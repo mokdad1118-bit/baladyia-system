@@ -1,0 +1,203 @@
+/**
+ * هوية بصرية — أخضر غامق مستوحى من خلفية الشعار الرسمي (أخضر زيتوني / غابة).
+ * تدرجات الهوامش والخلفيات بدرجات خضراء فاتحة للتناسق.
+ */
+:root {
+  --gov-primary: #124a38;
+  --gov-primary-pressed: #0c3528;
+  --gov-surface: #ffffff;
+  --gov-page-bg: #ecf4ef;
+  --gov-muted: #4a5d52;
+  --gov-border: #b8d0c4;
+  --gov-text: #142820;
+  --gov-accent-line: #124a38;
+  /* أحمر للرفض والتنبيهات — يبقى واضحاً على الخلفية الخضراء */
+  --gov-flag-red: #b4232d;
+  --gov-flag-green: #1a5c40;
+  --gov-flag-black: #0f3d2e;
+}
+
+.gov-page {
+  background-color: var(--gov-page-bg);
+  color: var(--gov-text);
+}
+
+.gov-header {
+  background-color: var(--gov-primary);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.gov-card {
+  background: var(--gov-surface);
+  border: 1px solid var(--gov-border);
+  border-radius: 2px;
+}
+
+.gov-btn-primary {
+  background-color: var(--gov-primary);
+  color: #fff;
+  border-radius: 2px;
+}
+
+.gov-btn-primary:hover {
+  background-color: var(--gov-primary-pressed);
+}
+
+.gov-input {
+  border: 1px solid var(--gov-border);
+  border-radius: 2px;
+  background: #fff;
+}
+
+.gov-table-wrap {
+  border: 1px solid var(--gov-border);
+  border-radius: 2px;
+  overflow: auto;
+}
+
+.gov-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.gov-table th,
+.gov-table td {
+  border-bottom: 1px solid var(--gov-border);
+  padding: 0.65rem 0.75rem;
+  text-align: start;
+}
+
+.gov-table th {
+  background: #d8ebe0;
+  font-weight: 600;
+  color: var(--gov-text);
+}
+
+.gov-table tr:hover td {
+  background: #eef6f1;
+}
+
+.gov-stat-card {
+  border: 1px solid var(--gov-border);
+  border-radius: 2px;
+  background: var(--gov-surface);
+  padding: 1rem 1.1rem;
+}
+
+.gov-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gov-primary);
+}
+
+.gov-step-bar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  border-inline-start: 3px solid var(--gov-primary);
+  padding-inline-start: 0.75rem;
+}
+
+.gov-step {
+  flex: 1;
+  font-size: 0.75rem;
+  color: var(--gov-muted);
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--gov-border);
+  background: #fff;
+}
+
+.gov-step-active {
+  background: var(--gov-primary);
+  color: #fff;
+  border-color: var(--gov-primary);
+}
+
+/* شريط تزييني بدرجات خضراء (بدل ألوان العلم) */
+.gov-divider-flag {
+  height: 2px;
+  background: linear-gradient(
+    to left,
+    var(--gov-flag-black) 0 33%,
+    var(--gov-flag-green) 33% 66%,
+    #2d7a58 66% 100%
+  );
+  opacity: 0.85;
+  max-width: 14rem;
+  border-radius: 0;
+}
+
+.gov-divider-flag--full {
+  max-width: none;
+  width: 100%;
+  opacity: 0.65;
+}
+
+.gov-btn-secondary {
+  background: #fff;
+  color: var(--gov-primary);
+  border: 1px solid var(--gov-border);
+  border-radius: 2px;
+}
+
+.gov-btn-secondary:hover {
+  background: #f0f7f3;
+}
+
+.gov-file-input::file-selector-button {
+  margin-inline-end: 0.75rem;
+  cursor: pointer;
+  border: 0;
+  border-radius: 2px;
+  background: var(--gov-primary);
+  color: #fff;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.gov-file-input::file-selector-button:hover {
+  background: var(--gov-primary-pressed);
+}
+
+.gov-step-indicator__item {
+  background: #fff;
+  border-color: var(--gov-border);
+  color: var(--gov-muted);
+}
+
+.gov-step-indicator__item--idle {
+  background: #f6faf7;
+}
+
+.gov-step-indicator__item--done {
+  border-color: var(--gov-border);
+  background: #e2efe6;
+  color: var(--gov-text);
+}
+
+.gov-step-indicator__item--active {
+  border-color: var(--gov-primary);
+  background: var(--gov-primary);
+  color: #fff;
+}
+
+.gov-page-heading {
+  max-width: 48rem;
+}
+
+.gov-panel {
+  max-width: 42rem;
+}
+
+.gov-aside-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gov-muted);
+  padding: 0.35rem 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--gov-border);
+  margin-bottom: 0.35rem;
+}

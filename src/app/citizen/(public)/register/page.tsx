@@ -1,0 +1,96 @@
+"use client";
+
+import { useActionState } from "react";
+import { registerCitizen } from "@/actions/auth";
+import Link from "next/link";
+import { StateEmblem } from "@/components/gov/StateEmblem";
+import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
+
+export default function CitizenRegisterPage() {
+  const [st, act] = useActionState(registerCitizen, undefined);
+  return (
+    <div className="gov-page flex min-h-dvh flex-col">
+      <header className="gov-header">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-4 px-4 py-5 sm:justify-between">
+          <div className="flex items-center gap-3">
+            <StateEmblem height={52} />
+            <div className="text-start text-white">
+              <p className="text-xs text-white/80">{PORTAL_SUBTITLE}</p>
+              <p className="text-lg font-bold">{ENTITY_NAME_AR}</p>
+              <p className="text-sm text-white/90">تسجيل مواطن</p>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main className="flex flex-1 justify-center px-4 py-10">
+        <div className="gov-card w-full max-w-md p-6">
+          <h1 className="mb-1 text-lg font-bold">إنشاء حساب مواطن</h1>
+          <p className="mb-6 text-sm text-[var(--gov-muted)]">للمتابعة والتقديم على الخدمات إلكترونياً.</p>
+          <form action={act} className="space-y-4">
+            {st?.error && (
+              <p className="border border-[var(--gov-flag-red)]/40 bg-[var(--gov-flag-red)]/5 px-3 py-2 text-sm">
+                {st.error}
+              </p>
+            )}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">الاسم الثلاثي</label>
+              <input
+                name="name"
+                required
+                minLength={2}
+                autoComplete="name"
+                className="gov-input w-full px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-[var(--gov-primary)]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">رقم واتساب (أرقام فقط)</label>
+              <input
+                name="phone"
+                type="tel"
+                required
+                inputMode="numeric"
+                autoComplete="tel"
+                dir="ltr"
+                className="gov-input w-full px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-[var(--gov-primary)]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">بريد إشعارات (اختياري)</label>
+              <input
+                name="notificationEmail"
+                type="email"
+                autoComplete="email"
+                className="gov-input w-full px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-[var(--gov-primary)]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">كلمة المرور (6 أحرف على الأقل)</label>
+              <input
+                name="password"
+                type="password"
+                required
+                minLength={6}
+                autoComplete="new-password"
+                className="gov-input w-full px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-[var(--gov-primary)]"
+              />
+            </div>
+            <button type="submit" className="gov-btn-primary w-full px-4 py-3 text-sm font-semibold">
+              إنشاء الحساب
+            </button>
+          </form>
+          <p className="mt-6 text-center text-sm text-[var(--gov-muted)]">
+            لديك حساب؟{" "}
+            <Link className="font-semibold text-[var(--gov-primary)] hover:underline" href="/citizen/login">
+              تسجيل الدخول
+            </Link>
+          </p>
+          <p className="mt-6 text-center text-xs">
+            <Link href="/" className="text-[var(--gov-muted)] hover:underline">
+              العودة لاختيار البوابة
+            </Link>
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}

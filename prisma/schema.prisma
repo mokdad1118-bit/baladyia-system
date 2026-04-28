@@ -1,0 +1,187 @@
+// Municipal e-services — extensible for departments & multi-employee assignment
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Admin / employee / citizen
+model User {
+  id             String   @id @default(cuid())
+  /// للموظفين/الإدارة غالباً؛ للمواطن يُفضّل الدخول برقم واتساب
+  email          String?  @unique
+  /// رقم واتساب (أرقام فقط بعد التطبيع) — تسجيل دخول المواطن
+  phone          String?  @unique
+  /// بريد اختياري لإشعارات لاحقة (بريد/واتساب داخل النظام حالياً داخلياً)
+  notificationEmail String? @unique
+  passwordHash   String
+  name           String
+  role           UserRole @default(CITIZEN)
+  isActive       Boolean  @default(true)
+  /// Future: assign services & routing by department
+  departmentId   String?
+  department     Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  citizenRequests    Request[]          @relation("CitizenRequests")
+  assignedRequests   Request[]          @relation("Assignee")
+  statusLogs         RequestStatusLog[] @relation("LogActor")
+  requestNotes       RequestNote[]      @relation("NoteAuthor")
+  notifications      Notification[]
+}
+
+enum UserRole {
+  ADMIN
+  EMPLOYEE
+  CITIZEN
+}
+
+/// Future: departments, employee pools, per-service routing
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?  @unique
+  description String?  @default("")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services  Service[] @relation("ServiceDepartment")
+  employees User[]    @relation("DepartmentEmployees")
+  requests  Request[] @relation("RequestDepartment")
+}
+
+model Service {
+  id             String   @id @default(cuid())
+  name           String
+  description    String   @default("")
+  /// Stored as decimal string in SQLite; use Prisma Decimal in app
+  price          String   @default("0")
+  isActive       Boolean  @default(true)
+  /// Future: used for automatic routing
+  departmentId   String?
+  department     Department? @relation("ServiceDepartment", fields: [departmentId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  documents  ServiceDocument[]
+  requests   Request[]
+}
+
+/// Required papers for a service — dynamic form = list of file inputs (+ metadata)
+model ServiceDocument {
+  id          String   @id @default(cuid())
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name        String
+  isRequired  Boolean  @default(true)
+  fileType    FileKind @default(PDF)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  requestFiles RequestFile[] @relation("FileForDocument")
+}
+
+enum FileKind {
+  IMAGE
+  PDF
+  ANY
+}
+
+model Request {
+  id            String   @id @default(cuid())
+  requestNumber String   @unique
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id])
+  citizenId     String
+  citizen       User     @relation("CitizenRequests", fields: [citizenId], references: [id])
+  /// Current phase: all requests go to the single (or first) assignee; nullable until assigned
+  assigneeId    String?
+  assignee      User?    @relation("Assignee", fields: [assigneeId], references: [id])
+  departmentId  String?
+  department    Department? @relation("RequestDepartment", fields: [departmentId], references: [id])
+  status        RequestStatus @default(PENDING)
+  /// بيانات مُدخلة مع الطلب (نسخة عند التقديم)
+  submittedFullName            String?
+  submittedPhone               String?
+  submittedNotificationEmail   String?
+  /// Optional JSON for future extra form fields
+  formPayload   String?  @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  files         RequestFile[]
+  statusLogs    RequestStatusLog[]
+  notes         RequestNote[]
+  notifications Notification[] @relation("RequestNotifications")
+}
+
+enum RequestStatus {
+  PENDING
+  UNDER_REVIEW
+  NEEDS_MODIFICATION
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+model RequestFile {
+  id                 String  @id @default(cuid())
+  requestId          String
+  request            Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  serviceDocumentId  String
+  serviceDocument    ServiceDocument @relation("FileForDocument", fields: [serviceDocumentId], references: [id])
+  storedName         String
+  originalName       String
+  mimeType           String
+  size               Int
+  createdAt          DateTime @default(now())
+}
+
+/// Audit trail for every status change
+model RequestStatusLog {
+  id             String   @id @default(cuid())
+  requestId      String
+  request        Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actorId        String
+  actor          User     @relation("LogActor", fields: [actorId], references: [id])
+  fromStatus     RequestStatus?
+  toStatus       RequestStatus
+  noteForCitizen String?  @default("")
+  createdAt      DateTime @default(now())
+}
+
+/// Internal staff notes
+model RequestNote {
+  id          String   @id @default(cuid())
+  requestId   String
+  request     Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation("NoteAuthor", fields: [authorId], references: [id])
+  body        String
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  title      String
+  message    String
+  read       Boolean  @default(false)
+  requestId  String?
+  request    Request? @relation("RequestNotifications", fields: [requestId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+}
+
+/// Atomic yearly counter for request numbers: REQ-YYYY-NNNNN
+model RequestSerial {
+  year  Int      @id
+  lastN Int
+}

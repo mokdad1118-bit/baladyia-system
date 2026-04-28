@@ -1,0 +1,62 @@
+@import "tailwindcss";
+@import "../styles/government.css";
+
+:root {
+  --background: var(--gov-page-bg);
+  --foreground: var(--gov-text);
+  --card: var(--gov-surface);
+  --muted: var(--gov-muted);
+  --ring: var(--gov-primary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-tajawal);
+}
+
+/* تجنّب smooth على مستوى الصفحة كاملة: يُبطئ التنقل بين المسارات ويبدو المحتوى كأنه لم يتغيّر */
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100dvh;
+}
+
+::selection {
+  background: rgba(18, 74, 56, 0.22);
+  color: var(--foreground);
+}
+
+@media (max-width: 767px) {
+  body.citizen-mobile-citizen {
+    overflow-x: hidden;
+  }
+
+  body.citizen-mobile-citizen .citizen-hide-global-chrome {
+    display: none;
+  }
+  body.citizen-mobile-citizen .citizen-main-full {
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  body.citizen-mobile-citizen .gov-table-wrap {
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  body.citizen-mobile-citizen button,
+  body.citizen-mobile-citizen [type="submit"],
+  body.citizen-mobile-citizen [type="button"],
+  body.citizen-mobile-citizen a.gov-btn-primary,
+  body.citizen-mobile-citizen a.gov-btn-secondary {
+    touch-action: manipulation;
+  }
+}

@@ -1,0 +1,19 @@
+# نشر محلي أو على خادم VPS: تطبيق واحد + قاعدة بيانات SQLite + مجلد المرفقات
+services:
+  eportal:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env or shell}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      DATABASE_URL: "${DATABASE_URL:-file:///data/eportal.db}"
+      TURSO_AUTH_TOKEN: "${TURSO_AUTH_TOKEN:-}"
+    volumes:
+      - eportal_sqlite:/data
+      - eportal_uploads:/app/public/uploads
+    restart: unless-stopped
+
+volumes:
+  eportal_sqlite:
+  eportal_uploads:
