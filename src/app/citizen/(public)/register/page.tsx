@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 import { registerCitizen } from "@/actions/auth";
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
+import { PasswordRevealField } from "@/components/PasswordRevealField";
 
 export default function CitizenRegisterPage() {
   const [st, act] = useActionState(registerCitizen, undefined);
+  const passwordFieldId = useId();
   return (
     <div className="gov-page flex min-h-dvh flex-col">
       <header className="gov-header">
@@ -17,7 +19,7 @@ export default function CitizenRegisterPage() {
             <div className="text-start text-white">
               <p className="text-xs text-white/80">{PORTAL_SUBTITLE}</p>
               <p className="text-lg font-bold">{ENTITY_NAME_AR}</p>
-              <p className="text-sm text-white/90">تسجيل مواطن</p>
+              <p className="text-sm text-white/90">إنشاء حساب جديد</p>
             </div>
           </div>
         </div>
@@ -43,7 +45,7 @@ export default function CitizenRegisterPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">رقم واتساب (أرقام فقط)</label>
+              <label className="mb-1.5 block text-sm font-medium">رقم الهاتف (واتساب)</label>
               <input
                 name="phone"
                 type="tel"
@@ -64,14 +66,15 @@ export default function CitizenRegisterPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">كلمة المرور (6 أحرف على الأقل)</label>
-              <input
+              <label htmlFor={passwordFieldId} className="mb-1.5 block text-sm font-medium">
+                كلمة المرور (6 أحرف على الأقل)
+              </label>
+              <PasswordRevealField
+                inputId={passwordFieldId}
                 name="password"
-                type="password"
-                required
                 minLength={6}
                 autoComplete="new-password"
-                className="gov-input w-full px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-[var(--gov-primary)]"
+                variant="gov"
               />
             </div>
             <button type="submit" className="gov-btn-primary w-full px-4 py-3 text-sm font-semibold">

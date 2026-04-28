@@ -22,7 +22,6 @@ export default async function CitizenMainChromeLayout({
             <div className="text-start">
               <p className="text-[0.65rem] text-[var(--gov-muted)]">{PORTAL_SUBTITLE}</p>
               <p className="text-sm font-bold text-[var(--gov-text)]">{ENTITY_NAME_AR}</p>
-              <p className="text-xs text-[var(--gov-muted)]">بوابة المواطن</p>
             </div>
           </Link>
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">

@@ -12,9 +12,8 @@ export default async function CitizenLoginPage() {
   return (
     <GovLoginPage
       portal="citizen"
-      title="بوابة المواطن"
-      subtitle="تسجيل دخول المواطنين"
-      identifierLabel="رقم واتساب (أرقام فقط)"
+      subtitle="تسجيل الدخول"
+      identifierLabel="رقم الهاتف (واتساب)"
       identifierPlaceholder="9639xxxxxxxx"
       identifierAutocomplete="tel"
     />

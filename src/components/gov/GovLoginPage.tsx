@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { AuthPortal } from "@/lib/auth-portal";
 import { safePostLoginRedirectPath } from "@/lib/portal-paths";
 import { StateEmblem } from "@/components/gov/StateEmblem";
@@ -10,6 +10,7 @@ import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { CitizenAuthShell } from "@/components/citizen/CitizenAuthShell";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { PasswordRevealField } from "@/components/PasswordRevealField";
 
 /**
  * صفحتا دخول منفصلتان بالواجهة والمسار والبوابة (portal في NextAuth).
@@ -26,7 +27,8 @@ export function GovLoginPage({
   staffPortalWeb,
 }: {
   portal: AuthPortal;
-  title: string;
+  /** يُعرض بجانب الشعار على دخول المواطن؛ اتركه فارغًا لإخفاء السطر */
+  title?: string;
   subtitle: string;
   identifierLabel: string;
   identifierPlaceholder: string;
@@ -38,6 +40,7 @@ export function GovLoginPage({
   const sp = useSearchParams();
   const [err, setErr] = useState<string | null>(null);
   const [pend, setPend] = useState(false);
+  const passwordFieldId = useId();
   const isCitizen = portal === "citizen";
 
   const form = (
@@ -48,7 +51,7 @@ export function GovLoginPage({
       )}
     >
       <h1 className="mb-1 text-lg font-bold text-[var(--gov-text)]">{subtitle}</h1>
-      <p className="mb-6 text-sm text-[var(--gov-muted)]">يرجى إدخال البيانات بدقة.</p>
+      <p className="mb-6 text-sm text-[var(--gov-muted)]">يرجى إدخال بياناتك بشكل صحيح للمتابعة.</p>
 
       <form
         className="space-y-4"
@@ -115,16 +118,14 @@ export function GovLoginPage({
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">كلمة المرور</label>
-          <input
+          <label htmlFor={passwordFieldId} className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">
+            كلمة المرور
+          </label>
+          <PasswordRevealField
+            inputId={passwordFieldId}
             name="password"
-            type="password"
-            required
             autoComplete="current-password"
-            className={cn(
-              "gov-input w-full px-3 py-2.5 text-sm outline-none focus:ring-2",
-              isCitizen ? "focus:ring-emerald-600/35" : "focus:ring-1 focus:ring-[var(--gov-primary)]",
-            )}
+            variant={isCitizen ? "emerald" : "gov"}
           />
         </div>
         <button
@@ -145,7 +146,7 @@ export function GovLoginPage({
         <p className="mt-6 text-center text-sm text-slate-600">
           ليس لديك حساب؟{" "}
           <Link className="font-semibold text-emerald-800 underline-offset-2 hover:underline" href="/register">
-            تسجيل مواطن جديد
+            إنشاء حساب جديد
           </Link>
         </p>
       )}
@@ -163,7 +164,11 @@ export function GovLoginPage({
   if (isCitizen) {
     return (
       <CitizenAuthShell
-        headerAside={<p className="text-sm font-semibold text-emerald-900">{title}</p>}
+        headerAside={
+          title?.trim() ? (
+            <p className="text-sm font-semibold text-emerald-900">{title.trim()}</p>
+          ) : undefined
+        }
       >
         <main className="flex flex-1 justify-center px-4 py-10">{form}</main>
       </CitizenAuthShell>

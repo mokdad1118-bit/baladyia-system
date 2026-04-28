@@ -8,16 +8,23 @@ import { IconBack } from "./citizen-icons";
 type Title = { t: string; backHref?: string };
 
 function getTitleForPath(p: string): Title {
-  if (p === "/services") return { t: "الخدمات" };
-  if (p === "/requests") return { t: "طلباتي" };
-  if (p.startsWith("/requests/") && !p.includes("/new/")) {
-    return { t: "تفاصيل الطلب", backHref: "/requests" };
+  const c = p.startsWith("/citizen") ? p.slice("/citizen".length) || "/" : p;
+  if (c === "/services") return { t: "الخدمات" };
+  if (c === "/requests") return { t: "طلباتي" };
+  if (c.startsWith("/requests/") && !c.includes("/new/")) {
+    return {
+      t: "تفاصيل الطلب",
+      backHref: p.startsWith("/citizen") ? "/citizen/requests" : "/requests",
+    };
   }
-  if (p.startsWith("/requests/new/")) {
-    return { t: "تقديم طلب", backHref: "/services" };
+  if (c.startsWith("/requests/new/")) {
+    return {
+      t: "تقديم طلب",
+      backHref: p.startsWith("/citizen") ? "/citizen/services" : "/services",
+    };
   }
-  if (p.startsWith("/notifications")) return { t: "الإشعارات" };
-  if (p === "/") return { t: "الرئيسية" };
+  if (c.startsWith("/notifications")) return { t: "الإشعارات" };
+  if (c === "/" || c === "") return { t: "الرئيسية" };
   return { t: "تطبيق المواطن" };
 }
 
