@@ -3,7 +3,7 @@
 import { Suspense, useId, useState } from "react";
 import { getSession, signIn, type SignInResponse } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import type { AuthPortal } from "@/lib/auth-portal";
+import type { LoginPageSurface } from "@/lib/auth-portal";
 import { safePostLoginRedirectPath } from "@/lib/portal-paths";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
@@ -13,9 +13,10 @@ import { cn } from "@/lib/cn";
 import { navigateTopLevel } from "@/lib/navigate-client";
 import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
+import { UserRole } from "@/generated/prisma/enums";
 
 export type GovLoginPageProps = {
-  portal: AuthPortal;
+  loginPage: LoginPageSurface;
   title?: string;
   subtitle: string;
   identifierLabel: string;
@@ -29,26 +30,25 @@ function isSignInSuccess(res: SignInResponse): boolean {
   return res.ok === true && !res.error;
 }
 
-function failureMessageForSignIn(portal: AuthPortal, res: SignInResponse): string {
+function failureMessageForSignIn(loginPage: LoginPageSurface, res: SignInResponse): string {
   if (res.status >= 500) {
     return "حدث خطأ في الخادم (500). حاول بعد قليل أو حدّث الصفحة.";
   }
   if (res.status === 401) {
-    return portal === "citizen"
+    return loginPage === "citizen"
       ? "رقم الهاتف أو كلمة المرور غير صحيحة"
       : "البريد الإلكتروني أو كلمة المرور غير صحيحة";
   }
-  return portal === "citizen"
+  return loginPage === "citizen"
     ? "رقم الهاتف أو كلمة المرور غير صحيحة"
     : "البريد الإلكتروني أو كلمة المرور غير صحيحة";
 }
 
 /**
- * صفحتا دخول منفصلتان بالواجهة والمسار والبوابة (portal في NextAuth).
- * لا يوجد اختيار نوع مستخدم — المواطن يدخل من /login والموظف من /admin/login فقط.
+ * صفحتان: /citizen/login و /admin/login — التحقق من صلاحية الدخول حسب الدور في الخادم (credentials.loginPage).
  */
 function GovLoginPageImpl({
-  portal,
+  loginPage,
   title,
   subtitle,
   identifierLabel,
@@ -63,7 +63,7 @@ function GovLoginPageImpl({
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const passwordFieldId = useId();
-  const isCitizen = portal === "citizen";
+  const isCitizen = loginPage === "citizen";
 
   const form = (
     <div
@@ -86,7 +86,7 @@ function GovLoginPageImpl({
             const res = await signIn("credentials", {
               identifier: idTrim,
               password,
-              portal: String(portal),
+              loginPage: String(loginPage),
               redirect: false,
             });
             if (process.env.NODE_ENV === "development") {
@@ -97,20 +97,27 @@ function GovLoginPageImpl({
               return;
             }
             if (!isSignInSuccess(res)) {
-              setErr(failureMessageForSignIn(portal, res));
+              setErr(failureMessageForSignIn(loginPage, res));
               return;
             }
-            const after = safePostLoginRedirectPath(sp.get("next"), portal, staffPortalWeb);
-            const dest =
-              after ??
-              (portal === "citizen" ? "/citizen" : staffPortalWeb ? "/" : "/admin");
-            const absolute = new URL(dest, window.location.origin).href;
+            const after = safePostLoginRedirectPath(sp.get("next"), loginPage, staffPortalWeb);
             await getSession();
             await fetch(`${window.location.origin}/api/auth/session`, {
               credentials: "include",
               cache: "no-store",
             });
-            /* بعض المتصفحات على الموبايل تُكمل التوجيه قبل commit الكوكي */
+            const session = await getSession();
+            const role = session?.user?.role as UserRole | undefined;
+            let dest = after ?? null;
+            if (!dest) {
+              if (role === UserRole.CITIZEN) dest = "/citizen";
+              else if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
+                dest = staffPortalWeb ? "/" : "/admin";
+              } else {
+                dest = loginPage === "citizen" ? "/citizen" : "/admin";
+              }
+            }
+            const absolute = new URL(dest, window.location.origin).href;
             await new Promise((r) => setTimeout(r, 120));
             navigateTopLevel(absolute);
           } catch (caught) {
@@ -133,7 +140,7 @@ function GovLoginPageImpl({
             {err}
           </p>
         )}
-        {sp.get("registered") && portal === "citizen" && (
+        {sp.get("registered") && loginPage === "citizen" && (
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
             تم إنشاء الحساب — يمكنك تسجيل الدخول الآن
           </p>
@@ -181,7 +188,7 @@ function GovLoginPageImpl({
         </button>
       </form>
 
-      {portal === "citizen" && (
+      {loginPage === "citizen" && (
         <p className="mt-6 text-center text-sm text-slate-600">
           ليس لديك حساب؟{" "}
           <Link className="font-semibold text-emerald-800 underline-offset-2 hover:underline" href="/register">
@@ -192,9 +199,13 @@ function GovLoginPageImpl({
 
       {extraFooter}
 
-      {portal === "staff" && (
+      {loginPage === "staff" && (
         <p className="mt-8 border-t border-[var(--gov-border)] pt-4 text-center text-[0.7rem] leading-relaxed text-[var(--gov-muted)]">
-          هذه البوابة للموظفين والمديرين فقط. لا يُستخدم حساب المواطن هنا — بوابة المواطنين منفصلة تماماً على المسارات العامة للموقع.
+          هذه البوابة للموظفين والمديرين فقط. لا يُستخدم حساب المواطن هنا — تسجيل الدخول للمواطنين من{" "}
+          <Link className="font-semibold text-[var(--gov-primary)] underline-offset-2 hover:underline" href="/citizen/login">
+            /citizen/login
+          </Link>
+          .
         </p>
       )}
     </div>
@@ -242,8 +253,8 @@ function GovLoginPageImpl({
   );
 }
 
-function GovLoginPageFallback({ portal }: { portal: AuthPortal }) {
-  const isCitizen = portal === "citizen";
+function GovLoginPageFallback({ loginPage }: { loginPage: LoginPageSurface }) {
+  const isCitizen = loginPage === "citizen";
   if (isCitizen) {
     return (
       <CitizenAuthShell>
@@ -267,7 +278,7 @@ function GovLoginPageFallback({ portal }: { portal: AuthPortal }) {
 
 export function GovLoginPage(props: GovLoginPageProps) {
   return (
-    <Suspense fallback={<GovLoginPageFallback portal={props.portal} />}>
+    <Suspense fallback={<GovLoginPageFallback loginPage={props.loginPage} />}>
       <GovLoginPageImpl {...props} />
     </Suspense>
   );

@@ -7,7 +7,7 @@ export function GuestBar() {
         تسجيل مواطن
       </Link>
       <span className="text-[var(--gov-muted)]">|</span>
-      <Link className="text-[var(--gov-primary)] hover:underline" href="/login">
+      <Link className="text-[var(--gov-primary)] hover:underline" href="/citizen/login">
         تسجيل الدخول
       </Link>
     </div>

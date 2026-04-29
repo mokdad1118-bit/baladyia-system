@@ -1,21 +1,17 @@
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { UserRole } from "@/generated/prisma/enums";
-import { GovLoginPage } from "@/components/gov/GovLoginPage";
 
-/** دخول المواطنين فقط — مسار منفصل عن /admin/login */
-export default async function CitizenLoginPage() {
-  const s = await auth();
-  if (s?.user?.role === UserRole.CITIZEN) redirect("/citizen");
-  if (s?.user?.role === UserRole.EMPLOYEE || s?.user?.role === UserRole.ADMIN) redirect("/admin");
-
-  return (
-    <GovLoginPage
-      portal="citizen"
-      subtitle="تسجيل الدخول"
-      identifierLabel="رقم الهاتف (واتساب)"
-      identifierPlaceholder="9639xxxxxxxx"
-      identifierAutocomplete="tel"
-    />
-  );
+/** المسار القديم /login — يُوجَّه إلى /citizen/login مع الحفاظ على الاستعلام */
+export default async function LegacyLoginRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === "string") q.set(k, v);
+    else if (Array.isArray(v)) v.forEach((x) => q.append(k, x));
+  }
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  redirect(`/citizen/login${suffix}`);
 }

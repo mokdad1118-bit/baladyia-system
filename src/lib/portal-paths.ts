@@ -1,4 +1,4 @@
-import type { AuthPortal } from "@/lib/auth-portal";
+import type { LoginPageSurface } from "@/lib/auth-portal";
 
 /** نسخة خفيفة بدون استيراد middleware — للاستخدام من العميل */
 function staffInternalPathToBrowserPath(internalPath: string): string {
@@ -13,7 +13,7 @@ function staffInternalPathToBrowserPath(internalPath: string): string {
 export function isCitizenAppPath(pathname: string) {
   return (
     pathname === "/" ||
-    pathname === "/login" ||
+    pathname === "/citizen/login" ||
     pathname === "/register" ||
     pathname.startsWith("/services") ||
     pathname.startsWith("/requests") ||
@@ -26,7 +26,6 @@ export function isCitizenAppPath(pathname: string) {
 /** صفحات تطبيق المواطن التي يمكن للزائر دخولها دون جلسة */
 export function isCitizenPublicPath(pathname: string) {
   return (
-    pathname === "/login" ||
     pathname === "/register" ||
     pathname.startsWith("/services") ||
     pathname === "/citizen/login" ||
@@ -54,14 +53,14 @@ function isStaffPortalBrowserNext(next: string) {
  */
 export function safePostLoginRedirectPath(
   raw: string | null,
-  portal: AuthPortal,
+  loginPage: LoginPageSurface,
   staffPortalWeb?: boolean,
 ): string | null {
   if (raw == null) return null;
   const next = raw.trim();
   if (!next.startsWith("/") || next.startsWith("//")) return null;
   if (next.includes("\\") || next.includes(":")) return null;
-  if (portal === "staff") {
+  if (loginPage === "staff") {
     if (staffPortalWeb) {
       if (next.startsWith("/admin")) return staffInternalPathToBrowserPath(next);
       if (isStaffPortalBrowserNext(next)) return next;

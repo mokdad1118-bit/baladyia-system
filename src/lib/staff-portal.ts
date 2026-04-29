@@ -15,7 +15,7 @@ export function staffPortalSplitEnabled(): boolean {
  * يعطّل منطق «فصل النطاقات» عند إعداد خاطئ شائع على Render:
  * `NEXT_PUBLIC_STAFF_PORTAL_URL` يشير لنفس أصل الموقع الحالي، أو
  * `ADMIN_PORTAL_HOST` = المضيف الحالي بدون رابط موظفين منفصل —
- * وإلا يُحوَّل /admin إلى /login (مواطن) ويختفي دخول الإدارة.
+ * وإلا يُحوَّل /admin إلى /citizen/login ويختفي دخول الإدارة من مسار المواطن.
  */
 export function staffPortalSplitDisabledForOrigin(
   requestOrigin: string,

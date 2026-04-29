@@ -4,6 +4,6 @@ import { homeForRole } from "@/lib/home-nav";
 
 export default async function AfterLoginPage() {
   const s = await auth();
-  if (!s?.user) redirect("/login");
+  if (!s?.user) redirect("/citizen/login");
   redirect(homeForRole(s.user.role));
 }

@@ -74,7 +74,7 @@ export default function CitizenRegisterPage() {
           </form>
           <p className="mt-6 text-center text-sm text-slate-600">
             لديك حساب؟{" "}
-            <Link className="font-semibold text-emerald-800 underline-offset-2 hover:underline" href="/login">
+            <Link className="font-semibold text-emerald-800 underline-offset-2 hover:underline" href="/citizen/login">
               تسجيل الدخول
             </Link>
           </p>

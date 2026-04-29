@@ -11,7 +11,7 @@ type S = { searchParams: Promise<Record<string, string | string[] | undefined>> 
 
 export default async function CitizenRequestsPage({ searchParams }: S) {
   const s = await auth();
-  if (!s?.user) redirect("/login?next=/requests");
+  if (!s?.user) redirect("/citizen/login?next=/requests");
   const sp = await searchParams;
   const success = sp.success === "1";
   const no = typeof sp.no === "string" ? sp.no : null;

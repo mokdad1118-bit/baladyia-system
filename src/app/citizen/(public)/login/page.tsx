@@ -11,7 +11,7 @@ export default async function CitizenLoginPage() {
 
   return (
     <GovLoginPage
-      portal="citizen"
+      loginPage="citizen"
       subtitle="تسجيل الدخول"
       identifierLabel="رقم الهاتف (واتساب)"
       identifierPlaceholder="9639xxxxxxxx"

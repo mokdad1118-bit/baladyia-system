@@ -12,7 +12,7 @@ import {
   staffPortalSplitEnabled,
 } from "@/lib/staff-portal";
 
-/** دخول الموظفين والمديرين فقط — مسار منفصل عن /login */
+/** دخول الموظفين والمديرين — /admin/login */
 export default async function AdminStaffLoginPage() {
   const s = await auth();
   const h = await headers();
@@ -30,7 +30,7 @@ export default async function AdminStaffLoginPage() {
 
   return (
     <GovLoginPage
-      portal="staff"
+      loginPage="staff"
       title="لوحة التحكم — دخول الموظفين"
       subtitle="تسجيل دخول الموظفين ومدير النظام"
       identifierLabel="البريد الإلكتروني"

@@ -39,7 +39,7 @@ export default async function CitizenDashboardLayout({ children }: { children: R
               </>
             ) : (
               <>
-                <Link className="text-[var(--gov-primary)] hover:underline" href="/login">
+                <Link className="text-[var(--gov-primary)] hover:underline" href="/citizen/login">
                   تسجيل الدخول
                 </Link>
                 <Link className="text-[var(--gov-primary)] hover:underline" href="/register">

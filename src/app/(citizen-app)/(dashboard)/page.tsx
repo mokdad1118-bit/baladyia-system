@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 
 export default async function CitizenHomePage() {
   const s = await auth();
-  if (!s?.user) redirect("/login?next=/");
+  if (!s?.user) redirect("/citizen/login?next=/");
   const recent = await db.request.findMany({
     where: { citizenId: s.user.id },
     orderBy: { createdAt: "desc" },

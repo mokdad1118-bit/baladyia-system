@@ -4,16 +4,15 @@ import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { digitsOnly, notifEmailOrNull } from "@/lib/phone";
 import { verifyPassword } from "@/lib/password";
-import type { AuthPortal } from "@/lib/auth-portal";
+import type { LoginPageSurface } from "@/lib/auth-portal";
 
-/** فصل البوابات: لا يُقبل موظف عبر portal=citizen ولا مواطن عبر portal=staff */
-function portalAllowsRole(portal: AuthPortal, role: UserRole) {
-  if (portal === "citizen") return role === UserRole.CITIZEN;
-  if (portal === "staff") return role === UserRole.EMPLOYEE || role === UserRole.ADMIN;
+function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
+  if (surface === "citizen") return role === UserRole.CITIZEN;
+  if (surface === "staff") return role === UserRole.EMPLOYEE || role === UserRole.ADMIN;
   return false;
 }
 
-/** أشكال شائعة لنفس الرقم (محلي 09… مقابل 963…) لتفادي «الحساب غير موجود» بعد التسجيل */
+/** أشكال شائعة لنفس الرقم (محلي 09… مقابل 963…) */
 function citizenPhoneLookupKeys(digits: string): string[] {
   const keys = new Set<string>();
   if (!digits) return [];
@@ -30,20 +29,20 @@ function citizenPhoneLookupKeys(digits: string): string[] {
   return [...keys];
 }
 
-async function findUserForCitizenCredentials(identifier: string) {
+/** بحث موحّد بالبريد أو الهاتف أو بريد الإشعارات (لجميع الأدوار) */
+async function findUserByIdentifier(identifier: string) {
   const id = identifier.trim();
   if (!id) return null;
   if (id.includes("@")) {
     const email = id.toLowerCase();
-    const user = await db.user.findUnique({ where: { email } });
-    if (user) return user;
+    const byEmail = await db.user.findUnique({ where: { email } });
+    if (byEmail) return byEmail;
     const notif = notifEmailOrNull(id);
     if (!notif) return null;
-    return db.user.findFirst({
-      where: { notificationEmail: notif, role: UserRole.CITIZEN },
-    });
+    return db.user.findFirst({ where: { notificationEmail: notif } });
   }
   const d = digitsOnly(id);
+  if (!d) return null;
   for (const phone of citizenPhoneLookupKeys(d)) {
     const u = await db.user.findUnique({ where: { phone } });
     if (u) return u;
@@ -54,42 +53,29 @@ async function findUserForCitizenCredentials(identifier: string) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   trustHost: true,
-  /** على http:// (مثل الموبايل على LAN) يجب ألا تُعلَّم الكوكيز Secure — وإلا لا تُحفظ الجلسة */
   useSecureCookies: process.env.NODE_ENV === "production",
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  pages: { signIn: "/citizen/login" },
   providers: [
     Credentials({
       name: "credentials",
       credentials: {
         identifier: { label: "بريد أو واتساب", type: "text" },
         password: { label: "password", type: "password" },
-        portal: { label: "portal", type: "text" },
+        loginPage: { label: "loginPage", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) return null;
-        const portalRaw = String(credentials.portal ?? "").trim() as AuthPortal;
-        if (portalRaw !== "citizen" && portalRaw !== "staff") {
+        const surface = String(credentials.loginPage ?? "").trim() as LoginPageSurface;
+        if (surface !== "citizen" && surface !== "staff") {
           return null;
         }
         const id = String(credentials.identifier).trim();
         if (!id) return null;
-        const user =
-          portalRaw === "citizen"
-            ? await findUserForCitizenCredentials(id)
-            : id.includes("@")
-              ? await db.user.findUnique({
-                  where: { email: id.toLowerCase() },
-                })
-              : await db.user.findUnique({
-                  where: { phone: digitsOnly(id) },
-                });
+        const user = await findUserByIdentifier(id);
         if (!user || !user.isActive) return null;
-        if (!portalAllowsRole(portalRaw, user.role)) return null;
-        const ok = await verifyPassword(
-          String(credentials.password),
-          user.passwordHash,
-        );
+        if (!loginPageAllowsRole(surface, user.role)) return null;
+        const ok = await verifyPassword(String(credentials.password), user.passwordHash);
         if (!ok) return null;
         const isAdminRole = user.role === UserRole.ADMIN;
         return {

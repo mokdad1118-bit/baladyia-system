@@ -1,2 +1,5 @@
-/** citizen = تطبيق المواطن | staff = لوحة التحكم (موظف أو مدير) */
-export type AuthPortal = "citizen" | "staff";
+/** صفحة الدخول: مواطن (/citizen/login) أو لوحة التحكم (/admin/login) — التحقق من الدور في الخادم */
+export type LoginPageSurface = "citizen" | "staff";
+
+/** @deprecated استخدم LoginPageSurface */
+export type AuthPortal = LoginPageSurface;

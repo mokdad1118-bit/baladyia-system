@@ -8,7 +8,7 @@ import { UserRole } from "@/generated/prisma/enums";
 export default async function CitizenNotificationsPage() {
   const s = await auth();
   if (!s?.user || s.user.role !== UserRole.CITIZEN) {
-    redirect("/login?next=/notifications");
+    redirect("/citizen/login?next=/notifications");
   }
   const list = await db.notification.findMany({
     where: { userId: s.user.id },

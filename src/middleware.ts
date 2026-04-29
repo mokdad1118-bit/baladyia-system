@@ -1,7 +1,6 @@
 /**
- * فصل الوصول: مسارات المواطن (/، /login، /services، …) مقابل لوحة التحكم (/admin/*).
- * الجلسة تُقيَّم حسب role؛ لا يوجد دخول مشترك — تسجيل المواطن portal=citizen والموظف portal=staff في Credentials.
- * أسباب الفصل: تجربة مستخدم أوضح، تقليل سطح الهجوم، وسهولة توسيع كل بوابة لاحقاً.
+ * فصل الوصول: مسارات المواطن (/، /citizen/login، /services، …) مقابل لوحة التحكم (/admin/*).
+ * الجلسة تُقيَّم حسب role؛ صفحتا دخول: مواطن (/citizen/login) وموظف (/admin/login) مع حقل credentials.loginPage.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
@@ -38,7 +37,7 @@ function rewriteStaff(req: NextRequest, internalPath: string) {
  * يجب أن يطابق اسم كوكي الجلسة ما يضبطه NextAuth (`useSecureCookies`).
  * في الإنتاج: `__Secure-authjs.session-token` — وإن مرّرنا secureCookie: false يبقى getToken
  * يبحث عن `authjs.session-token` فلا يجد الكوكي → لا جلسة في الـ middleware بينما `auth()` يراها
- * → حلقة إعادة توجيه بين /login و /citizen.
+ * → حلقة إعادة توجيه بين /citizen/login والجلسة.
  */
 function sessionCookieSecure(req: NextRequest): boolean {
   if (process.env.NODE_ENV === "production") return true;
@@ -64,6 +63,11 @@ async function readJwt(req: NextRequest) {
 
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
+  if (pathname === "/login") {
+    const u = req.nextUrl.clone();
+    u.pathname = "/citizen/login";
+    return NextResponse.redirect(u);
+  }
   const host = req.headers.get("host");
   const splitRaw = staffPortalSplitEnabled();
   const splitDisabled =
@@ -119,7 +123,7 @@ export async function middleware(req: NextRequest) {
       if (role === UserRole.CITIZEN) {
         return redirectToCitizenPortal(req, "/" + search);
       }
-      return redirectToCitizenPortal(req, `/login${search}`);
+      return redirectToCitizenPortal(req, `/citizen/login${search}`);
     }
 
     if (staffRewriteInternal) {
@@ -146,7 +150,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (!hasSession) {
-    const u = new URL("/login", req.url);
+    const u = new URL("/citizen/login", req.url);
     u.searchParams.set("next", pathname + search);
     return NextResponse.redirect(u);
   }
@@ -154,7 +158,7 @@ export async function middleware(req: NextRequest) {
     if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
       return redirectStaffHome(req, host, split);
     }
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/citizen/login", req.url));
   }
   if (staffRewriteInternal) {
     return rewriteStaff(req, staffRewriteInternal);

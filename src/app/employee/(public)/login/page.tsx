@@ -10,7 +10,7 @@ export default async function EmployeeLoginPage() {
   if (s?.user?.role === UserRole.CITIZEN) redirect("/citizen");
   return (
     <GovLoginPage
-      portal="staff"
+      loginPage="staff"
       title="بوابة الموظف"
       subtitle="تسجيل دخول الموظفين"
       identifierLabel="البريد الإلكتروني"

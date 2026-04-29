@@ -43,5 +43,5 @@ export async function registerCitizen(
       role: UserRole.CITIZEN,
     },
   });
-  redirect("/login?registered=1");
+  redirect("/citizen/login?registered=1");
 }

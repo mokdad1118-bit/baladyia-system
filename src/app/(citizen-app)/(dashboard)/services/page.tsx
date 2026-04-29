@@ -78,7 +78,7 @@ export default async function CitizenServicesPage() {
                   </div>
                   <p className="shrink-0 text-xs text-[var(--gov-muted)] md:text-sm">
                     <Link
-                      href="/login?next=/services"
+                      href="/citizen/login?next=/services"
                       className="font-semibold text-[var(--gov-primary)] hover:underline"
                     >
                       سجّل الدخول كمواطن
