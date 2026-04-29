@@ -33,6 +33,17 @@ function rewriteStaff(req: NextRequest, internalPath: string) {
   return NextResponse.rewrite(u);
 }
 
+/** بدون AUTH_SECRET أو عند فشل فك التشفير لا نرمي استثناءً يعطل الصفحات الثابتة */
+async function readJwt(req: NextRequest) {
+  const secret = process.env.AUTH_SECRET?.trim();
+  if (!secret) return null;
+  try {
+    return await getToken({ req, secret });
+  } catch {
+    return null;
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const host = req.headers.get("host");
@@ -62,10 +73,7 @@ export async function middleware(req: NextRequest) {
   const adminPathname =
     split && onStaffHost ? staffInternal : pathname.startsWith("/admin") ? pathname : null;
 
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-  });
+  const token = await readJwt(req);
   const role = token?.role as UserRole | undefined;
   const hasSession = Boolean(token);
 

@@ -11,7 +11,7 @@ RUN npm ci --include=dev
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npx prisma generate && npm run build
+RUN npm run build
 
 FROM node:20-bookworm-slim AS runner
 

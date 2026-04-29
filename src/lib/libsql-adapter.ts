@@ -6,6 +6,8 @@ const defaultFileUrl = pathToFileURL(
   path.join(process.cwd(), "prisma", "dev.db"),
 ).href;
 
+let warnedRemoteWithoutToken = false;
+
 /** إعدادات @prisma/adapter-libsql: ملف محلي، أو Turso / LibSQL عن بُعد */
 export function createLibSqlAdapter() {
   const raw = process.env.DATABASE_URL?.trim();
@@ -19,6 +21,12 @@ export function createLibSqlAdapter() {
       raw.startsWith("libsql+") ||
       raw.startsWith("https://"))
   ) {
+    if (!authToken && !warnedRemoteWithoutToken) {
+      warnedRemoteWithoutToken = true;
+      console.error(
+        "[db] DATABASE_URL يشير إلى LibSQL عن بُعد دون TURSO_AUTH_TOKEN — الاتصال سيفشل.",
+      );
+    }
     return new PrismaLibSql({
       url: raw,
       authToken: authToken || undefined,
