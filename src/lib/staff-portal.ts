@@ -11,6 +11,57 @@ export function staffPortalSplitEnabled(): boolean {
   return Boolean(configuredAdminPortalHost());
 }
 
+/**
+ * يعطّل منطق «فصل النطاقات» عند إعداد خاطئ شائع على Render:
+ * `NEXT_PUBLIC_STAFF_PORTAL_URL` يشير لنفس أصل الموقع الحالي، أو
+ * `ADMIN_PORTAL_HOST` = المضيف الحالي بدون رابط موظفين منفصل —
+ * وإلا يُحوَّل /admin إلى /login (مواطن) ويختفي دخول الإدارة.
+ */
+export function staffPortalSplitDisabledForOrigin(
+  requestOrigin: string,
+  hostHeader: string | null | undefined,
+): boolean {
+  if (!configuredAdminPortalHost()) return false;
+  let ro: URL;
+  try {
+    ro = new URL(requestOrigin);
+  } catch {
+    return false;
+  }
+  const cur = (hostHeader ?? "").split(":")[0]?.toLowerCase() ?? "";
+  const stf = staffPortalOrigin();
+  const cit = citizenPortalOrigin();
+
+  const sameOrigin = (base: string | undefined): boolean => {
+    if (!base?.trim()) return false;
+    try {
+      return new URL(base.trim()).origin === ro.origin;
+    } catch {
+      return false;
+    }
+  };
+
+  if (stf && sameOrigin(stf)) {
+    if (!cit || sameOrigin(cit)) return true;
+  }
+  if (!stf && cur === configuredAdminPortalHost()) return true;
+  return false;
+}
+
+/** أصل الطلب من رؤوس Next (خادم فقط) */
+export function requestOriginFromHeaders(h: Headers): string {
+  const xfHost = h.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const host = xfHost || h.get("host") || "localhost";
+  const xfProto = h.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  const proto =
+    xfProto === "http" || xfProto === "https"
+      ? xfProto
+      : host.startsWith("localhost") || host.startsWith("127.")
+        ? "http"
+        : "https";
+  return `${proto}://${host}`;
+}
+
 export function isStaffPortalHostname(hostHeader: string | null | undefined): boolean {
   const cfg = configuredAdminPortalHost();
   if (!cfg) return false;
@@ -122,8 +173,15 @@ export function staffPanelHomePath(hostHeader: string | null | undefined): strin
 }
 
 /** تحويل مسار إعادة التوجيه بعد إجراءات الخادم من /admin/... إلى مسار المتصفح على نطاق الموظفين */
-export function staffActionRedirectPath(hostHeader: string | null | undefined, internalPathWithQuery: string): string {
+export function staffActionRedirectPath(
+  hostHeader: string | null | undefined,
+  internalPathWithQuery: string,
+  requestOrigin?: string,
+): string {
   if (!staffPortalSplitEnabled()) return internalPathWithQuery;
+  if (requestOrigin && staffPortalSplitDisabledForOrigin(requestOrigin, hostHeader)) {
+    return internalPathWithQuery;
+  }
   const [path, ...q] = internalPathWithQuery.split("?");
   const qs = q.length ? `?${q.join("?")}` : "";
   if (isStaffPortalHostname(hostHeader)) {

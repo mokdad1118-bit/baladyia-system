@@ -16,12 +16,13 @@ import {
   staffLoginRedirectUrl,
   staffPanelHomePath,
   staffPortalOrigin,
+  staffPortalSplitDisabledForOrigin,
   staffPortalSplitEnabled,
 } from "@/lib/staff-portal";
 
-function redirectStaffHome(req: NextRequest, hostHeader: string | null) {
+function redirectStaffHome(req: NextRequest, hostHeader: string | null, splitEffective: boolean) {
   const origin = staffPortalOrigin();
-  if (staffPortalSplitEnabled() && !isStaffPortalHostname(hostHeader) && origin) {
+  if (splitEffective && !isStaffPortalHostname(hostHeader) && origin) {
     return NextResponse.redirect(new URL("/", `${origin}/`));
   }
   return NextResponse.redirect(new URL(staffPanelHomePath(hostHeader), req.url));
@@ -64,7 +65,10 @@ async function readJwt(req: NextRequest) {
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const host = req.headers.get("host");
-  const split = staffPortalSplitEnabled();
+  const splitRaw = staffPortalSplitEnabled();
+  const splitDisabled =
+    splitRaw && staffPortalSplitDisabledForOrigin(req.nextUrl.origin, host);
+  const split = splitRaw && !splitDisabled;
   const onStaffHost = isStaffPortalHostname(host);
 
   if (split && !onStaffHost && pathname.startsWith("/admin")) {
@@ -133,7 +137,7 @@ export async function middleware(req: NextRequest) {
 
   if (isCitizenPublicPath(pathname)) {
     if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
-      return redirectStaffHome(req, host);
+      return redirectStaffHome(req, host, split);
     }
     if (staffRewriteInternal) {
       return rewriteStaff(req, staffRewriteInternal);
@@ -148,7 +152,7 @@ export async function middleware(req: NextRequest) {
   }
   if (role !== UserRole.CITIZEN) {
     if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
-      return redirectStaffHome(req, host);
+      return redirectStaffHome(req, host, split);
     }
     return NextResponse.redirect(new URL("/login", req.url));
   }

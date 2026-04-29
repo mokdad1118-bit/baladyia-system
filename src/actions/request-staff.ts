@@ -8,7 +8,7 @@ import { notifyUsers } from "@/lib/notify";
 import { requestStatusAr } from "@/lib/labels";
 import { UserRole, RequestStatus } from "@/generated/prisma/enums";
 import { redirect } from "next/navigation";
-import { staffActionRedirectPath } from "@/lib/staff-portal";
+import { requestOriginFromHeaders, staffActionRedirectPath } from "@/lib/staff-portal";
 
 const STAFF_REVALIDATE = ["/admin/requests", "/admin", "/requests", "/notifications"] as const;
 
@@ -69,8 +69,9 @@ export async function updateRequestStatus(formData: FormData) {
   revalidatePath(`/admin/requests/${id}`);
   revalidatePath(`/requests/${id}`);
 
-  const host = (await headers()).get("host");
-  redirect(staffActionRedirectPath(host, `${listRedirect}?updated=1`));
+  const hdrs = await headers();
+  const host = hdrs.get("host");
+  redirect(staffActionRedirectPath(host, `${listRedirect}?updated=1`, requestOriginFromHeaders(hdrs)));
 }
 
 export async function addRequestNote(formData: FormData) {
@@ -92,8 +93,9 @@ export async function addRequestNote(formData: FormData) {
   });
   revalidateStaffViews();
   revalidatePath(detailPath);
-  const host = (await headers()).get("host");
-  redirect(staffActionRedirectPath(host, `${detailPath}?noted=1`));
+  const hdrs = await headers();
+  const host = hdrs.get("host");
+  redirect(staffActionRedirectPath(host, `${detailPath}?noted=1`, requestOriginFromHeaders(hdrs)));
 }
 
 export async function markNotificationRead(notifId: string) {
