@@ -6,6 +6,7 @@ import { acceptForKind } from "@/lib/file-accept";
 import { submitRequest } from "@/actions/request-citizen";
 import type { Service, ServiceDocument } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
+import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 import { FieldLabel, Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { GovStepIndicator, type CitizenFlowStep } from "@/components/gov/GovStepIndicator";
@@ -26,7 +27,7 @@ export function CitizenRequestWizard({
   service: Service & { documents: ServiceDocument[] };
   prefill: Prefill | null;
 }) {
-  const [st, act] = useActionState(submitRequest, undefined);
+  const [st, act, isPending] = useActionState(submitRequest, undefined);
   const formRef = useRef<HTMLFormElement>(null);
   const [uiStep, setUiStep] = useState<2 | 3 | 4>(2);
   const [reviewSnapshot, setReviewSnapshot] = useState<ReviewSnapshot | null>(null);
@@ -70,6 +71,7 @@ export function CitizenRequestWizard({
 
   return (
     <form ref={formRef} className="space-y-5" action={act}>
+      <AsyncWaitOverlay active={isPending} variant="emerald" />
       <GovStepIndicator currentStep={currentStep} />
 
       {st?.error && (
@@ -177,8 +179,9 @@ export function CitizenRequestWizard({
               className="gov-btn-primary min-h-11 w-full rounded-sm border-0 bg-[var(--gov-primary)] px-6 text-sm font-semibold sm:w-auto sm:min-h-10"
               type="submit"
               size="lg"
+              disabled={isPending}
             >
-              إرسال الطلب
+              {isPending ? "يرجى الانتظار…" : "إرسال الطلب"}
             </Button>
           </div>
         </div>

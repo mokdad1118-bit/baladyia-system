@@ -6,12 +6,14 @@ import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
+import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 
 export default function CitizenRegisterPage() {
-  const [st, act] = useActionState(registerCitizen, undefined);
+  const [st, act, isPending] = useActionState(registerCitizen, undefined);
   const passwordFieldId = useId();
   return (
     <div className="gov-page flex min-h-dvh flex-col">
+      <AsyncWaitOverlay active={isPending} variant="gov" />
       <header className="gov-header">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-4 px-4 py-5 sm:justify-between">
           <div className="flex items-center gap-3">
@@ -77,8 +79,12 @@ export default function CitizenRegisterPage() {
                 variant="gov"
               />
             </div>
-            <button type="submit" className="gov-btn-primary w-full px-4 py-3 text-sm font-semibold">
-              إنشاء الحساب
+            <button
+              type="submit"
+              disabled={isPending}
+              className="gov-btn-primary w-full px-4 py-3 text-sm font-semibold disabled:opacity-60"
+            >
+              {isPending ? "يرجى الانتظار…" : "إنشاء الحساب"}
             </button>
           </form>
           <p className="mt-6 text-center text-sm text-[var(--gov-muted)]">

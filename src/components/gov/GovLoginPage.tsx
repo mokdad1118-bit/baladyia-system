@@ -11,6 +11,7 @@ import { CitizenAuthShell } from "@/components/citizen/CitizenAuthShell";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { navigateTopLevel } from "@/lib/navigate-client";
+import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
 
 export type GovLoginPageProps = {
@@ -176,7 +177,7 @@ function GovLoginPageImpl({
               : "gov-btn-primary",
           )}
         >
-          {pend ? "جاري التحقق…" : "تسجيل الدخول"}
+          {pend ? "يرجى الانتظار…" : "تسجيل الدخول"}
         </button>
       </form>
 
@@ -199,37 +200,45 @@ function GovLoginPageImpl({
     </div>
   );
 
+  const waitOverlay = <AsyncWaitOverlay active={pend} variant={isCitizen ? "emerald" : "gov"} />;
+
   if (isCitizen) {
     return (
-      <CitizenAuthShell
-        headerAside={
-          title?.trim() ? (
-            <p className="text-sm font-semibold text-emerald-900">{title.trim()}</p>
-          ) : undefined
-        }
-      >
-        <main className="flex flex-1 justify-center px-4 py-10">{form}</main>
-      </CitizenAuthShell>
+      <>
+        <CitizenAuthShell
+          headerAside={
+            title?.trim() ? (
+              <p className="text-sm font-semibold text-emerald-900">{title.trim()}</p>
+            ) : undefined
+          }
+        >
+          <main className="flex flex-1 justify-center px-4 py-10">{form}</main>
+        </CitizenAuthShell>
+        {waitOverlay}
+      </>
     );
   }
 
   return (
-    <div className="gov-page flex min-h-dvh flex-col">
-      <header className="gov-header">
-        <div className="gov-divider-flag mx-auto mb-2 max-w-3xl opacity-80" />
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-4 px-4 py-5 sm:justify-between sm:py-6">
-          <div className="flex items-center gap-3">
-            <StateEmblem height={58} />
-            <div className="text-start text-white">
-              <p className="text-xs text-white/80">{PORTAL_SUBTITLE}</p>
-              <p className="text-lg font-bold leading-snug">{ENTITY_NAME_AR}</p>
+    <>
+      <div className="gov-page flex min-h-dvh flex-col">
+        <header className="gov-header">
+          <div className="gov-divider-flag mx-auto mb-2 max-w-3xl opacity-80" />
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-4 px-4 py-5 sm:justify-between sm:py-6">
+            <div className="flex items-center gap-3">
+              <StateEmblem height={58} />
+              <div className="text-start text-white">
+                <p className="text-xs text-white/80">{PORTAL_SUBTITLE}</p>
+                <p className="text-lg font-bold leading-snug">{ENTITY_NAME_AR}</p>
+              </div>
             </div>
+            <p className="w-full text-center text-sm text-white/90 sm:w-auto sm:text-start">{title}</p>
           </div>
-          <p className="w-full text-center text-sm text-white/90 sm:w-auto sm:text-start">{title}</p>
-        </div>
-      </header>
-      <main className="flex flex-1 items-start justify-center px-4 py-10">{form}</main>
-    </div>
+        </header>
+        <main className="flex flex-1 items-start justify-center px-4 py-10">{form}</main>
+      </div>
+      {waitOverlay}
+    </>
   );
 }
 

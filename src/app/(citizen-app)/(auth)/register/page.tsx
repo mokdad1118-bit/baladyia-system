@@ -5,12 +5,14 @@ import { registerCitizen } from "@/actions/auth";
 import Link from "next/link";
 import { CitizenAuthShell } from "@/components/citizen/CitizenAuthShell";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
+import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 
 export default function CitizenRegisterPage() {
-  const [st, act] = useActionState(registerCitizen, undefined);
+  const [st, act, isPending] = useActionState(registerCitizen, undefined);
   const passwordFieldId = useId();
   return (
     <CitizenAuthShell headerAside={<p className="text-sm font-semibold text-emerald-900">إنشاء حساب جديد</p>}>
+      <AsyncWaitOverlay active={isPending} variant="emerald" />
       <main className="flex flex-1 justify-center px-4 py-10">
         <div className="w-full max-w-md rounded-2xl border border-emerald-100/90 bg-white/90 p-6 shadow-sm">
           <h1 className="mb-1 text-lg font-bold text-slate-900">إنشاء حساب مواطن</h1>
@@ -64,9 +66,10 @@ export default function CitizenRegisterPage() {
             </div>
             <button
               type="submit"
-              className="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+              disabled={isPending}
+              className="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-60"
             >
-              إنشاء الحساب
+              {isPending ? "يرجى الانتظار…" : "إنشاء الحساب"}
             </button>
           </form>
           <p className="mt-6 text-center text-sm text-slate-600">
