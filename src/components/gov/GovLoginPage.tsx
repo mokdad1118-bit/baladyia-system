@@ -10,6 +10,7 @@ import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { CitizenAuthShell } from "@/components/citizen/CitizenAuthShell";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { navigateTopLevel } from "@/lib/navigate-client";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
 
 export type GovLoginPageProps = {
@@ -87,7 +88,9 @@ function GovLoginPageImpl({
               portal: String(portal),
               redirect: false,
             });
-            console.log("[credentials signIn response]", res);
+            if (process.env.NODE_ENV === "development") {
+              console.log("[credentials signIn response]", res);
+            }
             if (res == null || typeof res !== "object") {
               setErr("تعذّر إكمال تسجيل الدخول. حدّث الصفحة وحاول مرة أخرى.");
               return;
@@ -108,7 +111,7 @@ function GovLoginPageImpl({
             });
             /* بعض المتصفحات على الموبايل تُكمل التوجيه قبل commit الكوكي */
             await new Promise((r) => setTimeout(r, 120));
-            window.location.href = absolute;
+            navigateTopLevel(absolute);
           } catch (caught) {
             console.error("[credentials signIn]", caught);
             setErr("تعذّر الاتصال بالخادم. تحقق من الشبكة وحاول مرة أخرى.");
