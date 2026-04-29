@@ -33,12 +33,29 @@ function rewriteStaff(req: NextRequest, internalPath: string) {
   return NextResponse.rewrite(u);
 }
 
+/**
+ * يجب أن يطابق اسم كوكي الجلسة ما يضبطه NextAuth (`useSecureCookies`).
+ * في الإنتاج: `__Secure-authjs.session-token` — وإن مرّرنا secureCookie: false يبقى getToken
+ * يبحث عن `authjs.session-token` فلا يجد الكوكي → لا جلسة في الـ middleware بينما `auth()` يراها
+ * → حلقة إعادة توجيه بين /login و /citizen.
+ */
+function sessionCookieSecure(req: NextRequest): boolean {
+  if (process.env.NODE_ENV === "production") return true;
+  const xf = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  if (xf === "https") return true;
+  return req.nextUrl.protocol === "https:";
+}
+
 /** بدون AUTH_SECRET أو عند فشل فك التشفير لا نرمي استثناءً يعطل الصفحات الثابتة */
 async function readJwt(req: NextRequest) {
   const secret = process.env.AUTH_SECRET?.trim();
   if (!secret) return null;
   try {
-    return await getToken({ req, secret });
+    return await getToken({
+      req,
+      secret,
+      secureCookie: sessionCookieSecure(req),
+    });
   } catch {
     return null;
   }
