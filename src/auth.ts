@@ -2,7 +2,12 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { digitsOnly, notifEmailOrNull } from "@/lib/phone";
+import {
+  citizenPhoneLookupKeys,
+  digitsOnly,
+  normalizeCitizenPhoneForStorage,
+  notifEmailOrNull,
+} from "@/lib/phone";
 import { verifyPassword } from "@/lib/password";
 import type { LoginPageSurface } from "@/lib/auth-portal";
 
@@ -10,23 +15,6 @@ function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
   if (surface === "citizen") return role === UserRole.CITIZEN;
   if (surface === "staff") return role === UserRole.EMPLOYEE || role === UserRole.ADMIN;
   return false;
-}
-
-/** أشكال شائعة لنفس الرقم (محلي 09… مقابل 963…) */
-function citizenPhoneLookupKeys(digits: string): string[] {
-  const keys = new Set<string>();
-  if (!digits) return [];
-  keys.add(digits);
-  if (digits.startsWith("963") && digits.length >= 11) {
-    keys.add(`0${digits.slice(3)}`);
-  }
-  if (digits.startsWith("0") && digits.length >= 10) {
-    keys.add(`963${digits.slice(1)}`);
-  }
-  if (/^9\d{8,9}$/.test(digits)) {
-    keys.add(`963${digits}`);
-  }
-  return [...keys];
 }
 
 /** بحث موحّد بالبريد أو الهاتف أو بريد الإشعارات (لجميع الأدوار) */
@@ -43,7 +31,14 @@ async function findUserByIdentifier(identifier: string) {
   }
   const d = digitsOnly(id);
   if (!d) return null;
-  for (const phone of citizenPhoneLookupKeys(d)) {
+  const canonical = normalizeCitizenPhoneForStorage(id);
+  const variants = new Set([
+    ...citizenPhoneLookupKeys(d),
+    ...citizenPhoneLookupKeys(canonical),
+    canonical,
+  ]);
+  for (const phone of variants) {
+    if (!phone) continue;
     const u = await db.user.findUnique({ where: { phone } });
     if (u) return u;
   }

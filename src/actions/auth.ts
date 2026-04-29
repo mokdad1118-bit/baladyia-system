@@ -3,7 +3,12 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
-import { digitsOnly, notifEmailOrNull } from "@/lib/phone";
+import {
+  citizenPhoneLookupKeys,
+  digitsOnly,
+  normalizeCitizenPhoneForStorage,
+  notifEmailOrNull,
+} from "@/lib/phone";
 import { UserRole } from "@/generated/prisma/enums";
 
 export async function registerCitizen(
@@ -11,10 +16,12 @@ export async function registerCitizen(
   formData: FormData,
 ) {
   const name = String(formData.get("name") ?? "").trim();
-  const phone = digitsOnly(String(formData.get("phone") ?? "").trim());
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const phoneDigits = digitsOnly(phoneRaw);
+  const phone = normalizeCitizenPhoneForStorage(phoneRaw);
   const password = String(formData.get("password") ?? "");
   const notifRaw = String(formData.get("notificationEmail") ?? "").trim();
-  if (!name || !phone || !password)
+  if (!name || !phoneDigits || !password)
     return { error: "يرجى تعبئة الحقول المطلوبة" };
   if (phone.length < 8 || phone.length > 15)
     return { error: "رقم واتساب: أرقام (٨–١٥ رقماً)" };
@@ -25,23 +32,43 @@ export async function registerCitizen(
     : null;
   if (notifRaw && notifNorm == null)
     return { error: "بريد الإشعارات غير صالح" };
-  const phoneTaken = await db.user.findUnique({ where: { phone } });
-  if (phoneTaken) return { error: "رقم واتساب مسجّل مسبقاً" };
+  const phoneVariants = new Set([
+    ...citizenPhoneLookupKeys(phoneDigits),
+    ...citizenPhoneLookupKeys(phone),
+    phone,
+  ]);
+  for (const p of phoneVariants) {
+    if (!p) continue;
+    const phoneTaken = await db.user.findUnique({ where: { phone: p } });
+    if (phoneTaken) return { error: "رقم واتساب مسجّل مسبقاً" };
+  }
   if (notifNorm) {
     const t = await db.user.findFirst({
       where: { notificationEmail: notifNorm },
     });
     if (t) return { error: "بريد الإشعارات مُسجّل" };
   }
-  await db.user.create({
-    data: {
-      name,
-      email: null,
-      phone,
-      passwordHash: await hashPassword(password),
-      notificationEmail: notifNorm || null,
-      role: UserRole.CITIZEN,
-    },
-  });
+  try {
+    await db.user.create({
+      data: {
+        name,
+        email: null,
+        phone,
+        passwordHash: await hashPassword(password),
+        notificationEmail: notifNorm || null,
+        role: UserRole.CITIZEN,
+      },
+    });
+  } catch (e: unknown) {
+    const code =
+      typeof e === "object" && e !== null && "code" in e
+        ? String((e as { code: unknown }).code)
+        : "";
+    if (code === "P2002") {
+      return { error: "رقم واتساب أو بريد إشعارات مُستخدم مسبقاً" };
+    }
+    console.error("[registerCitizen]", e);
+    return { error: "تعذّر حفظ الحساب. تحقق من الاتصال بقاعدة البيانات وحاول مرة أخرى." };
+  }
   redirect("/citizen/login?registered=1");
 }
