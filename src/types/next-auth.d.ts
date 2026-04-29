@@ -9,6 +9,10 @@ declare module "next-auth" {
       /** بريد الدخول أو "" للمواطن بلا بريد */
       email: string;
       phone: string;
+      /** للموظف في لوحة الإدارة؛ المدير يُملأ دائماً بـ true من الخادم */
+      permManageServices?: boolean;
+      permManageUsers?: boolean;
+      permViewStats?: boolean;
     };
   }
 }
@@ -19,5 +23,8 @@ declare module "next-auth/jwt" {
     role: UserRole;
     email?: string | null;
     phone?: string | null;
+    permManageServices?: boolean;
+    permManageUsers?: boolean;
+    permViewStats?: boolean;
   }
 }

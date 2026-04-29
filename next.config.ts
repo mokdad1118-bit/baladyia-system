@@ -4,12 +4,17 @@ const staffRoot = process.env.NEXT_PUBLIC_STAFF_PORTAL_URL?.replace(/\/$/, "") ?
 const staffEmployeeDest = staffRoot ? `${staffRoot}/` : "/admin";
 const staffEmployeeNested = staffRoot ? `${staffRoot}/:path*` : "/admin/:path*";
 
+/** لعناوين مثل 192.168.x.x عند فتح الموقع من موبايل على نفس Wi‑Fi (قائمة مفصولة بفواصل، من .env: LOCAL_LAN_HOSTS) */
+const localLanHosts =
+  process.env.LOCAL_LAN_HOSTS?.split(/,\s*/).map((s) => s.trim()).filter(Boolean) ?? [];
+
 const nextConfig: NextConfig = {
+  /** + عناوين الشبكة المحلية لأن Next 16 يحجب /_next و HMR لأي Origin غير مُدرج */
+  allowedDevOrigins: ["127.0.0.1", "[::1]", ...localLanHosts],
   serverExternalPackages: ["bcrypt", "@libsql/client", "@prisma/adapter-libsql"],
   async redirects() {
     return [
-      { source: "/citizen", destination: "/", permanent: false },
-      { source: "/citizen/:path*", destination: "/:path*", permanent: false },
+      /* لا تعيد توجيه /citizen إلى / — يكسر دخول المواطن (الجذر يعيد التوجيه إلى /citizen فيصير حلقة لا نهائية). */
       { source: "/employee", destination: staffEmployeeDest, permanent: false },
       { source: "/employee/:path*", destination: staffEmployeeNested, permanent: false },
       { source: "/staff", destination: staffEmployeeDest, permanent: false },

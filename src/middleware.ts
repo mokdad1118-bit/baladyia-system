@@ -141,6 +141,8 @@ export const config = {
     "/services/:path*",
     "/requests/:path*",
     "/notifications/:path*",
+    "/citizen",
+    "/citizen/:path*",
     "/admin/:path*",
     "/users/:path*",
     "/stats/:path*",

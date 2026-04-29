@@ -69,7 +69,7 @@ export function CitizenRequestWizard({
   }
 
   return (
-    <form ref={formRef} className="space-y-5" action={act} encType="multipart/form-data">
+    <form ref={formRef} className="space-y-5" action={act}>
       <GovStepIndicator currentStep={currentStep} />
 
       {st?.error && (

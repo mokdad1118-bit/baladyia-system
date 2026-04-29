@@ -14,22 +14,36 @@ async function main() {
   const [admin, employee, citizen] = await Promise.all([
     prisma.user.upsert({
       where: { email: "admin@bosra.local" },
-      update: {},
+      update: {
+        permManageServices: true,
+        permManageUsers: true,
+        permViewStats: true,
+      },
       create: {
         email: "admin@bosra.local",
         name: "رئيس البلدية (تجريبي)",
         passwordHash: await hash("Admin123", ROUNDS),
         role: UserRole.ADMIN,
+        permManageServices: true,
+        permManageUsers: true,
+        permViewStats: true,
       },
     }),
     prisma.user.upsert({
       where: { email: "employee@bosra.local" },
-      update: {},
+      update: {
+        permManageServices: true,
+        permManageUsers: false,
+        permViewStats: true,
+      },
       create: {
         email: "employee@bosra.local",
         name: "موظف الاستقبال (تجريبي)",
         passwordHash: await hash("Employee123", ROUNDS),
         role: UserRole.EMPLOYEE,
+        permManageServices: true,
+        permManageUsers: false,
+        permViewStats: true,
       },
     }),
     prisma.user.upsert({
@@ -58,6 +72,9 @@ async function main() {
     },
   });
 
+  await prisma.requestFile.deleteMany({
+    where: { serviceDocument: { serviceId: svc.id } },
+  });
   await prisma.serviceDocument.deleteMany({ where: { serviceId: svc.id } });
   await prisma.serviceDocument.createMany({
     data: [

@@ -28,11 +28,12 @@ export function CitizenMobileShell({
     <div
       className={cn(
         "min-h-0",
-        isCitizen &&
-          "pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] md:pt-0 md:pb-0",
+        /* شريط علوي (شعار + عنوان) على الموبايل لجميع زوار مسار المواطن */
+        "pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:pt-0",
+        isCitizen && "pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] md:pb-0",
       )}
     >
-      {isCitizen && <CitizenAppBar />}
+      <CitizenAppBar isCitizen={isCitizen} />
       <div
         className={cn(
           "min-w-0 max-w-full overflow-x-hidden px-3 md:px-0",

@@ -11,7 +11,7 @@ const SRC_SVG = "/brand/state-emblem.svg";
  */
 export function StateEmblem({
   className,
-  height = 56,
+  height = 64,
 }: {
   className?: string;
   /** ارتفاع بالبكسل — العرض يتبع نسبة الشعار */

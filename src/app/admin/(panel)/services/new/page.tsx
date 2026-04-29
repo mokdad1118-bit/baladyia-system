@@ -2,10 +2,10 @@ import { ServiceForm } from "@/components/ServiceForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { auth } from "@/auth";
-import { requireAdminRole } from "@/lib/admin-guard";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 
 export default async function NewServicePage() {
-  await requireAdminRole(await auth());
+  await requireStaffPanelPermission(await auth(), "services");
   return (
     <div>
       <PageHeader

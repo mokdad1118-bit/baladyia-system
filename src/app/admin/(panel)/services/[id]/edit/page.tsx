@@ -4,12 +4,12 @@ import { ServiceForm } from "@/components/ServiceForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { auth } from "@/auth";
-import { requireAdminRole } from "@/lib/admin-guard";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 
 type P = { params: Promise<{ id: string }> };
 
 export default async function EditServicePage({ params }: P) {
-  await requireAdminRole(await auth());
+  await requireStaffPanelPermission(await auth(), "services");
   const { id } = await params;
   const service = await db.service.findFirst({
     where: { id },

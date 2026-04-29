@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { staffNavPermissions } from "@/lib/staff-permissions";
 import { GovWorkspaceShell } from "@/components/gov/GovWorkspaceShell";
 import {
   citizenPortalOrigin,
@@ -24,7 +25,7 @@ export default async function AdminPanelLayout({
   if (s.user.role !== UserRole.EMPLOYEE && s.user.role !== UserRole.ADMIN) {
     redirect(citizenPortalOrigin() ?? "/");
   }
-  const isAdmin = s.user.role === UserRole.ADMIN;
+  const staffPerms = staffNavPermissions(s);
   const homeHref = staffRoot ? "/" : "/admin";
   const logoutCallbackUrl = staffRoot
     ? "/login"
@@ -34,7 +35,7 @@ export default async function AdminPanelLayout({
   return (
     <GovWorkspaceShell
       portalTitle="لوحة التحكم"
-      nav={<AdminNav isAdmin={isAdmin} staffRoot={staffRoot} />}
+      nav={<AdminNav staffPerms={staffPerms} staffRoot={staffRoot} />}
       homeHref={homeHref}
       logoutCallbackUrl={logoutCallbackUrl}
     >

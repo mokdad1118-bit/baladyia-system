@@ -1,0 +1,90 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { UserRole } from "@/generated/prisma/enums";
+import { userRoleAr } from "@/lib/labels";
+import { ToggleForm } from "@/app/admin/(panel)/users/ToggleForm";
+import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { Badge } from "@/components/ui/badge";
+import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
+
+export type CitizenRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  notificationEmail: string | null;
+  phone: string | null;
+  role: UserRole;
+  isActive: boolean;
+};
+
+function haystack(u: CitizenRow): string {
+  return [u.name, u.email, u.notificationEmail, u.phone, userRoleAr[u.role], u.isActive ? "" : "معطّل"]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+export function CitizensListWithSearch({
+  citizens,
+  isAdmin,
+}: {
+  citizens: CitizenRow[];
+  isAdmin: boolean;
+}) {
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return citizens;
+    return citizens.filter((u) => haystack(u).includes(n));
+  }, [citizens, q]);
+
+  return (
+    <div className="space-y-8">
+      <PageHeader className="!mb-4" title="حسابات المواطنين" />
+      <div>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">القائمة</h2>
+        <AdminListSearchField
+          id="admin-citizens-search"
+          label="بحث في قائمة المواطنين"
+          placeholder="الاسم، البريد، الواتساب…"
+          value={q}
+          onChange={setQ}
+          className="mb-4"
+        />
+        {citizens.length === 0 ? (
+          <p className="text-center text-sm text-[var(--gov-muted)]">لا يوجد مواطنون مسجّلون بعد.</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-center text-sm text-[var(--gov-muted)]">لا نتائج مطابقة للبحث.</p>
+        ) : (
+          <ul className="space-y-2">
+            {filtered.map((u) => (
+              <li key={u.id}>
+                <Card>
+                  <CardContent className="!py-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">{u.name}</p>
+                        <p className="text-sm text-slate-500">
+                          {u.email || u.notificationEmail || (u.phone ? `واتساب ${u.phone}` : "—")}
+                        </p>
+                        <p className="mt-1 flex flex-wrap items-center gap-1">
+                          <Badge>{userRoleAr[u.role]}</Badge>
+                          {!u.isActive && (
+                            <Badge className="border-rose-200/80 bg-rose-50 text-rose-800">معطّل</Badge>
+                          )}
+                        </p>
+                      </div>
+                      {isAdmin ? <ToggleForm userId={u.id} isActive={u.isActive} /> : null}
+                    </div>
+                  </CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}

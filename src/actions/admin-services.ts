@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { FileKind, UserRole } from "@/generated/prisma/enums";
+import { FileKind } from "@/generated/prisma/enums";
+import { staffCanManageServices } from "@/lib/staff-permissions";
 
 function parseFileKind(v: string | File | null | undefined): FileKind | null {
   const s = String(v ?? "");
@@ -16,7 +17,7 @@ export async function upsertService(
   formData: FormData,
 ) {
   const s = await auth();
-  if (!s?.user || s.user.role !== UserRole.ADMIN) {
+  if (!staffCanManageServices(s)) {
     return { error: "غير مصرّح" };
   }
 
@@ -86,7 +87,7 @@ export async function upsertService(
 
 export async function deleteService(serviceId: string) {
   const s = await auth();
-  if (!s?.user || s.user.role !== UserRole.ADMIN) {
+  if (!staffCanManageServices(s)) {
     return { error: "غير مصرّح" };
   }
   await db.service.update({

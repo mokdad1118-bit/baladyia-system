@@ -21,7 +21,7 @@ export function CitizenAuthShell({
         <div className="gov-divider-flag mx-auto mb-2 max-w-3xl opacity-60" />
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:py-5">
           <Link href="/services" className="flex items-center gap-3 no-underline">
-            <StateEmblem height={48} />
+            <StateEmblem height={54} />
             <div className="text-start text-slate-900">
               <p className="text-[0.65rem] font-medium uppercase tracking-wide text-emerald-800/90">{PORTAL_SUBTITLE}</p>
               <p className="text-base font-bold leading-snug sm:text-lg">{ENTITY_NAME_AR}</p>

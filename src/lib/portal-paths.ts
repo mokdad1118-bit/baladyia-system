@@ -17,13 +17,21 @@ export function isCitizenAppPath(pathname: string) {
     pathname === "/register" ||
     pathname.startsWith("/services") ||
     pathname.startsWith("/requests") ||
-    pathname.startsWith("/notifications")
+    pathname.startsWith("/notifications") ||
+    pathname === "/citizen" ||
+    pathname.startsWith("/citizen/")
   );
 }
 
 /** صفحات تطبيق المواطن التي يمكن للزائر دخولها دون جلسة */
 export function isCitizenPublicPath(pathname: string) {
-  return pathname === "/login" || pathname === "/register" || pathname.startsWith("/services");
+  return (
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname.startsWith("/services") ||
+    pathname === "/citizen/login" ||
+    pathname === "/citizen/register"
+  );
 }
 
 /**

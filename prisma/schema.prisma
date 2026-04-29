@@ -22,6 +22,10 @@ model User {
   name           String
   role           UserRole @default(CITIZEN)
   isActive       Boolean  @default(true)
+  /// لوحة الإدارة — للموظف؛ المدير يُعامل كامتلاك الجميع في التطبيق
+  permManageServices Boolean @default(false)
+  permManageUsers    Boolean @default(false)
+  permViewStats      Boolean @default(false)
   /// Future: assign services & routing by department
   departmentId   String?
   department     Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id])

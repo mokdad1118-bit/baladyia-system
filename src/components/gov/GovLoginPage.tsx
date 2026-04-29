@@ -1,8 +1,8 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useId, useState } from "react";
+import { Suspense, useId, useState } from "react";
+import { getSession, signIn, type SignInResponse } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import type { AuthPortal } from "@/lib/auth-portal";
 import { safePostLoginRedirectPath } from "@/lib/portal-paths";
 import { StateEmblem } from "@/components/gov/StateEmblem";
@@ -12,11 +12,40 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
 
+export type GovLoginPageProps = {
+  portal: AuthPortal;
+  title?: string;
+  subtitle: string;
+  identifierLabel: string;
+  identifierPlaceholder: string;
+  identifierAutocomplete?: string;
+  extraFooter?: React.ReactNode;
+  staffPortalWeb?: boolean;
+};
+
+function isSignInSuccess(res: SignInResponse): boolean {
+  return res.ok === true && !res.error;
+}
+
+function failureMessageForSignIn(portal: AuthPortal, res: SignInResponse): string {
+  if (res.status >= 500) {
+    return "حدث خطأ في الخادم (500). حاول بعد قليل أو حدّث الصفحة.";
+  }
+  if (res.status === 401) {
+    return portal === "citizen"
+      ? "رقم الهاتف أو كلمة المرور غير صحيحة"
+      : "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+  }
+  return portal === "citizen"
+    ? "رقم الهاتف أو كلمة المرور غير صحيحة"
+    : "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+}
+
 /**
  * صفحتا دخول منفصلتان بالواجهة والمسار والبوابة (portal في NextAuth).
  * لا يوجد اختيار نوع مستخدم — المواطن يدخل من /login والموظف من /admin/login فقط.
  */
-export function GovLoginPage({
+function GovLoginPageImpl({
   portal,
   title,
   subtitle,
@@ -25,21 +54,12 @@ export function GovLoginPage({
   identifierAutocomplete,
   extraFooter,
   staffPortalWeb,
-}: {
-  portal: AuthPortal;
-  /** يُعرض بجانب الشعار على دخول المواطن؛ اتركه فارغًا لإخفاء السطر */
-  title?: string;
-  subtitle: string;
-  identifierLabel: string;
-  identifierPlaceholder: string;
-  identifierAutocomplete?: string;
-  extraFooter?: React.ReactNode;
-  staffPortalWeb?: boolean;
-}) {
-  const router = useRouter();
+}: GovLoginPageProps) {
   const sp = useSearchParams();
   const [err, setErr] = useState<string | null>(null);
   const [pend, setPend] = useState(false);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const passwordFieldId = useId();
   const isCitizen = portal === "citizen";
 
@@ -59,31 +79,42 @@ export function GovLoginPage({
           e.preventDefault();
           setPend(true);
           setErr(null);
-          const fd = new FormData(e.currentTarget);
-          const res = await signIn("credentials", {
-            identifier: String(fd.get("identifier") ?? "").trim(),
-            password: String(fd.get("password")),
-            portal,
-            redirect: false,
-          });
-          setPend(false);
-          if (res?.error) {
-            setErr(
-              isCitizen
-                ? "بيانات غير صحيحة — تأكد من رقم الواتساب وكلمة المرور (حساب مواطن فقط)"
-                : "بيانات غير صحيحة — البريد وكلمة المرور لحساب موظف أو مدير فقط",
-            );
-            return;
+          const idTrim = identifier.trim();
+          try {
+            const res = await signIn("credentials", {
+              identifier: idTrim,
+              password,
+              portal: String(portal),
+              redirect: false,
+            });
+            console.log("[credentials signIn response]", res);
+            if (res == null || typeof res !== "object") {
+              setErr("تعذّر إكمال تسجيل الدخول. حدّث الصفحة وحاول مرة أخرى.");
+              return;
+            }
+            if (!isSignInSuccess(res)) {
+              setErr(failureMessageForSignIn(portal, res));
+              return;
+            }
+            const after = safePostLoginRedirectPath(sp.get("next"), portal, staffPortalWeb);
+            const dest =
+              after ??
+              (portal === "citizen" ? "/citizen" : staffPortalWeb ? "/" : "/admin");
+            const absolute = new URL(dest, window.location.origin).href;
+            await getSession();
+            await fetch(`${window.location.origin}/api/auth/session`, {
+              credentials: "include",
+              cache: "no-store",
+            });
+            /* بعض المتصفحات على الموبايل تُكمل التوجيه قبل commit الكوكي */
+            await new Promise((r) => setTimeout(r, 120));
+            window.location.href = absolute;
+          } catch (caught) {
+            console.error("[credentials signIn]", caught);
+            setErr("تعذّر الاتصال بالخادم. تحقق من الشبكة وحاول مرة أخرى.");
+          } finally {
+            setPend(false);
           }
-          const after = safePostLoginRedirectPath(sp.get("next"), portal, staffPortalWeb);
-          if (after) {
-            router.push(after);
-            router.refresh();
-            return;
-          }
-          if (portal === "citizen") router.push("/citizen");
-          else router.push(staffPortalWeb ? "/" : "/admin");
-          router.refresh();
         }}
       >
         {err && (
@@ -109,6 +140,8 @@ export function GovLoginPage({
             name="identifier"
             type="text"
             required
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             autoComplete={identifierAutocomplete ?? "username"}
             placeholder={identifierPlaceholder}
             className={cn(
@@ -126,6 +159,8 @@ export function GovLoginPage({
             name="password"
             autoComplete="current-password"
             variant={isCitizen ? "emerald" : "gov"}
+            value={password}
+            onValueChange={setPassword}
           />
         </div>
         <button
@@ -181,7 +216,7 @@ export function GovLoginPage({
         <div className="gov-divider-flag mx-auto mb-2 max-w-3xl opacity-80" />
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-4 px-4 py-5 sm:justify-between sm:py-6">
           <div className="flex items-center gap-3">
-            <StateEmblem height={52} />
+            <StateEmblem height={58} />
             <div className="text-start text-white">
               <p className="text-xs text-white/80">{PORTAL_SUBTITLE}</p>
               <p className="text-lg font-bold leading-snug">{ENTITY_NAME_AR}</p>
@@ -192,5 +227,36 @@ export function GovLoginPage({
       </header>
       <main className="flex flex-1 items-start justify-center px-4 py-10">{form}</main>
     </div>
+  );
+}
+
+function GovLoginPageFallback({ portal }: { portal: AuthPortal }) {
+  const isCitizen = portal === "citizen";
+  if (isCitizen) {
+    return (
+      <CitizenAuthShell>
+        <main className="flex flex-1 justify-center px-4 py-10">
+          <p className="text-sm text-slate-600">جاري التحميل…</p>
+        </main>
+      </CitizenAuthShell>
+    );
+  }
+  return (
+    <div className="gov-page flex min-h-dvh flex-col">
+      <header className="gov-header">
+        <div className="gov-divider-flag mx-auto mb-2 max-w-3xl opacity-80" />
+      </header>
+      <main className="flex flex-1 items-center justify-center px-4 py-10">
+        <p className="text-sm text-[var(--gov-muted)]">جاري التحميل…</p>
+      </main>
+    </div>
+  );
+}
+
+export function GovLoginPage(props: GovLoginPageProps) {
+  return (
+    <Suspense fallback={<GovLoginPageFallback portal={props.portal} />}>
+      <GovLoginPageImpl {...props} />
+    </Suspense>
   );
 }

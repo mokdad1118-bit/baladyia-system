@@ -3,14 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import type { StaffNavPermissions } from "@/lib/staff-permissions";
 
 const segments = [
-  { internal: "/admin", label: "لوحة التحكم", desc: "نظرة عامة", adminOnly: false },
-  { internal: "/admin/requests", label: "الطلبات", desc: "مراجعة وتحديث الحالة", adminOnly: false },
-  { internal: "/admin/services", label: "الخدمات", desc: "النماذج والمستندات والأسعار", adminOnly: true },
-  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", adminOnly: false },
-  { internal: "/admin/users", label: "حسابات الموظفين", desc: "الموظفون والمديرون والصلاحيات", adminOnly: true },
-  { internal: "/admin/stats", label: "الإحصائيات", desc: "تقارير", adminOnly: true },
+  { internal: "/admin", label: "لوحة التحكم", desc: "نظرة عامة", perm: null },
+  { internal: "/admin/requests", label: "الطلبات", desc: "مراجعة وتحديث الحالة", perm: null },
+  {
+    internal: "/admin/services",
+    label: "الخدمات",
+    desc: "النماذج والمستندات والأسعار",
+    perm: "manageServices" as const,
+  },
+  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: null },
+  {
+    internal: "/admin/users",
+    label: "حسابات الموظفين",
+    desc: "الموظفون والمديرون والصلاحيات",
+    perm: "manageUsers" as const,
+  },
+  { internal: "/admin/stats", label: "الإحصائيات", desc: "تقارير", perm: "viewStats" as const },
 ] as const;
 
 function hrefFor(staffRoot: boolean, internal: string) {
@@ -26,9 +37,15 @@ function navActive(staffRoot: boolean, internal: string, path: string) {
   return path === href || path.startsWith(`${href}/`);
 }
 
-export function AdminNav({ isAdmin, staffRoot }: { isAdmin: boolean; staffRoot: boolean }) {
+export function AdminNav({
+  staffPerms,
+  staffRoot,
+}: {
+  staffPerms: StaffNavPermissions;
+  staffRoot: boolean;
+}) {
   const path = usePathname() ?? "";
-  const items = segments.filter((i) => !i.adminOnly || isAdmin);
+  const items = segments.filter((i) => !i.perm || staffPerms[i.perm]);
   return (
     <nav className="space-y-1">
       {items.map((i) => {

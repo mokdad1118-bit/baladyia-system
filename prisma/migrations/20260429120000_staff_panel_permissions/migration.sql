@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "permManageServices" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "permManageUsers" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "permViewStats" BOOLEAN NOT NULL DEFAULT false;
