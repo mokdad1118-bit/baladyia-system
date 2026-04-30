@@ -52,7 +52,6 @@ async function applyMigrationsToRemoteLibsql(url: string) {
     const statements = splitSqlStatements(sql);
     if (statements.length === 0) continue;
 
-    await client.execute("BEGIN");
     try {
       for (const stmt of statements) {
         await client.execute(stmt);
@@ -61,10 +60,9 @@ async function applyMigrationsToRemoteLibsql(url: string) {
         sql: "INSERT INTO _app_migrations (name, appliedAt) VALUES (?, ?)",
         args: [dir, new Date().toISOString()],
       });
-      await client.execute("COMMIT");
       console.log(`[prepare-db] applied remote migration: ${dir}`);
     } catch (e) {
-      await client.execute("ROLLBACK");
+      console.error(`[prepare-db] failed migration: ${dir}`);
       throw e;
     }
   }
