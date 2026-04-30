@@ -8,6 +8,12 @@ import { getToken } from "next-auth/jwt";
 import { UserRole } from "@/generated/prisma/enums";
 import { isCitizenAppPath, isCitizenPublicPath } from "@/lib/portal-paths";
 
+function roleHome(role: UserRole | undefined): string {
+  if (role === UserRole.ADMIN) return "/admin";
+  if (role === UserRole.EMPLOYEE) return "/staff";
+  return "/citizen";
+}
+
 /**
  * يجب أن يطابق اسم كوكي الجلسة ما يضبطه NextAuth (`useSecureCookies`).
  * في الإنتاج: `__Secure-authjs.session-token` — وإن مرّرنا secureCookie: false يبقى getToken
@@ -54,9 +60,7 @@ export async function middleware(req: NextRequest) {
   const hasSession = Boolean(token);
 
   if (pathname === "/admin/login") {
-    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
-    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
-    if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
+    if (hasSession) return NextResponse.redirect(new URL(roleHome(role), req.url));
     return NextResponse.next();
   }
   if (pathname.startsWith("/admin")) {
@@ -74,9 +78,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (pathname === "/staff/login") {
-    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
-    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
-    if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
+    if (hasSession) return NextResponse.redirect(new URL(roleHome(role), req.url));
     return NextResponse.next();
   }
   if (pathname.startsWith("/staff")) {
@@ -98,8 +100,9 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isCitizenPublicPath(pathname)) {
-    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
-    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+    if (hasSession && role !== UserRole.CITIZEN) {
+      return NextResponse.redirect(new URL(roleHome(role), req.url));
+    }
     return NextResponse.next();
   }
 
@@ -120,12 +123,16 @@ export const config = {
   matcher: [
     "/",
     "/login",
+    "/citizen/login",
+    "/staff/login",
+    "/admin/login",
     "/register",
     "/services/:path*",
     "/requests/:path*",
     "/notifications/:path*",
     "/citizen",
     "/citizen/:path*",
+    "/admin",
     "/staff",
     "/staff/:path*",
     "/admin/:path*",
