@@ -1,13 +1,52 @@
 import type { RequestStatus } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 
+export type AdminRequestAttachmentLink = {
+  href: string;
+  linkLabel: string;
+};
+
 export type AdminRequestsExportSourceRow = {
   requestNumber: string;
   citizenName: string;
   serviceName: string;
   status: RequestStatus;
   createdAt: string;
+  attachments: AdminRequestAttachmentLink[];
 };
+
+/** تسميات قصيرة للتصدير: صورة 1، PDF 1، … */
+export function buildRequestAttachmentExportLinks(
+  files: { storedName: string; mimeType: string }[],
+  baseUrl: string,
+): AdminRequestAttachmentLink[] {
+  const root = baseUrl.replace(/\/$/, "");
+  let img = 0;
+  let pdf = 0;
+  let other = 0;
+  const out: AdminRequestAttachmentLink[] = [];
+  for (const f of files) {
+    const path = f.storedName.trim();
+    const href =
+      path.startsWith("http://") || path.startsWith("https://")
+        ? path
+        : `${root}${path.startsWith("/") ? path : `/${path}`}`;
+    const m = (f.mimeType || "").toLowerCase();
+    let linkLabel: string;
+    if (m.startsWith("image/")) {
+      img += 1;
+      linkLabel = `صورة ${img}`;
+    } else if (m === "application/pdf" || m.endsWith("/pdf")) {
+      pdf += 1;
+      linkLabel = `PDF ${pdf}`;
+    } else {
+      other += 1;
+      linkLabel = `ملف ${other}`;
+    }
+    out.push({ href, linkLabel });
+  }
+  return out;
+}
 
 function fileStamp(): string {
   const d = new Date();
@@ -27,6 +66,28 @@ function rowLabels(r: AdminRequestsExportSourceRow) {
   };
 }
 
+/** نص خلية المرفقات لـ Excel: رابط واحد ككائن؛ عدة مرفقات = سطر ملخص (صورة 1 | PDF 1) ثم روابط URL كل سطر ليتعرّف Excel عليها. */
+function attachmentsExcelCellValue(attachments: AdminRequestAttachmentLink[]) {
+  if (attachments.length === 0) return "—";
+  if (attachments.length === 1) {
+    const a = attachments[0];
+    return { text: a.linkLabel, hyperlink: a.href };
+  }
+  const summary = attachments.map((a) => a.linkLabel).join(" | ");
+  const urlBlock = attachments.map((a) => a.href).join("\n");
+  return `${summary}\n\n${urlBlock}`;
+}
+
+function attachmentsPdfHtml(attachments: AdminRequestAttachmentLink[]): string {
+  if (attachments.length === 0) return escapeHtml("—");
+  return attachments
+    .map(
+      (a) =>
+        `<a href="${escapeHtml(a.href)}" style="color:#0b57d0;text-decoration:underline;">${escapeHtml(a.linkLabel)}</a>`,
+    )
+    .join(' <span style="color:#999;">|</span> ');
+}
+
 /** تصدير القائمة الحالية (مثلاً بعد البحث) إلى Excel */
 export async function downloadAdminRequestsExcel(rows: AdminRequestsExportSourceRow[]): Promise<void> {
   if (rows.length === 0) return;
@@ -42,6 +103,7 @@ export async function downloadAdminRequestsExcel(rows: AdminRequestsExportSource
     { header: "الخدمة", key: "serviceName", width: 36 },
     { header: "الحالة", key: "statusLabel", width: 18 },
     { header: "التاريخ", key: "dateLabel", width: 16 },
+    { header: "المرفقات", key: "attachments", width: 44 },
   ];
 
   const headerRow = sheet.getRow(1);
@@ -67,12 +129,15 @@ export async function downloadAdminRequestsExcel(rows: AdminRequestsExportSource
       serviceName: L.serviceName,
       statusLabel: L.statusLabel,
       dateLabel: L.dateLabel,
+      attachments: attachmentsExcelCellValue(r.attachments),
     });
   }
 
   sheet.eachRow((row, i) => {
     if (i > 1) {
       row.alignment = { vertical: "middle", horizontal: "right", wrapText: true };
+      const attCell = row.getCell(6);
+      attCell.alignment = { vertical: "top", horizontal: "right", wrapText: true };
     }
   });
 
@@ -142,6 +207,7 @@ export async function downloadAdminRequestsPdf(rows: AdminRequestsExportSourceRo
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">الخدمة</th>
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">الحالة</th>
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">التاريخ</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">المرفقات</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -157,6 +223,7 @@ export async function downloadAdminRequestsPdf(rows: AdminRequestsExportSourceRo
       <td style="border:1px solid #ddd;padding:7px;text-align:right;">${escapeHtml(L.serviceName)}</td>
       <td style="border:1px solid #ddd;padding:7px;text-align:right;">${escapeHtml(L.statusLabel)}</td>
       <td style="border:1px solid #ddd;padding:7px;text-align:right;white-space:nowrap;">${escapeHtml(L.dateLabel)}</td>
+      <td style="border:1px solid #ddd;padding:7px;text-align:right;white-space:normal;max-width:320px;font-size:10px;">${attachmentsPdfHtml(r.attachments)}</td>
     `;
     tbody.appendChild(tr);
   }

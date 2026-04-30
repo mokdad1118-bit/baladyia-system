@@ -9,15 +9,11 @@ import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
 import {
   downloadAdminRequestsExcel,
   downloadAdminRequestsPdf,
+  type AdminRequestsExportSourceRow,
 } from "@/lib/admin-requests-export";
 
-export type AdminRequestRow = {
+export type AdminRequestRow = AdminRequestsExportSourceRow & {
   id: string;
-  requestNumber: string;
-  citizenName: string;
-  serviceName: string;
-  status: RequestStatus;
-  createdAt: string;
   detailHref: string;
 };
 
@@ -28,6 +24,7 @@ function haystack(r: AdminRequestRow): string {
     r.serviceName,
     requestStatusAr[r.status],
     r.createdAt,
+    ...r.attachments.flatMap((a) => [a.linkLabel, a.href]),
   ]
     .join(" ")
     .toLowerCase();

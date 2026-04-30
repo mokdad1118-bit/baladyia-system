@@ -1,7 +1,10 @@
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { requestStatusAr } from "@/lib/labels";
 import { RequestStatus } from "@/generated/prisma/enums";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
+import { buildRequestAttachmentExportLinks } from "@/lib/admin-requests-export";
+import { requestExportBaseUrl } from "@/lib/request-export-base-url";
 import { AdminRequestsTableWithSearch } from "@/components/admin/AdminRequestsTableWithSearch";
 
 type S = { searchParams: Promise<{ status?: string; dateFrom?: string; dateTo?: string }> };
@@ -28,8 +31,15 @@ export default async function AdminRequestsPage({ searchParams }: S) {
     },
     orderBy: { createdAt: "desc" },
     take: 300,
-    include: { service: true, citizen: true, assignee: true },
+    include: {
+      service: true,
+      citizen: true,
+      assignee: true,
+      files: { select: { storedName: true, mimeType: true } },
+    },
   });
+
+  const baseUrl = requestExportBaseUrl(await headers());
 
   const filterForm = (
     <form className="flex flex-wrap items-end gap-3" method="get" action="/admin/requests">
@@ -71,6 +81,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
     status: r.status,
     createdAt: r.createdAt.toISOString(),
     detailHref: `/admin/requests/${r.id}`,
+    attachments: buildRequestAttachmentExportLinks(r.files, baseUrl),
   }));
 
   return <AdminRequestsTableWithSearch rows={rows} filterForm={filterForm} />;
