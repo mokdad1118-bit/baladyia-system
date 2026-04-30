@@ -45,7 +45,8 @@ function failureMessageForSignIn(loginPage: LoginPageSurface, res: SignInRespons
 }
 
 /**
- * صفحتان: /citizen/login و /admin/login — التحقق من صلاحية الدخول حسب الدور في الخادم (credentials.loginPage).
+ * ثلاث صفحات دخول: /citizen/login و /staff/login و /admin/login
+ * والتحقق من صلاحية الدخول حسب الدور في الخادم (credentials.loginPage).
  */
 function GovLoginPageImpl({
   loginPage,
@@ -111,11 +112,9 @@ function GovLoginPageImpl({
             let dest = after ?? null;
             if (!dest) {
               if (role === UserRole.CITIZEN) dest = "/citizen";
-              else if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
-                dest = staffPortalWeb ? "/" : "/admin";
-              } else {
-                dest = loginPage === "citizen" ? "/citizen" : "/admin";
-              }
+              else if (role === UserRole.EMPLOYEE) dest = "/staff";
+              else if (role === UserRole.ADMIN) dest = "/admin";
+              else dest = loginPage === "citizen" ? "/citizen" : loginPage === "staff" ? "/staff" : "/admin";
             }
             const absolute = new URL(dest, window.location.origin).href;
             await new Promise((r) => setTimeout(r, 120));
@@ -199,9 +198,12 @@ function GovLoginPageImpl({
 
       {extraFooter}
 
-      {loginPage === "staff" && (
+      {(loginPage === "staff" || loginPage === "admin") && (
         <p className="mt-8 border-t border-[var(--gov-border)] pt-4 text-center text-[0.7rem] leading-relaxed text-[var(--gov-muted)]">
-          هذه البوابة للموظفين والمديرين فقط. لا يُستخدم حساب المواطن هنا — تسجيل الدخول للمواطنين من{" "}
+          {loginPage === "staff"
+            ? "هذه البوابة للموظفين فقط."
+            : "هذه البوابة لمدير النظام فقط."}{" "}
+          لا يُستخدم حساب المواطن هنا — تسجيل الدخول للمواطنين من{" "}
           <Link className="font-semibold text-[var(--gov-primary)] underline-offset-2 hover:underline" href="/citizen/login">
             /citizen/login
           </Link>

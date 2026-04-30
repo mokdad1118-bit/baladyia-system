@@ -13,7 +13,8 @@ import type { LoginPageSurface } from "@/lib/auth-portal";
 
 function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
   if (surface === "citizen") return role === UserRole.CITIZEN;
-  if (surface === "staff") return role === UserRole.EMPLOYEE || role === UserRole.ADMIN;
+  if (surface === "staff") return role === UserRole.EMPLOYEE;
+  if (surface === "admin") return role === UserRole.ADMIN;
   return false;
 }
 
@@ -62,7 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) return null;
         const surface = String(credentials.loginPage ?? "").trim() as LoginPageSurface;
-        if (surface !== "citizen" && surface !== "staff") {
+        if (surface !== "citizen" && surface !== "staff" && surface !== "admin") {
           return null;
         }
         const id = String(credentials.identifier).trim();

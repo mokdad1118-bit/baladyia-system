@@ -7,6 +7,6 @@ export default async function HomePage() {
 
   if (!s?.user) redirect("/citizen/login?next=/");
   if (s.user.role === UserRole.CITIZEN) redirect("/citizen");
-  if (s.user.role === UserRole.EMPLOYEE) redirect("/employee");
+  if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");
   redirect("/admin");
 }

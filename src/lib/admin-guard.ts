@@ -1,12 +1,7 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
 import { UserRole } from "@/generated/prisma/enums";
-import {
-  citizenPortalOrigin,
-  staffPanelHomePath,
-  staffUnauthenticatedLoginPath,
-} from "@/lib/staff-portal";
+import { citizenPortalOrigin } from "@/lib/staff-portal";
 import {
   staffCanManageServices,
   staffCanManageUsers,
@@ -16,12 +11,10 @@ import {
 type AuthSession = Session | null;
 
 export async function requireAdminPanel(session: AuthSession) {
-  const host = (await headers()).get("host");
-  if (!session?.user?.role) redirect(staffUnauthenticatedLoginPath(host, "/admin"));
+  if (!session?.user?.role) redirect("/admin/login?next=/admin");
   if (session.user.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/");
-  if (session.user.role !== UserRole.EMPLOYEE && session.user.role !== UserRole.ADMIN) {
-    redirect(citizenPortalOrigin() ?? "/");
-  }
+  if (session.user.role === UserRole.EMPLOYEE) redirect("/staff");
+  if (session.user.role !== UserRole.ADMIN) redirect(citizenPortalOrigin() ?? "/");
 }
 
 export type StaffPanelPermissionKey = "services" | "users" | "stats";
@@ -32,12 +25,11 @@ export async function requireStaffPanelPermission(
   key: StaffPanelPermissionKey,
 ) {
   await requireAdminPanel(session);
-  const host = (await headers()).get("host");
   const ok =
     key === "services"
       ? staffCanManageServices(session)
       : key === "users"
         ? staffCanManageUsers(session)
         : staffCanViewStats(session);
-  if (!ok) redirect(staffPanelHomePath(host));
+  if (!ok) redirect("/admin");
 }

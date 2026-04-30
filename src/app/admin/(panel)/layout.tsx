@@ -11,7 +11,6 @@ import {
   requestOriginFromHeaders,
   staffPortalSplitDisabledForOrigin,
   staffPortalSplitEnabled,
-  staffUnauthenticatedLoginPath,
 } from "@/lib/staff-portal";
 
 export default async function AdminPanelLayout({
@@ -26,18 +25,15 @@ export default async function AdminPanelLayout({
   const splitOff = staffPortalSplitDisabledForOrigin(origin, host);
   const staffRoot =
     staffPortalSplitEnabled() && !splitOff && isStaffPortalHostname(host);
-  if (!s?.user) redirect(staffUnauthenticatedLoginPath(host, "/admin"));
-  if (s.user.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/");
-  if (s.user.role !== UserRole.EMPLOYEE && s.user.role !== UserRole.ADMIN) {
-    redirect(citizenPortalOrigin() ?? "/");
+  if (!s?.user) redirect("/admin/login?next=/admin");
+  if (s.user.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/citizen");
+  if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");
+  if (s.user.role !== UserRole.ADMIN) {
+    redirect("/citizen/login");
   }
   const staffPerms = staffNavPermissions(s);
   const homeHref = staffRoot ? "/" : "/admin";
-  const logoutCallbackUrl = staffRoot
-    ? "/login"
-    : citizenPortalOrigin() !== undefined
-      ? citizenPortalOrigin()
-      : "/";
+  const logoutCallbackUrl = "/admin/login";
   return (
     <GovWorkspaceShell
       portalTitle="لوحة التحكم"

@@ -1,5 +1,5 @@
-/** صفحة الدخول: مواطن (/citizen/login) أو لوحة التحكم (/admin/login) — التحقق من الدور في الخادم */
-export type LoginPageSurface = "citizen" | "staff";
+/** صفحات الدخول على نفس الدومين — التحقق من الدور في الخادم */
+export type LoginPageSurface = "citizen" | "staff" | "admin";
 
 /** @deprecated استخدم LoginPageSurface */
 export type AuthPortal = LoginPageSurface;

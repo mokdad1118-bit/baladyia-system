@@ -1,37 +1,12 @@
 /**
- * فصل الوصول: مسارات المواطن (/، /citizen/login، /services، …) مقابل لوحة التحكم (/admin/*).
- * الجلسة تُقيَّم حسب role؛ صفحتا دخول: مواطن (/citizen/login) وموظف (/admin/login) مع حقل credentials.loginPage.
+ * ثلاث صفحات دخول على نفس الدومين:
+ * /citizen/login للمواطن، /staff/login للموظف، /admin/login للمدير.
+ * وكل لوحة محمية حسب role فقط.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { UserRole } from "@/generated/prisma/enums";
 import { isCitizenAppPath, isCitizenPublicPath } from "@/lib/portal-paths";
-import {
-  isStaffPortalHostname,
-  redirectToCitizenPortal,
-  redirectToStaffPortalFromCitizen,
-  staffBrowserPathToInternalPathname,
-  staffInternalPathToBrowserPath,
-  staffLoginRedirectUrl,
-  staffPanelHomePath,
-  staffPortalOrigin,
-  staffPortalSplitDisabledForOrigin,
-  staffPortalSplitEnabled,
-} from "@/lib/staff-portal";
-
-function redirectStaffHome(req: NextRequest, hostHeader: string | null, splitEffective: boolean) {
-  const origin = staffPortalOrigin();
-  if (splitEffective && !isStaffPortalHostname(hostHeader) && origin) {
-    return NextResponse.redirect(new URL("/", `${origin}/`));
-  }
-  return NextResponse.redirect(new URL(staffPanelHomePath(hostHeader), req.url));
-}
-
-function rewriteStaff(req: NextRequest, internalPath: string) {
-  const u = req.nextUrl.clone();
-  u.pathname = internalPath;
-  return NextResponse.rewrite(u);
-}
 
 /**
  * يجب أن يطابق اسم كوكي الجلسة ما يضبطه NextAuth (`useSecureCookies`).
@@ -68,84 +43,63 @@ export async function middleware(req: NextRequest) {
     u.pathname = "/citizen/login";
     return NextResponse.redirect(u);
   }
-  const host = req.headers.get("host");
-  const splitRaw = staffPortalSplitEnabled();
-  const splitDisabled =
-    splitRaw && staffPortalSplitDisabledForOrigin(req.nextUrl.origin, host);
-  const split = splitRaw && !splitDisabled;
-  const onStaffHost = isStaffPortalHostname(host);
-
-  if (split && !onStaffHost && pathname.startsWith("/admin")) {
-    return redirectToStaffPortalFromCitizen(req, pathname + search);
+  if (pathname === "/employee/login") {
+    const u = req.nextUrl.clone();
+    u.pathname = "/staff/login";
+    return NextResponse.redirect(u);
   }
-
-  if (split && onStaffHost && pathname.startsWith("/admin")) {
-    return NextResponse.redirect(new URL(staffInternalPathToBrowserPath(pathname) + search, req.url));
-  }
-
-  let staffRewriteInternal: string | null = null;
-  let staffInternal: string | null = null;
-  if (split && onStaffHost) {
-    staffInternal = staffBrowserPathToInternalPathname(pathname);
-    if (staffInternal == null) {
-      return redirectToCitizenPortal(req, pathname + search);
-    }
-    if (staffInternal !== pathname) {
-      staffRewriteInternal = staffInternal;
-    }
-  }
-
-  const adminPathname =
-    split && onStaffHost ? staffInternal : pathname.startsWith("/admin") ? pathname : null;
 
   const token = await readJwt(req);
   const role = token?.role as UserRole | undefined;
   const hasSession = Boolean(token);
 
-  if (adminPathname) {
-    if (adminPathname === "/admin/login") {
-      if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
-        return NextResponse.redirect(new URL(staffPanelHomePath(host), req.url));
-      }
-      if (role === UserRole.CITIZEN) {
-        return redirectToCitizenPortal(req, "/" + search);
-      }
-      if (staffRewriteInternal) {
-        return rewriteStaff(req, staffRewriteInternal);
-      }
-      return NextResponse.next();
-    }
-
+  if (pathname === "/admin/login") {
+    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+    if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
+    return NextResponse.next();
+  }
+  if (pathname.startsWith("/admin")) {
     if (!hasSession) {
-      return NextResponse.redirect(staffLoginRedirectUrl(req, host, adminPathname, search));
+      const u = new URL("/admin/login", req.url);
+      u.searchParams.set("next", pathname + search);
+      return NextResponse.redirect(u);
     }
-    if (role !== UserRole.EMPLOYEE && role !== UserRole.ADMIN) {
-      if (role === UserRole.CITIZEN) {
-        return redirectToCitizenPortal(req, "/" + search);
-      }
-      return redirectToCitizenPortal(req, `/citizen/login${search}`);
+    if (role !== UserRole.ADMIN) {
+      if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+      if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
+      return NextResponse.redirect(new URL("/citizen/login", req.url));
     }
+    return NextResponse.next();
+  }
 
-    if (staffRewriteInternal) {
-      return rewriteStaff(req, staffRewriteInternal);
+  if (pathname === "/staff/login") {
+    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+    if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
+    return NextResponse.next();
+  }
+  if (pathname.startsWith("/staff")) {
+    if (!hasSession) {
+      const u = new URL("/staff/login", req.url);
+      u.searchParams.set("next", pathname + search);
+      return NextResponse.redirect(u);
+    }
+    if (role !== UserRole.EMPLOYEE) {
+      if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+      if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
+      return NextResponse.redirect(new URL("/citizen/login", req.url));
     }
     return NextResponse.next();
   }
 
   if (!isCitizenAppPath(pathname)) {
-    if (staffRewriteInternal) {
-      return rewriteStaff(req, staffRewriteInternal);
-    }
     return NextResponse.next();
   }
 
   if (isCitizenPublicPath(pathname)) {
-    if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
-      return redirectStaffHome(req, host, split);
-    }
-    if (staffRewriteInternal) {
-      return rewriteStaff(req, staffRewriteInternal);
-    }
+    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
     return NextResponse.next();
   }
 
@@ -155,13 +109,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(u);
   }
   if (role !== UserRole.CITIZEN) {
-    if (role === UserRole.EMPLOYEE || role === UserRole.ADMIN) {
-      return redirectStaffHome(req, host, split);
-    }
+    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
     return NextResponse.redirect(new URL("/citizen/login", req.url));
-  }
-  if (staffRewriteInternal) {
-    return rewriteStaff(req, staffRewriteInternal);
   }
   return NextResponse.next();
 }
@@ -176,6 +126,8 @@ export const config = {
     "/notifications/:path*",
     "/citizen",
     "/citizen/:path*",
+    "/staff",
+    "/staff/:path*",
     "/admin/:path*",
     "/users/:path*",
     "/stats/:path*",

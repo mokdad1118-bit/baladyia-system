@@ -1,9 +1,5 @@
 import type { NextConfig } from "next";
 
-const staffRoot = process.env.NEXT_PUBLIC_STAFF_PORTAL_URL?.replace(/\/$/, "") ?? "";
-const staffEmployeeDest = staffRoot ? `${staffRoot}/` : "/admin";
-const staffEmployeeNested = staffRoot ? `${staffRoot}/:path*` : "/admin/:path*";
-
 /** لعناوين مثل 192.168.x.x عند فتح الموقع من موبايل على نفس Wi‑Fi (قائمة مفصولة بفواصل، من .env: LOCAL_LAN_HOSTS) */
 const localLanHosts =
   process.env.LOCAL_LAN_HOSTS?.split(/,\s*/).map((s) => s.trim()).filter(Boolean) ?? [];
@@ -15,10 +11,8 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       /* لا تعيد توجيه /citizen إلى / — يكسر دخول المواطن (الجذر يعيد التوجيه إلى /citizen فيصير حلقة لا نهائية). */
-      { source: "/employee", destination: staffEmployeeDest, permanent: false },
-      { source: "/employee/:path*", destination: staffEmployeeNested, permanent: false },
-      { source: "/staff", destination: staffEmployeeDest, permanent: false },
-      { source: "/staff/:path*", destination: staffEmployeeNested, permanent: false },
+      { source: "/employee", destination: "/staff", permanent: false },
+      { source: "/employee/:path*", destination: "/staff/:path*", permanent: false },
       { source: "/my-requests", destination: "/requests", permanent: false },
       { source: "/my-requests/:id", destination: "/requests/:id", permanent: false },
       { source: "/new-request/:serviceId", destination: "/requests/new/:serviceId", permanent: false },

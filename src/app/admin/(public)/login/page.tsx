@@ -7,12 +7,11 @@ import {
   citizenPortalOrigin,
   isStaffPortalHostname,
   requestOriginFromHeaders,
-  staffPanelHomePath,
   staffPortalSplitDisabledForOrigin,
   staffPortalSplitEnabled,
 } from "@/lib/staff-portal";
 
-/** دخول الموظفين والمديرين — /admin/login */
+/** دخول مدير النظام فقط — /admin/login */
 export default async function AdminStaffLoginPage() {
   const s = await auth();
   const h = await headers();
@@ -22,17 +21,15 @@ export default async function AdminStaffLoginPage() {
   const staffPortalWeb =
     staffPortalSplitEnabled() && !splitOff && isStaffPortalHostname(host);
 
-  if (s?.user?.role === UserRole.ADMIN || s?.user?.role === UserRole.EMPLOYEE) {
-    redirect(staffPanelHomePath(host));
-  }
-
+  if (s?.user?.role === UserRole.ADMIN) redirect("/admin");
+  if (s?.user?.role === UserRole.EMPLOYEE) redirect("/staff");
   if (s?.user?.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/");
 
   return (
     <GovLoginPage
-      loginPage="staff"
-      title="لوحة التحكم — دخول الموظفين"
-      subtitle="تسجيل دخول الموظفين ومدير النظام"
+      loginPage="admin"
+      title="لوحة التحكم — دخول المدير"
+      subtitle="تسجيل دخول مدير النظام"
       identifierLabel="البريد الإلكتروني"
       identifierPlaceholder="employee@example.local"
       identifierAutocomplete="username"

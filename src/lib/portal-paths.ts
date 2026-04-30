@@ -60,13 +60,17 @@ export function safePostLoginRedirectPath(
   const next = raw.trim();
   if (!next.startsWith("/") || next.startsWith("//")) return null;
   if (next.includes("\\") || next.includes(":")) return null;
+  if (loginPage === "admin") {
+    if (next.startsWith("/admin")) return next;
+    return null;
+  }
   if (loginPage === "staff") {
     if (staffPortalWeb) {
       if (next.startsWith("/admin")) return staffInternalPathToBrowserPath(next);
       if (isStaffPortalBrowserNext(next)) return next;
       return null;
     }
-    if (next.startsWith("/admin")) return next;
+    if (next.startsWith("/staff")) return next;
     return null;
   }
   if (isCitizenAppPath(next)) return next;
