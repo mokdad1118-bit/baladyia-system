@@ -93,6 +93,7 @@ export default async function EmployeeRequestDetailPage({ params }: P) {
             <input type="hidden" name="requestId" value={r.id} />
             <input type="hidden" name="actorPortal" value="employee" />
             <input type="hidden" name="listPath" value="/employee/requests" />
+            <input type="hidden" name="detailPath" value={`/employee/requests/${r.id}`} />
             <Textarea name="body" required rows={3} placeholder="للموظفين فقط" />
             <Button type="submit" variant="secondary">
               حفظ الملاحظة

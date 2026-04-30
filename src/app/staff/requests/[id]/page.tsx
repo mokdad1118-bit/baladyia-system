@@ -74,6 +74,8 @@ export default async function StaffRequestDetailPage({ params }: P) {
           <CardContent>
             <form action={updateRequestStatus} className="space-y-4 max-w-md">
               <input type="hidden" name="requestId" value={r.id} />
+              <input type="hidden" name="actorPortal" value="staff" />
+              <input type="hidden" name="listPath" value="/staff/requests" />
               <FieldGroup>
                 <FieldLabel>الحالة الجديدة</FieldLabel>
                 <select
@@ -109,6 +111,8 @@ export default async function StaffRequestDetailPage({ params }: P) {
           <CardContent>
             <form action={addRequestNote} className="space-y-3 max-w-md">
               <input type="hidden" name="requestId" value={r.id} />
+              <input type="hidden" name="actorPortal" value="staff" />
+              <input type="hidden" name="detailPath" value={`/staff/requests/${r.id}`} />
               <Textarea
                 name="body"
                 required
