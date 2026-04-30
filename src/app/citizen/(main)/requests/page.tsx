@@ -85,9 +85,20 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
         </form>
       </div>
 
-      {success && no && (
-        <div className="mb-4 border border-[var(--gov-flag-green)]/40 bg-[var(--gov-flag-green)]/5 px-4 py-3 text-sm text-[var(--gov-text)]">
-          تم إرسال الطلب بنجاح. الرقم المرجعي: <strong className="font-mono">{no}</strong>
+      {success && (
+        <div
+          role="status"
+          className="mb-4 border border-[var(--gov-flag-green)]/40 bg-[var(--gov-flag-green)]/5 px-4 py-3 text-sm text-[var(--gov-text)]"
+        >
+          <p className="font-semibold text-[var(--gov-text)]">قد تم إرسال طلبك بنجاح.</p>
+          {no ? (
+            <p className="mt-2">
+              الرقم المرجعي: <strong className="font-mono">{no}</strong>
+            </p>
+          ) : null}
+          <p className="mt-2 leading-relaxed">
+            تابع تفاصيل طلبك من تبويب <span className="font-semibold">طلباتي</span> داخل التطبيق.
+          </p>
         </div>
       )}
       {list.length === 0 ? (
