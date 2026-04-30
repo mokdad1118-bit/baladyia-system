@@ -15,19 +15,8 @@ import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { notifEmailOrNull, digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextRequestNumber } from "@/lib/request-serial";
 import { UserRole, RequestStatus } from "@/generated/prisma/enums";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
-
-/** يمنع بلع `redirect()` داخل try/catch — يؤدي إلى فشل التوجيه بعد نجاح الطلب */
-function isNextRedirectError(e: unknown): boolean {
-  return (
-    typeof e === "object" &&
-    e !== null &&
-    "digest" in e &&
-    typeof (e as { digest: unknown }).digest === "string" &&
-    (e as { digest: string }).digest.startsWith("NEXT_REDIRECT")
-  );
-}
 
 async function defaultAssigneeId() {
   const e = await db.user.findFirst({
@@ -215,7 +204,7 @@ export async function submitRequest(
 
     redirect(`/requests?success=1&no=${number}`);
   } catch (e) {
-    if (isNextRedirectError(e)) throw e;
+    unstable_rethrow(e);
     console.error("[submitRequest] failed:", e);
     return {
       error:

@@ -10,6 +10,7 @@ import { UserRole, RequestStatus } from "@/generated/prisma/enums";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { requestOriginFromHeaders, staffActionRedirectPath } from "@/lib/staff-portal";
 import { Prisma } from "@/generated/prisma/client";
+import { digitsOnly } from "@/lib/phone";
 
 const STAFF_REVALIDATE = [
   "/admin/requests",
@@ -36,6 +37,53 @@ function staffDetailPath(actorPortal: string, requestId: string, listPathHint: s
   if (actorPortal === "employee") return `/employee/requests/${requestId}`;
   if (actorPortal === "staff" && listPathHint.startsWith("/staff")) return `/staff/requests/${requestId}`;
   return `/admin/requests/${requestId}`;
+}
+
+function staffStaleLoginPath(actorPortal: string): string {
+  if (actorPortal === "employee") return "/employee/login";
+  if (actorPortal === "staff") return "/staff/login";
+  return "/admin/login";
+}
+
+/**
+ * بعد إعادة إنشاء Turso أو تغيير المعرّفات، قد يبقى JWT يحمل user.id قديماً غير موجود في DB → فشل FK.
+ * نحلّ المستخدم الفعلي من قاعدة البيانات بالمعرّف ثم البريد ثم واتساب (للموظف).
+ */
+async function resolveStaffActorDbId(opts: {
+  sessionUserId: string;
+  email: string | null | undefined;
+  phone: string | null | undefined;
+  role: UserRole;
+}): Promise<string | null> {
+  const roles: UserRole[] =
+    opts.role === UserRole.ADMIN
+      ? [UserRole.ADMIN, UserRole.EMPLOYEE]
+      : [UserRole.EMPLOYEE, UserRole.ADMIN];
+
+  const base = { isActive: true as const, role: { in: roles } };
+
+  const byId = await db.user.findFirst({
+    where: { ...base, id: opts.sessionUserId },
+  });
+  if (byId) return byId.id;
+
+  const em = opts.email?.trim().toLowerCase();
+  if (em) {
+    const byEmail = await db.user.findFirst({
+      where: { ...base, email: em },
+    });
+    if (byEmail) return byEmail.id;
+  }
+
+  const ph = digitsOnly(opts.phone ?? "");
+  if (ph && opts.role === UserRole.EMPLOYEE) {
+    const byPhone = await db.user.findFirst({
+      where: { ...base, phone: ph },
+    });
+    if (byPhone) return byPhone.id;
+  }
+
+  return null;
 }
 
 export async function updateRequestStatus(formData: FormData) {
@@ -69,16 +117,33 @@ export async function updateRequestStatus(formData: FormData) {
   if (!r) return;
   if (r.status === to) return;
 
+  const actorDbId = await resolveStaffActorDbId({
+    sessionUserId: s.user.id,
+    email: s.user.email,
+    phone: s.user.phone,
+    role: s.user.role as UserRole,
+  });
+  if (!actorDbId) {
+    const next = encodeURIComponent(detailPath);
+    redirect(
+      staffActionRedirectPath(
+        host,
+        `${staffStaleLoginPath(actorPortal)}?next=${next}&reason=stale_session`,
+        origin,
+      ),
+    );
+  }
+
   try {
     /** بدون معاملة prisma — أنسب لبعض إعدادات LibSQL/Turso وتجنّب أعطال غامضة */
     await db.request.update({
       where: { id },
-      data: { status: to, assigneeId: s.user.id },
+      data: { status: to, assigneeId: actorDbId },
     });
     await db.requestStatusLog.create({
       data: {
         requestId: id,
-        actorId: s.user.id,
+        actorId: actorDbId,
         fromStatus: r.status,
         toStatus: to,
         ...(note ? { noteForCitizen: note } : {}),
@@ -140,14 +205,33 @@ export async function addRequestNote(formData: FormData) {
   const r = await db.request.findUnique({ where: { id: requestId } });
   if (!r) return;
 
+  const hdrs0 = await headers();
+  const host0 = hdrs0.get("host");
+  const origin0 = requestOriginFromHeaders(hdrs0);
+
+  const actorDbId = await resolveStaffActorDbId({
+    sessionUserId: s.user.id,
+    email: s.user.email,
+    phone: s.user.phone,
+    role: s.user.role as UserRole,
+  });
+  if (!actorDbId) {
+    const next = encodeURIComponent(detailPath);
+    redirect(
+      staffActionRedirectPath(
+        host0,
+        `${staffStaleLoginPath(actorPortal)}?next=${next}&reason=stale_session`,
+        origin0,
+      ),
+    );
+  }
+
   await db.requestNote.create({
-    data: { requestId, authorId: s.user.id, body },
+    data: { requestId, authorId: actorDbId, body },
   });
   revalidateStaffViews();
   revalidatePath(detailPath);
-  const hdrs = await headers();
-  const host = hdrs.get("host");
-  redirect(staffActionRedirectPath(host, `${detailPath}?noted=1`, requestOriginFromHeaders(hdrs)));
+  redirect(staffActionRedirectPath(host0, `${detailPath}?noted=1`, origin0));
 }
 
 export async function markNotificationRead(notifId: string) {
