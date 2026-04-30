@@ -8,7 +8,10 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { FieldGroup, Textarea, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 
-type P = { params: Promise<{ id: string }> };
+type P = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 const statuses: RequestStatus[] = [
   RequestStatus.PENDING,
@@ -19,8 +22,10 @@ const statuses: RequestStatus[] = [
   RequestStatus.COMPLETED,
 ];
 
-export default async function EmployeeRequestDetailPage({ params }: P) {
+export default async function EmployeeRequestDetailPage({ params, searchParams }: P) {
   const { id } = await params;
+  const sp = await searchParams;
+  const statusError = sp.statusError === "1";
   const r = await db.request.findFirst({
     where: { id },
     include: {
@@ -36,6 +41,14 @@ export default async function EmployeeRequestDetailPage({ params }: P) {
 
   return (
     <div>
+      {statusError && (
+        <p
+          role="alert"
+          className="mb-4 border border-[var(--gov-flag-red)]/35 bg-[var(--gov-flag-red)]/5 px-3 py-2 text-sm text-[var(--gov-text)]"
+        >
+          تعذّر حفظ تغيير الحالة. أعد المحاولة؛ إذا استمر الخطأ راجع سجلات الخادم أو اتصال قاعدة البيانات.
+        </p>
+      )}
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2 border-b border-[var(--gov-border)] pb-4">
         <div>
           <h1 className="font-mono text-lg font-bold text-[var(--gov-text)]">{r.requestNumber}</h1>

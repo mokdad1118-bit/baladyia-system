@@ -19,8 +19,32 @@ const STAFF_REVALIDATE = [
   "/staff/requests",
 ] as const;
 
+function isNextRedirectError(e: unknown): boolean {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    "digest" in e &&
+    typeof (e as { digest: unknown }).digest === "string" &&
+    (e as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  );
+}
+
+function safeRevalidatePath(pathname: string) {
+  try {
+    revalidatePath(pathname);
+  } catch {
+    /* تجاهل — بعض الأنماط النادرة قد ترفضها بيئة الإنتاج */
+  }
+}
+
 function revalidateStaffViews() {
-  for (const p of STAFF_REVALIDATE) revalidatePath(p);
+  for (const p of STAFF_REVALIDATE) safeRevalidatePath(p);
+}
+
+function staffDetailPath(actorPortal: string, requestId: string, listPathHint: string): string {
+  if (actorPortal === "employee") return `/employee/requests/${requestId}`;
+  if (actorPortal === "staff" && listPathHint.startsWith("/staff")) return `/staff/requests/${requestId}`;
+  return `/admin/requests/${requestId}`;
 }
 
 export async function updateRequestStatus(formData: FormData) {
@@ -45,55 +69,62 @@ export async function updateRequestStatus(formData: FormData) {
     return;
   }
 
-  const r = await db.request.findUnique({ where: { id } });
-  if (!r) return;
-  if (r.status === to) return;
+  const hdrs = await headers();
+  const host = hdrs.get("host");
+  const origin = requestOriginFromHeaders(hdrs);
+  const detailPath = staffDetailPath(actorPortal, id, listPathHint);
 
-  /** تفاعلي بدل مصفوفة الطلبات — أوفر توافقاً مع محول LibSQL/Turso من دفعات prisma */
-  await db.$transaction(async (tx) => {
-    await tx.request.update({
+  try {
+    const r = await db.request.findUnique({ where: { id } });
+    if (!r) return;
+    if (r.status === to) return;
+
+    /** بدون معاملة prisma — أنسب لبعض إعدادات LibSQL/Turso وتجنّب أعطال غامضة */
+    await db.request.update({
       where: { id },
       data: { status: to, assigneeId: s.user.id },
     });
-    await tx.requestStatusLog.create({
+    await db.requestStatusLog.create({
       data: {
         requestId: id,
         actorId: s.user.id,
         fromStatus: r.status,
         toStatus: to,
-        noteForCitizen: note || null,
+        noteForCitizen: note || "",
       },
     });
-  });
 
-  const statusLine = `الطلب ${r.requestNumber} أصبح: ${requestStatusAr[to]}`;
-  const noteLine =
-    to === RequestStatus.NEEDS_MODIFICATION && note
-      ? ` — مطلوب تعديل: ${note}`
-      : note
-        ? ` — ${note}`
-        : "";
-  try {
-    await notifyUsers({
-      userIds: [r.citizenId],
-      type: "STATUS_CHANGE",
-      title: "تغيير حالة الطلب",
-      message: `${statusLine}${noteLine}`,
-      requestId: id,
-    });
-  } catch (notifyErr) {
-    console.error("[updateRequestStatus] notifyUsers failed:", notifyErr);
+    const statusLine = `الطلب ${r.requestNumber} أصبح: ${requestStatusAr[to]}`;
+    const noteLine =
+      to === RequestStatus.NEEDS_MODIFICATION && note
+        ? ` — مطلوب تعديل: ${note}`
+        : note
+          ? ` — ${note}`
+          : "";
+    try {
+      await notifyUsers({
+        userIds: [r.citizenId],
+        type: "STATUS_CHANGE",
+        title: "تغيير حالة الطلب",
+        message: `${statusLine}${noteLine}`,
+        requestId: id,
+      });
+    } catch (notifyErr) {
+      console.error("[updateRequestStatus] notifyUsers failed:", notifyErr);
+    }
+
+    revalidateStaffViews();
+    safeRevalidatePath(`/admin/requests/${id}`);
+    safeRevalidatePath(`/requests/${id}`);
+    safeRevalidatePath(`/employee/requests/${id}`);
+    safeRevalidatePath(`/staff/requests/${id}`);
+
+    redirect(staffActionRedirectPath(host, `${listRedirect}?updated=1`, origin));
+  } catch (e) {
+    if (isNextRedirectError(e)) throw e;
+    console.error("[updateRequestStatus] failed:", e);
+    redirect(staffActionRedirectPath(host, `${detailPath}?statusError=1`, origin));
   }
-
-  revalidateStaffViews();
-  revalidatePath(`/admin/requests/${id}`);
-  revalidatePath(`/requests/${id}`);
-  revalidatePath(`/employee/requests/${id}`);
-  revalidatePath(`/staff/requests/${id}`);
-
-  const hdrs = await headers();
-  const host = hdrs.get("host");
-  redirect(staffActionRedirectPath(host, `${listRedirect}?updated=1`, requestOriginFromHeaders(hdrs)));
 }
 
 export async function addRequestNote(formData: FormData) {

@@ -11,7 +11,10 @@ import { FieldGroup, Textarea, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-type P = { params: Promise<{ id: string }> };
+type P = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 const statuses: RequestStatus[] = [
   RequestStatus.PENDING,
@@ -22,8 +25,10 @@ const statuses: RequestStatus[] = [
   RequestStatus.COMPLETED,
 ];
 
-export default async function StaffRequestDetailPage({ params }: P) {
+export default async function StaffRequestDetailPage({ params, searchParams }: P) {
   const { id } = await params;
+  const sp = await searchParams;
+  const statusError = sp.statusError === "1";
   const r = await db.request.findFirst({
     where: { id },
     include: {
@@ -38,6 +43,14 @@ export default async function StaffRequestDetailPage({ params }: P) {
   if (!r) notFound();
   return (
     <div>
+      {statusError && (
+        <p
+          role="alert"
+          className="mb-4 rounded-lg border border-red-200 bg-red-50/90 px-3 py-2 text-sm text-slate-800"
+        >
+          تعذّر حفظ تغيير الحالة. أعد المحاولة؛ إذا استمر الخطأ راجع سجلات الخادم أو اتصال قاعدة البيانات.
+        </p>
+      )}
       <PageHeader
         title={r.requestNumber}
         description={`${r.service.name} — ${r.citizen.name}`}
