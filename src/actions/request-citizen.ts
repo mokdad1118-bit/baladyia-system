@@ -1,9 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { acceptsForFileKind } from "@/lib/file-validation";
@@ -13,6 +17,17 @@ import { nextRequestNumber } from "@/lib/request-serial";
 import { UserRole, RequestStatus } from "@/generated/prisma/enums";
 import { redirect } from "next/navigation";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
+
+/** يمنع بلع `redirect()` داخل try/catch — يؤدي إلى فشل التوجيه بعد نجاح الطلب */
+function isNextRedirectError(e: unknown): boolean {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    "digest" in e &&
+    typeof (e as { digest: unknown }).digest === "string" &&
+    (e as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  );
+}
 
 async function defaultAssigneeId() {
   const e = await db.user.findFirst({
@@ -127,14 +142,17 @@ export async function submitRequest(
         (mime === "application/pdf" ? ".pdf" : ".bin");
       const stored = `${randomUUID()}${ext}`;
       const full = path.join(outDir, stored);
-      await writeFile(full, buf);
+      await pipeline(
+        Readable.fromWeb(file.stream() as unknown as NodeReadableStream),
+        createWriteStream(full),
+      );
       const rel = `/uploads/${new Date().getUTCFullYear()}/${stored}`;
       fileRecords.push({
         serviceDocumentId: d.id,
         storedName: rel,
         originalName: (file as File & { name?: string }).name || "file",
         mimeType: mime,
-        size: buf.length,
+        size: file.size,
       });
     }
 
@@ -171,20 +189,24 @@ export async function submitRequest(
       },
     });
 
-    await notifyUsers({
-      userIds: staff,
-      type: "REQUEST_SUBMIT",
-      title: "طلب جديد",
-      message: `وصل طلب رقم ${number} للخدمة: ${service.name}.`,
-      requestId: req.id,
-    });
-    await notifyUsers({
-      userIds: [citizenId],
-      type: "REQUEST_SUBMIT",
-      title: "تم استلام الطلب",
-      message: `طلبك ${number} قيد المعالجة. يمكنك المتابعة من «طلباتي».`,
-      requestId: req.id,
-    });
+    try {
+      await notifyUsers({
+        userIds: staff,
+        type: "REQUEST_SUBMIT",
+        title: "طلب جديد",
+        message: `وصل طلب رقم ${number} للخدمة: ${service.name}.`,
+        requestId: req.id,
+      });
+      await notifyUsers({
+        userIds: [citizenId],
+        type: "REQUEST_SUBMIT",
+        title: "تم استلام الطلب",
+        message: `طلبك ${number} قيد المعالجة. يمكنك المتابعة من «طلباتي».`,
+        requestId: req.id,
+      });
+    } catch (notifyErr) {
+      console.error("[submitRequest] notifyUsers failed after create:", notifyErr);
+    }
 
     revalidatePath("/requests");
     revalidatePath("/notifications");
@@ -193,6 +215,7 @@ export async function submitRequest(
 
     redirect(`/requests?success=1&no=${number}`);
   } catch (e) {
+    if (isNextRedirectError(e)) throw e;
     console.error("[submitRequest] failed:", e);
     return {
       error:
