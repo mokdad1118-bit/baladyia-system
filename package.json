@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build --webpack",
     "start": "tsx scripts/prepare-db.ts && tsx scripts/ensure-admin.ts && next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
@@ -12,6 +12,7 @@
     "db:seed": "prisma db seed"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@libsql/client": "^0.17.3",
     "@prisma/adapter-libsql": "^7.8.0",
     "@prisma/client": "^7.8.0",

@@ -58,3 +58,9 @@ next-env.d.ts
 src/generated/prisma/
 prisma/dev.db
 public/uploads/
+
+# PWA (يُولَّد عند `npm run build` مع next-pwa)
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map

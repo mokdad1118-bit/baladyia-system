@@ -3,3 +3,6 @@ state-emblem.png
 أو
 state-emblem.svg
 دون تعديل على الشعار نفسه — الحجم يُضبط من الواجهة فقط (object-contain).
+
+أيقونات PWA (تُولَّد من الشعار عند الحاجة):
+icon-192.png، icon-512.png، apple-touch-icon.png — أو أعد تشغيل سكربت التصدير بعد استبدال state-emblem.png.

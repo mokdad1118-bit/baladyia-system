@@ -1,6 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { isPersistentDatabaseConfiguredFromEnv } from "./database-env-guard";
 
 const defaultFileUrl = pathToFileURL(
   path.join(process.cwd(), "prisma", "dev.db"),
@@ -24,7 +25,7 @@ function resolveDatabaseMode(raw: string | undefined): DatabaseMode {
 
 /** هل الاتصال الحالي Persistent (قاعدة بعيدة) أم ملف محلي داخل الحاوية؟ */
 export function isPersistentDatabaseConfigured(): boolean {
-  return resolveDatabaseMode(process.env.DATABASE_URL?.trim()) === "remote-libsql";
+  return isPersistentDatabaseConfiguredFromEnv();
 }
 
 /** إعدادات @prisma/adapter-libsql: ملف محلي، أو Turso / LibSQL عن بُعد */

@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { CitizenBottomNav } from "./CitizenBottomNav";
 import { CitizenAppBar } from "./CitizenAppBar";
+import { CitizenPwaLayer } from "./CitizenPwaLayer";
 
 /**
  * واجهة مخصصة للجوال للمواطن: شريط علوي مبسط، تبويب سفلي،
@@ -42,6 +43,7 @@ export function CitizenMobileShell({
         {children}
       </div>
       {isCitizen && <CitizenBottomNav />}
+      <CitizenPwaLayer />
     </div>
   );
 }
