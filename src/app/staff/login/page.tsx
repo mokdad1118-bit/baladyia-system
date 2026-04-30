@@ -1,13 +1,6 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
-import { UserRole } from "@/generated/prisma/enums";
 import { GovLoginPage } from "@/components/gov/GovLoginPage";
 
-export default async function StaffLoginPage() {
-  const s = await auth();
-  if (s?.user?.role === UserRole.EMPLOYEE) redirect("/staff");
-  if (s?.user?.role === UserRole.ADMIN) redirect("/admin");
-  if (s?.user?.role === UserRole.CITIZEN) redirect("/citizen");
+export default function StaffLoginPage() {
   return (
     <GovLoginPage
       loginPage="staff"

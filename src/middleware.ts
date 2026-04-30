@@ -8,12 +8,6 @@ import { getToken } from "next-auth/jwt";
 import { UserRole } from "@/generated/prisma/enums";
 import { isCitizenAppPath, isCitizenPublicPath } from "@/lib/portal-paths";
 
-function roleHome(role: UserRole | undefined): string {
-  if (role === UserRole.ADMIN) return "/admin";
-  if (role === UserRole.EMPLOYEE) return "/staff";
-  return "/citizen";
-}
-
 /**
  * يجب أن يطابق اسم كوكي الجلسة ما يضبطه NextAuth (`useSecureCookies`).
  * في الإنتاج: `__Secure-authjs.session-token` — وإن مرّرنا secureCookie: false يبقى getToken
@@ -59,10 +53,7 @@ export async function middleware(req: NextRequest) {
   const role = token?.role as UserRole | undefined;
   const hasSession = Boolean(token);
 
-  if (pathname === "/admin/login") {
-    if (hasSession) return NextResponse.redirect(new URL(roleHome(role), req.url));
-    return NextResponse.next();
-  }
+  if (pathname === "/admin/login") return NextResponse.next();
   if (pathname.startsWith("/admin")) {
     if (!hasSession) {
       const u = new URL("/admin/login", req.url);
@@ -77,10 +68,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/staff/login") {
-    if (hasSession) return NextResponse.redirect(new URL(roleHome(role), req.url));
-    return NextResponse.next();
-  }
+  if (pathname === "/staff/login") return NextResponse.next();
   if (pathname.startsWith("/staff")) {
     if (!hasSession) {
       const u = new URL("/staff/login", req.url);
@@ -99,12 +87,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (isCitizenPublicPath(pathname)) {
-    if (hasSession && role !== UserRole.CITIZEN) {
-      return NextResponse.redirect(new URL(roleHome(role), req.url));
-    }
-    return NextResponse.next();
-  }
+  if (isCitizenPublicPath(pathname)) return NextResponse.next();
 
   if (!hasSession) {
     const u = new URL("/citizen/login", req.url);
