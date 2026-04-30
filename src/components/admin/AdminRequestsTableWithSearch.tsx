@@ -71,7 +71,7 @@ export function AdminRequestsTableWithSearch({
           <button
             type="button"
             disabled={filtered.length === 0 || exportBusy !== null}
-            className="gov-btn-secondary min-h-10 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            className="gov-btn-primary min-h-10 rounded-sm border-0 px-4 py-2 text-sm font-semibold disabled:opacity-50"
             onClick={async () => {
               setExportBusy("excel");
               try {
@@ -89,7 +89,7 @@ export function AdminRequestsTableWithSearch({
           <button
             type="button"
             disabled={filtered.length === 0 || exportBusy !== null}
-            className="gov-btn-secondary min-h-10 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            className="gov-btn-primary min-h-10 rounded-sm border-0 px-4 py-2 text-sm font-semibold disabled:opacity-50"
             onClick={async () => {
               setExportBusy("pdf");
               try {

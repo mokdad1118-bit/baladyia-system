@@ -45,8 +45,19 @@ export async function downloadAdminRequestsExcel(rows: AdminRequestsExportSource
   ];
 
   const headerRow = sheet.getRow(1);
-  headerRow.font = { bold: true };
+  headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
   headerRow.alignment = { vertical: "middle", horizontal: "right" };
+  headerRow.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF1a5c40" },
+  };
+  headerRow.border = {
+    top: { style: "thin", color: { argb: "FF0c3528" } },
+    left: { style: "thin", color: { argb: "FF0c3528" } },
+    bottom: { style: "thin", color: { argb: "FF0c3528" } },
+    right: { style: "thin", color: { argb: "FF0c3528" } },
+  };
 
   for (const r of rows) {
     const L = rowLabels(r);
@@ -85,10 +96,31 @@ export async function downloadAdminRequestsPdf(rows: AdminRequestsExportSourceRo
   if (rows.length === 0) return;
   const html2pdf = (await import("html2pdf.js")).default;
 
+  /**
+   * html2canvas لا يلتقط عناصر بعيدة خارج الشاشة → PDF فارغ.
+   * نضع الحاوية داخل نافذة العرض مؤقتاً ثم نزيلها بعد الحفظ.
+   */
   const wrap = document.createElement("div");
   wrap.setAttribute("dir", "rtl");
-  wrap.style.cssText =
-    "position:fixed;left:-12000px;top:0;width:900px;padding:16px 20px;background:#fff;font-family:system-ui,'Segoe UI',Tahoma,sans-serif;font-size:12px;color:#111;";
+  wrap.style.cssText = [
+    "position:fixed",
+    "right:8px",
+    "bottom:8px",
+    "left:auto",
+    "top:auto",
+    "width:min(1024px,calc(100vw - 16px))",
+    "max-height:min(90vh,calc(100vh - 16px))",
+    "overflow:auto",
+    "padding:20px 24px",
+    "box-sizing:border-box",
+    "background:#ffffff",
+    "box-shadow:0 4px 24px rgba(0,0,0,.12)",
+    "z-index:2147483000",
+    "font-family:system-ui,'Segoe UI',Tahoma,sans-serif",
+    "font-size:12px",
+    "color:#111111",
+    "pointer-events:none",
+  ].join(";");
 
   const title = document.createElement("h2");
   title.style.cssText = "margin:0 0 12px;font-size:18px;font-weight:700;";
@@ -104,12 +136,12 @@ export async function downloadAdminRequestsPdf(rows: AdminRequestsExportSourceRo
   table.style.cssText = "width:100%;border-collapse:collapse;font-size:11px;";
   table.innerHTML = `
     <thead>
-      <tr style="background:#f0f4f8;">
-        <th style="border:1px solid #ccc;padding:8px;text-align:right;">رقم الطلب</th>
-        <th style="border:1px solid #ccc;padding:8px;text-align:right;">المواطن</th>
-        <th style="border:1px solid #ccc;padding:8px;text-align:right;">الخدمة</th>
-        <th style="border:1px solid #ccc;padding:8px;text-align:right;">الحالة</th>
-        <th style="border:1px solid #ccc;padding:8px;text-align:right;">التاريخ</th>
+      <tr style="background:#1a5c40;color:#fff;">
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">رقم الطلب</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">المواطن</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">الخدمة</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">الحالة</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">التاريخ</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -133,12 +165,25 @@ export async function downloadAdminRequestsPdf(rows: AdminRequestsExportSourceRo
   document.body.appendChild(wrap);
 
   try {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+    await new Promise((r) => setTimeout(r, 80));
+
     await html2pdf()
       .set({
         margin: [10, 10, 10, 10],
         filename: `requests-${fileStamp()}.pdf`,
         image: { type: "jpeg", quality: 0.92 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: -window.scrollY,
+        },
         jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
       })
       .from(wrap)
