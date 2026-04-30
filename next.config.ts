@@ -11,7 +11,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // رفع حجم body للـ Server Actions لأن نموذج الطلب يرفع مرفقات من الجوال.
     serverActions: {
-      bodySizeLimit: "15mb",
+      // عدة مرفقات قد تصل كلّها إلى ~٥ ميغابايت لكل ملف
+      bodySizeLimit: "30mb",
     },
   },
   async redirects() {

@@ -10,6 +10,7 @@ import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 import { FieldLabel, Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { GovStepIndicator, type CitizenFlowStep } from "@/components/gov/GovStepIndicator";
+import { MAX_CITIZEN_ATTACHMENT_BYTES, maxCitizenAttachmentLabelAr } from "@/lib/upload-limits";
 
 type Prefill = { name: string; phone: string | null; notificationEmail: string | null };
 
@@ -31,9 +32,24 @@ export function CitizenRequestWizard({
   const formRef = useRef<HTMLFormElement>(null);
   const [uiStep, setUiStep] = useState<2 | 3 | 4>(2);
   const [reviewSnapshot, setReviewSnapshot] = useState<ReviewSnapshot | null>(null);
+  const [attachmentStepError, setAttachmentStepError] = useState<string | null>(null);
   const currentStep: CitizenFlowStep = uiStep;
 
   const list = service.documents.slice().sort((a, b) => a.sortOrder - b.sortOrder);
+
+  function validateAttachmentSizes(docs: ServiceDocument[]): string | null {
+    const root = formRef.current;
+    if (!root) return null;
+    for (const d of docs) {
+      const el = root.elements.namedItem(`file_${d.id}`);
+      if (!(el instanceof HTMLInputElement)) continue;
+      const f = el.files?.[0];
+      if (f && f.size > MAX_CITIZEN_ATTACHMENT_BYTES) {
+        return `الملف «${f.name}» (${d.name}) يتجاوز الحد المسموح (${maxCitizenAttachmentLabelAr()} لكل ملف). اختر ملفاً أصغر أو اضغط الصورة.`;
+      }
+    }
+    return null;
+  }
 
   function validateStep(step: 2 | 3): boolean {
     const root = formRef.current;
@@ -125,6 +141,7 @@ export function CitizenRequestWizard({
             className="gov-btn-primary min-h-11 w-full px-5 py-2.5 text-sm font-semibold sm:w-auto"
             onClick={() => {
               if (!validateStep(2)) return;
+              setAttachmentStepError(null);
               setUiStep(3);
             }}
           >
@@ -134,6 +151,11 @@ export function CitizenRequestWizard({
       </div>
 
       <div data-wizard-step="3" hidden={uiStep !== 3} className="space-y-4">
+        {attachmentStepError && (
+          <p className="border border-[var(--gov-flag-red)]/35 bg-[var(--gov-flag-red)]/5 px-3 py-2 text-sm text-[var(--gov-text)]">
+            {attachmentStepError}
+          </p>
+        )}
         {list.map((d) => (
           <FileField key={d.id} doc={d} />
         ))}
@@ -141,7 +163,10 @@ export function CitizenRequestWizard({
           <button
             type="button"
             className="gov-btn-secondary min-h-11 w-full px-5 py-2.5 text-sm font-semibold sm:w-auto"
-            onClick={() => setUiStep(2)}
+            onClick={() => {
+              setAttachmentStepError(null);
+              setUiStep(2);
+            }}
           >
             السابق
           </button>
@@ -149,7 +174,13 @@ export function CitizenRequestWizard({
             type="button"
             className="gov-btn-primary min-h-11 w-full px-5 py-2.5 text-sm font-semibold sm:w-auto"
             onClick={() => {
+              setAttachmentStepError(null);
               if (!validateStep(3)) return;
+              const sizeErr = validateAttachmentSizes(list);
+              if (sizeErr) {
+                setAttachmentStepError(sizeErr);
+                return;
+              }
               const snap = captureReviewSnapshot(list);
               if (!snap) return;
               setReviewSnapshot(snap);
@@ -170,6 +201,7 @@ export function CitizenRequestWizard({
               type="button"
               className="gov-btn-secondary min-h-11 w-full px-5 py-2.5 text-sm font-semibold sm:w-auto"
               onClick={() => {
+                setAttachmentStepError(null);
                 setUiStep(3);
               }}
             >
@@ -213,6 +245,9 @@ function FileField({ doc: d }: { doc: ServiceDocument }) {
         required={d.isRequired}
         accept={acceptForKind(d.fileType)}
       />
+      <p className="mt-1.5 text-xs text-[var(--gov-muted)]">
+        الحد الأقصى لحجم الملف: {maxCitizenAttachmentLabelAr()} لكل مرفق.
+      </p>
     </div>
   );
 }

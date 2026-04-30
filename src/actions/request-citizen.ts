@@ -12,6 +12,7 @@ import { notifEmailOrNull, digitsOnly, isValidWhatsappLength } from "@/lib/phone
 import { nextRequestNumber } from "@/lib/request-serial";
 import { UserRole, RequestStatus } from "@/generated/prisma/enums";
 import { redirect } from "next/navigation";
+import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
 
 async function defaultAssigneeId() {
   const e = await db.user.findFirst({
@@ -109,6 +110,11 @@ export async function submitRequest(
         }
       }
       if (!file || file.size === 0) continue;
+      if (file.size > MAX_CITIZEN_ATTACHMENT_BYTES) {
+        return {
+          error: `${d.name}: حجم الملف كبير جداً (الحد الأقصى ${Math.round(MAX_CITIZEN_ATTACHMENT_BYTES / (1024 * 1024))} ميغابايت لكل ملف).`,
+        };
+      }
       const mime = file.type || "application/octet-stream";
       const v = acceptsForFileKind(d.fileType, mime);
       if (!v.ok) {
@@ -190,7 +196,7 @@ export async function submitRequest(
     console.error("[submitRequest] failed:", e);
     return {
       error:
-        "تعذر إرسال الطلب حالياً. تأكد من حجم المرفقات (صغّر الصور/الملفات) ثم حاول مرة أخرى.",
+        "تعذر إرسال الطلب حالياً. تأكد أن كل ملف لا يتجاوز ٥ ميغابايت، وأن إجمال حجم المرفقات معقول، ثم حاول مرة أخرى.",
     };
   }
 }
