@@ -8,19 +8,34 @@ const defaultFileUrl = pathToFileURL(
 
 let warnedRemoteWithoutToken = false;
 
-/** إعدادات @prisma/adapter-libsql: ملف محلي، أو Turso / LibSQL عن بُعد */
-export function createLibSqlAdapter() {
-  const raw = process.env.DATABASE_URL?.trim();
-  const authToken =
-    process.env.TURSO_AUTH_TOKEN?.trim() ||
-    process.env.LIBSQL_AUTH_TOKEN?.trim();
+type DatabaseMode = "remote-libsql" | "local-file";
 
+function resolveDatabaseMode(raw: string | undefined): DatabaseMode {
   if (
     raw &&
     (raw.startsWith("libsql://") ||
       raw.startsWith("libsql+") ||
       raw.startsWith("https://"))
   ) {
+    return "remote-libsql";
+  }
+  return "local-file";
+}
+
+/** هل الاتصال الحالي Persistent (قاعدة بعيدة) أم ملف محلي داخل الحاوية؟ */
+export function isPersistentDatabaseConfigured(): boolean {
+  return resolveDatabaseMode(process.env.DATABASE_URL?.trim()) === "remote-libsql";
+}
+
+/** إعدادات @prisma/adapter-libsql: ملف محلي، أو Turso / LibSQL عن بُعد */
+export function createLibSqlAdapter() {
+  const raw = process.env.DATABASE_URL?.trim();
+  const authToken =
+    process.env.TURSO_AUTH_TOKEN?.trim() ||
+    process.env.LIBSQL_AUTH_TOKEN?.trim();
+  const mode = resolveDatabaseMode(raw);
+
+  if (mode === "remote-libsql" && raw) {
     if (!authToken && !warnedRemoteWithoutToken) {
       warnedRemoteWithoutToken = true;
       console.error(
