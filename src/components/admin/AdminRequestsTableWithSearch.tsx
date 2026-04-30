@@ -6,6 +6,10 @@ import { RequestStatus } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
+import {
+  downloadAdminRequestsExcel,
+  downloadAdminRequestsPdf,
+} from "@/lib/admin-requests-export";
 
 export type AdminRequestRow = {
   id: string;
@@ -38,6 +42,7 @@ export function AdminRequestsTableWithSearch({
   filterForm: ReactNode;
 }) {
   const [q, setQ] = useState("");
+  const [exportBusy, setExportBusy] = useState<"excel" | "pdf" | null>(null);
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return rows;
@@ -51,14 +56,56 @@ export function AdminRequestsTableWithSearch({
         <p className="mt-1 text-sm text-[var(--gov-muted)]">عرض شامل مع تصفية حسب الحالة والتاريخ والبحث في القائمة.</p>
       </header>
       <div className="gov-card mb-6 p-4">{filterForm}</div>
-      <AdminListSearchField
-        id="admin-requests-search"
-        label="بحث في قائمة الطلبات"
-        placeholder="رقم الطلب، اسم المواطن، الخدمة، الحالة…"
-        value={q}
-        onChange={setQ}
-        className="mb-4"
-      />
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <AdminListSearchField
+            id="admin-requests-search"
+            label="بحث في قائمة الطلبات"
+            placeholder="رقم الطلب، اسم المواطن، الخدمة، الحالة…"
+            value={q}
+            onChange={setQ}
+            className="mb-0"
+          />
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={filtered.length === 0 || exportBusy !== null}
+            className="gov-btn-secondary min-h-10 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            onClick={async () => {
+              setExportBusy("excel");
+              try {
+                await downloadAdminRequestsExcel(filtered);
+              } catch (e) {
+                console.error(e);
+                alert("تعذر تصدير Excel. حاول مرة أخرى أو من متصفح آخر.");
+              } finally {
+                setExportBusy(null);
+              }
+            }}
+          >
+            {exportBusy === "excel" ? "جاري التصدير…" : "تصدير Excel"}
+          </button>
+          <button
+            type="button"
+            disabled={filtered.length === 0 || exportBusy !== null}
+            className="gov-btn-secondary min-h-10 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            onClick={async () => {
+              setExportBusy("pdf");
+              try {
+                await downloadAdminRequestsPdf(filtered);
+              } catch (e) {
+                console.error(e);
+                alert("تعذر تصدير PDF. حاول مرة أخرى أو استخدم تصدير Excel.");
+              } finally {
+                setExportBusy(null);
+              }
+            }}
+          >
+            {exportBusy === "pdf" ? "جاري التصدير…" : "تصدير PDF"}
+          </button>
+        </div>
+      </div>
       {rows.length === 0 ? (
         <p className="text-center text-sm text-[var(--gov-muted)]">لا طلبات مطابقة</p>
       ) : filtered.length === 0 ? (
