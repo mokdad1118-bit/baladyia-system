@@ -7,8 +7,9 @@ import { db } from "@/lib/db";
 import { notifyUsers } from "@/lib/notify";
 import { requestStatusAr } from "@/lib/labels";
 import { UserRole, RequestStatus } from "@/generated/prisma/enums";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { requestOriginFromHeaders, staffActionRedirectPath } from "@/lib/staff-portal";
+import { Prisma } from "@/generated/prisma/client";
 
 const STAFF_REVALIDATE = [
   "/admin/requests",
@@ -18,16 +19,6 @@ const STAFF_REVALIDATE = [
   "/employee/requests",
   "/staff/requests",
 ] as const;
-
-function isNextRedirectError(e: unknown): boolean {
-  return (
-    typeof e === "object" &&
-    e !== null &&
-    "digest" in e &&
-    typeof (e as { digest: unknown }).digest === "string" &&
-    (e as { digest: string }).digest.startsWith("NEXT_REDIRECT")
-  );
-}
 
 function safeRevalidatePath(pathname: string) {
   try {
@@ -74,11 +65,11 @@ export async function updateRequestStatus(formData: FormData) {
   const origin = requestOriginFromHeaders(hdrs);
   const detailPath = staffDetailPath(actorPortal, id, listPathHint);
 
-  try {
-    const r = await db.request.findUnique({ where: { id } });
-    if (!r) return;
-    if (r.status === to) return;
+  const r = await db.request.findUnique({ where: { id } });
+  if (!r) return;
+  if (r.status === to) return;
 
+  try {
     /** بدون معاملة prisma — أنسب لبعض إعدادات LibSQL/Turso وتجنّب أعطال غامضة */
     await db.request.update({
       where: { id },
@@ -90,41 +81,45 @@ export async function updateRequestStatus(formData: FormData) {
         actorId: s.user.id,
         fromStatus: r.status,
         toStatus: to,
-        noteForCitizen: note || "",
+        ...(note ? { noteForCitizen: note } : {}),
       },
     });
-
-    const statusLine = `الطلب ${r.requestNumber} أصبح: ${requestStatusAr[to]}`;
-    const noteLine =
-      to === RequestStatus.NEEDS_MODIFICATION && note
-        ? ` — مطلوب تعديل: ${note}`
-        : note
-          ? ` — ${note}`
-          : "";
-    try {
-      await notifyUsers({
-        userIds: [r.citizenId],
-        type: "STATUS_CHANGE",
-        title: "تغيير حالة الطلب",
-        message: `${statusLine}${noteLine}`,
-        requestId: id,
-      });
-    } catch (notifyErr) {
-      console.error("[updateRequestStatus] notifyUsers failed:", notifyErr);
-    }
-
-    revalidateStaffViews();
-    safeRevalidatePath(`/admin/requests/${id}`);
-    safeRevalidatePath(`/requests/${id}`);
-    safeRevalidatePath(`/employee/requests/${id}`);
-    safeRevalidatePath(`/staff/requests/${id}`);
-
-    redirect(staffActionRedirectPath(host, `${listRedirect}?updated=1`, origin));
   } catch (e) {
-    if (isNextRedirectError(e)) throw e;
-    console.error("[updateRequestStatus] failed:", e);
+    unstable_rethrow(e);
+    const prismaMsg =
+      e instanceof Prisma.PrismaClientKnownRequestError
+        ? `${e.code} ${e.meta ? JSON.stringify(e.meta) : ""}`
+        : "";
+    console.error("[updateRequestStatus] database failed:", prismaMsg || e);
     redirect(staffActionRedirectPath(host, `${detailPath}?statusError=1`, origin));
   }
+
+  const statusLine = `الطلب ${r.requestNumber} أصبح: ${requestStatusAr[to]}`;
+  const noteLine =
+    to === RequestStatus.NEEDS_MODIFICATION && note
+      ? ` — مطلوب تعديل: ${note}`
+      : note
+        ? ` — ${note}`
+        : "";
+  try {
+    await notifyUsers({
+      userIds: [r.citizenId],
+      type: "STATUS_CHANGE",
+      title: "تغيير حالة الطلب",
+      message: `${statusLine}${noteLine}`,
+      requestId: id,
+    });
+  } catch (notifyErr) {
+    console.error("[updateRequestStatus] notifyUsers failed:", notifyErr);
+  }
+
+  revalidateStaffViews();
+  safeRevalidatePath(`/admin/requests/${id}`);
+  safeRevalidatePath(`/requests/${id}`);
+  safeRevalidatePath(`/employee/requests/${id}`);
+  safeRevalidatePath(`/staff/requests/${id}`);
+
+  redirect(staffActionRedirectPath(host, `${listRedirect}?updated=1`, origin));
 }
 
 export async function addRequestNote(formData: FormData) {
