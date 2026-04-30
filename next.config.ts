@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
   /** + عناوين الشبكة المحلية لأن Next 16 يحجب /_next و HMR لأي Origin غير مُدرج */
   allowedDevOrigins: ["127.0.0.1", "[::1]", ...localLanHosts],
   serverExternalPackages: ["bcrypt", "@libsql/client", "@prisma/adapter-libsql"],
+  experimental: {
+    // رفع حجم body للـ Server Actions لأن نموذج الطلب يرفع مرفقات من الجوال.
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   async redirects() {
     return [
       /* لا تعيد توجيه /citizen إلى / — يكسر دخول المواطن (الجذر يعيد التوجيه إلى /citizen فيصير حلقة لا نهائية). */
