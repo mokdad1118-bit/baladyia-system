@@ -4,6 +4,19 @@ import withPWAInit from "@ducanh2912/next-pwa";
 const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
+  /** لا نُخزّن مرفقات المواطنين في الـ SW وقت البناء (تتغير بعد النشر وتسبب 404/نسخة قديمة). */
+  publicExcludes: ["!uploads/**"],
+  /** دمج قواعد التخزين الافتراضية مع قاعدة مرفقات لا تُخزَّن (قبل مسار «الصفحات» العام). */
+  extendDefaultRuntimeCaching: true,
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/uploads/"),
+        handler: "NetworkOnly",
+        method: "GET",
+      },
+    ],
+  },
 });
 
 /** لعناوين مثل 192.168.x.x عند فتح الموقع من موبايل على نفس Wi‑Fi (قائمة مفصولة بفواصل، من .env: LOCAL_LAN_HOSTS) */

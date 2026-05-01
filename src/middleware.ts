@@ -38,6 +38,8 @@ async function readJwt(req: NextRequest) {
 
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
+  /** مرفقات الطلبات: ملفات ثابتة تحت public/uploads — لا تمر على منطق الجلسات/الأدوار. */
+  if (pathname.startsWith("/uploads")) return NextResponse.next();
   if (pathname === "/login") {
     const u = req.nextUrl.clone();
     u.pathname = "/citizen/login";
@@ -104,6 +106,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/uploads/:path*",
     "/",
     "/login",
     "/citizen/login",
