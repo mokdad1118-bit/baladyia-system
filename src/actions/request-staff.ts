@@ -115,7 +115,8 @@ export async function updateRequestStatus(formData: FormData) {
 
   const r = await db.request.findUnique({ where: { id } });
   if (!r) return;
-  if (r.status === to) return;
+  /** بدون تغيير حالة وبدون تنبيه = لا شيء. تنبيه فقط مع نفس الحالة كان يُتجاهل سابقاً ولا يصل للمواطن. */
+  if (r.status === to && !note) return;
 
   const actorDbId = await resolveStaffActorDbId({
     sessionUserId: s.user.id,
@@ -159,6 +160,7 @@ export async function updateRequestStatus(formData: FormData) {
     redirect(staffActionRedirectPath(host, `${detailPath}?statusError=1`, origin));
   }
 
+  const statusChanged = r.status !== to;
   const statusLine = `الطلب ${r.requestNumber} أصبح: ${requestStatusAr[to]}`;
   const noteLine =
     to === RequestStatus.NEEDS_MODIFICATION && note
@@ -166,12 +168,18 @@ export async function updateRequestStatus(formData: FormData) {
       : note
         ? ` — ${note}`
         : "";
+  const notifyTitle = statusChanged ? "تغيير حالة الطلب" : "تنبيه بخصوص طلبك";
+  const notifyMessage = statusChanged
+    ? `${statusLine}${noteLine}`
+    : note
+      ? `بخصوص الطلب ${r.requestNumber}: ${note}`
+      : statusLine;
   try {
     await notifyUsers({
       userIds: [r.citizenId],
-      type: "STATUS_CHANGE",
-      title: "تغيير حالة الطلب",
-      message: `${statusLine}${noteLine}`,
+      type: statusChanged ? "STATUS_CHANGE" : "STAFF_MESSAGE",
+      title: notifyTitle,
+      message: notifyMessage,
       requestId: id,
     });
   } catch (notifyErr) {
