@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useId, useState } from "react";
+import { Suspense, useEffect, useId, useState } from "react";
 import { getSession, signIn, type SignInResponse } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import type { LoginPageSurface } from "@/lib/auth-portal";
@@ -14,6 +14,7 @@ import { navigateTopLevel } from "@/lib/navigate-client";
 import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
 import { UserRole } from "@/generated/prisma/enums";
+import { CITIZEN_POST_REGISTER_PASSWORD_KEY } from "@/lib/citizen-login-prefill";
 
 export type GovLoginPageProps = {
   loginPage: LoginPageSurface;
@@ -65,6 +66,28 @@ function GovLoginPageImpl({
   const [password, setPassword] = useState("");
   const passwordFieldId = useId();
   const isCitizen = loginPage === "citizen";
+
+  const spQuery = sp.toString();
+  useEffect(() => {
+    if (!isCitizen) return;
+    const id = sp.get("identifier")?.trim();
+    if (id) setIdentifier(id);
+    // يُعاد عند تغيّر الاستعلام (spQuery)؛ sp من useSearchParams متزامن.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCitizen, spQuery]);
+
+  useEffect(() => {
+    if (!isCitizen) return;
+    try {
+      const pw = sessionStorage.getItem(CITIZEN_POST_REGISTER_PASSWORD_KEY);
+      if (pw != null && pw !== "") {
+        setPassword(pw);
+        sessionStorage.removeItem(CITIZEN_POST_REGISTER_PASSWORD_KEY);
+      }
+    } catch {
+      /* تعطيل التخزين */
+    }
+  }, [isCitizen]);
 
   const form = (
     <div
@@ -141,7 +164,7 @@ function GovLoginPageImpl({
         )}
         {sp.get("registered") && loginPage === "citizen" && (
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-            تم إنشاء الحساب — يمكنك تسجيل الدخول الآن
+            تم إنشاء الحساب — تم تعبئة رقم الواتساب وكلمة المرور؛ اضغط «تسجيل الدخول» للمتابعة.
           </p>
         )}
         <div>

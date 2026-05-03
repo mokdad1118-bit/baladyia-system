@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import {
@@ -11,22 +10,24 @@ import {
 } from "@/lib/phone";
 import { UserRole } from "@/generated/prisma/enums";
 
+export type RegisterCitizenState =
+  | { error: string }
+  | { ok: true; identifier: string }
+  | undefined;
+
 export async function registerCitizen(
-  _prev: { error?: string } | undefined,
+  _prev: RegisterCitizenState,
   formData: FormData,
-) {
+): Promise<RegisterCitizenState> {
   const name = String(formData.get("name") ?? "").trim();
   const phoneRaw = String(formData.get("phone") ?? "").trim();
   const phoneDigits = digitsOnly(phoneRaw);
   const phone = normalizeCitizenPhoneForStorage(phoneRaw);
   const password = String(formData.get("password") ?? "");
   const notifRaw = String(formData.get("notificationEmail") ?? "").trim();
-  if (!name || !phoneDigits || !password)
-    return { error: "يرجى تعبئة الحقول المطلوبة" };
-  if (phone.length < 8 || phone.length > 15)
-    return { error: "رقم واتساب: أرقام (٨–١٥ رقماً)" };
-  if (password.length < 6)
-    return { error: "كلمة المرور 6 أحرف على الأقل" };
+  if (!name || !phoneDigits || !password) return { error: "يرجى تعبئة الحقول المطلوبة" };
+  if (phone.length < 8 || phone.length > 15) return { error: "رقم واتساب: أرقام (٨–١٥ رقماً)" };
+  if (password.length < 6) return { error: "كلمة المرور 6 أحرف على الأقل" };
   const notifNorm = notifRaw
     ? notifEmailOrNull(notifRaw)
     : null;
@@ -70,5 +71,6 @@ export async function registerCitizen(
     console.error("[registerCitizen]", e);
     return { error: "تعذّر حفظ الحساب. تحقق من الاتصال بقاعدة البيانات وحاول مرة أخرى." };
   }
-  redirect("/citizen/login?registered=1");
+  /** العميل يوجّه إلى الدخول ويملأ الحقول (رقم في الرابط، كلمة مرور في sessionStorage مؤقتاً). */
+  return { ok: true, identifier: phone };
 }
