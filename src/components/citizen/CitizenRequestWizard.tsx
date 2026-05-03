@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 import { GovStepIndicator, type CitizenFlowStep } from "@/components/gov/GovStepIndicator";
 import { MAX_CITIZEN_ATTACHMENT_BYTES, maxCitizenAttachmentLabelAr } from "@/lib/upload-limits";
 
-type Prefill = { name: string; phone: string | null; notificationEmail: string | null };
+type Prefill = { name: string; phone: string | null; email: string | null; notificationEmail: string | null };
 
 type ReviewSnapshot = {
   name: string;
@@ -129,7 +129,7 @@ export function CitizenRequestWizard({
             <Input
               name="notificationEmail"
               type="email"
-              defaultValue={prefill?.notificationEmail ?? ""}
+              defaultValue={prefill?.notificationEmail ?? prefill?.email ?? ""}
               autoComplete="email"
             />
             <p className="mt-1 text-xs text-[var(--gov-muted)]">يُسجَّل في ملفك عند الإرسال.</p>

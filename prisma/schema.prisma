@@ -12,15 +12,19 @@ datasource db {
 /// Admin / employee / citizen
 model User {
   id             String   @id @default(cuid())
-  /// للموظفين/الإدارة غالباً؛ للمواطن يُفضّل الدخول برقم واتساب
+  /// للموظفين/الإدارة غالباً؛ للمواطن — البريد للتفعيل والإشعارات
   email          String?  @unique
   /// رقم واتساب (أرقام فقط بعد التطبيع) — تسجيل دخول المواطن
   phone          String?  @unique
+  /// الرقم الوطني (المواطن) — فريد عند التسجيل
+  nationalId     String?  @unique
   /// بريد اختياري لإشعارات لاحقة (بريد/واتساب داخل النظام حالياً داخلياً)
   notificationEmail String? @unique
   passwordHash   String
   name           String
   role           UserRole @default(CITIZEN)
+  /// للمواطن: لا يُسمح بالدخول قبل التحقق من البريد (OTP)
+  isVerified     Boolean  @default(true)
   isActive       Boolean  @default(true)
   /// لوحة الإدارة — للموظف؛ المدير يُعامل كامتلاك الجميع في التطبيق
   permManageServices Boolean @default(false)
@@ -37,6 +41,25 @@ model User {
   statusLogs         RequestStatusLog[] @relation("LogActor")
   requestNotes       RequestNote[]      @relation("NoteAuthor")
   notifications      Notification[]
+}
+
+/// رموز OTP للبريد (تفعيل الحساب أو استعادة كلمة المرور)
+model EmailOtp {
+  id        String    @id @default(cuid())
+  email     String
+  /// SHA-256 HMAC للرمز المكوّن من 6 أرقام (لا يُخزَّن النص الصريح)
+  codeHash  String
+  purpose   OtpPurpose
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([email, purpose])
+}
+
+enum OtpPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
 }
 
 enum UserRole {

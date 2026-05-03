@@ -7,6 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { UserRole } from "@/generated/prisma/enums";
 import { isCitizenAppPath, isCitizenPublicPath } from "@/lib/portal-paths";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 /**
  * يجب أن يطابق اسم كوكي الجلسة ما يضبطه NextAuth (`useSecureCookies`).
@@ -23,7 +24,7 @@ function sessionCookieSecure(req: NextRequest): boolean {
 
 /** بدون AUTH_SECRET أو عند فشل فك التشفير لا نرمي استثناءً يعطل الصفحات الثابتة */
 async function readJwt(req: NextRequest) {
-  const secret = process.env.AUTH_SECRET?.trim();
+  const secret = getAuthSecret();
   if (!secret) return null;
   try {
     return await getToken({
@@ -110,9 +111,12 @@ export const config = {
     "/",
     "/login",
     "/citizen/login",
+    "/citizen/forgot-password",
+    "/citizen/forgot-password/:path*",
     "/staff/login",
     "/admin/login",
     "/register",
+    "/register/:path*",
     "/services/:path*",
     "/requests/:path*",
     "/notifications/:path*",

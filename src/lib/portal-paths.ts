@@ -14,7 +14,7 @@ export function isCitizenAppPath(pathname: string) {
   return (
     pathname === "/" ||
     pathname === "/citizen/login" ||
-    pathname === "/register" ||
+    pathname.startsWith("/register") ||
     pathname.startsWith("/services") ||
     pathname.startsWith("/requests") ||
     pathname.startsWith("/notifications") ||
@@ -26,10 +26,12 @@ export function isCitizenAppPath(pathname: string) {
 /** صفحات تطبيق المواطن التي يمكن للزائر دخولها دون جلسة */
 export function isCitizenPublicPath(pathname: string) {
   return (
-    pathname === "/register" ||
+    pathname.startsWith("/register") ||
     pathname.startsWith("/services") ||
     pathname === "/citizen/login" ||
-    pathname === "/citizen/register"
+    pathname.startsWith("/citizen/register") ||
+    pathname === "/citizen/forgot-password" ||
+    pathname.startsWith("/citizen/forgot-password/")
   );
 }
 

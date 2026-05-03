@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
-import { CitizenRegisterForm } from "@/components/citizen/CitizenRegisterForm";
+import { CitizenNewPasswordForm } from "@/components/citizen/CitizenNewPasswordForm";
 
-export default function CitizenRegisterPagePublic() {
+export default function NewPasswordPage() {
   return (
     <div className="gov-page flex min-h-dvh flex-col">
       <header className="gov-header">
@@ -15,25 +15,19 @@ export default function CitizenRegisterPagePublic() {
             <div className="text-start text-white">
               <p className="text-xs text-white/80">{PORTAL_SUBTITLE}</p>
               <p className="text-lg font-bold">{ENTITY_NAME_AR}</p>
-              <p className="text-sm text-white/90">إنشاء حساب جديد</p>
+              <p className="text-sm text-white/90">كلمة مرور جديدة</p>
             </div>
           </div>
         </div>
       </header>
       <main className="flex flex-1 justify-center px-4 py-10">
-        <CitizenRegisterForm
-          verifyHref="/citizen/register/verify"
-          loginHref="/citizen/login"
-          variant="gov"
-          extraFooter={
-            <p className="mt-6 text-center text-xs">
-              <Link href="/" className="text-[var(--gov-muted)] hover:underline">
-                العودة لاختيار البوابة
-              </Link>
-            </p>
-          }
-        />
+        <CitizenNewPasswordForm loginHref="/citizen/login" variant="gov" />
       </main>
+      <p className="pb-6 text-center text-xs">
+        <Link href="/" className="text-[var(--gov-muted)] hover:underline">
+          العودة لاختيار البوابة
+        </Link>
+      </p>
     </div>
   );
 }

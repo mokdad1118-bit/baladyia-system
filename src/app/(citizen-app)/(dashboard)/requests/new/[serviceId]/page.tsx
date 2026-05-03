@@ -18,7 +18,7 @@ export default async function CitizenNewRequestPage({ params }: Props) {
   }
   const prefill = await db.user.findUnique({
     where: { id: s.user.id },
-    select: { name: true, phone: true, notificationEmail: true },
+    select: { name: true, phone: true, email: true, notificationEmail: true },
   });
   const service = await db.service.findFirst({
     where: { id: serviceId, isActive: true },

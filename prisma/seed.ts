@@ -50,13 +50,17 @@ async function main() {
       where: { email: "citizen@example.com" },
       update: {
         phone: "963900000001",
+        nationalId: "12345678901",
+        isVerified: true,
       },
       create: {
         email: "citizen@example.com",
         phone: "963900000001",
+        nationalId: "12345678901",
         name: "مواطن تجريبي",
         passwordHash: await hash("Citizen123", ROUNDS),
         role: UserRole.CITIZEN,
+        isVerified: true,
       },
     }),
   ]);

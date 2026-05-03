@@ -14,7 +14,6 @@ import { navigateTopLevel } from "@/lib/navigate-client";
 import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
 import { UserRole } from "@/generated/prisma/enums";
-import { CITIZEN_POST_REGISTER_PASSWORD_KEY } from "@/lib/citizen-login-prefill";
 
 export type GovLoginPageProps = {
   loginPage: LoginPageSurface;
@@ -75,19 +74,6 @@ function GovLoginPageImpl({
     // يُعاد عند تغيّر الاستعلام (spQuery)؛ sp من useSearchParams متزامن.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCitizen, spQuery]);
-
-  useEffect(() => {
-    if (!isCitizen) return;
-    try {
-      const pw = sessionStorage.getItem(CITIZEN_POST_REGISTER_PASSWORD_KEY);
-      if (pw != null && pw !== "") {
-        setPassword(pw);
-        sessionStorage.removeItem(CITIZEN_POST_REGISTER_PASSWORD_KEY);
-      }
-    } catch {
-      /* تعطيل التخزين */
-    }
-  }, [isCitizen]);
 
   const form = (
     <div
@@ -164,7 +150,17 @@ function GovLoginPageImpl({
         )}
         {sp.get("registered") && loginPage === "citizen" && (
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-            تم إنشاء الحساب — تم تعبئة رقم الواتساب وكلمة المرور؛ اضغط «تسجيل الدخول» للمتابعة.
+            أكمل تفعيل الحساب من البريد ثم سجّل الدخول برقم الهاتف وكلمة المرور.
+          </p>
+        )}
+        {sp.get("verified") && loginPage === "citizen" && (
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+            تم تفعيل الحساب بنجاح — يمكنك تسجيل الدخول الآن.
+          </p>
+        )}
+        {sp.get("reset") && loginPage === "citizen" && (
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+            تم تحديث كلمة المرور — سجّل الدخول باستخدام الرقم الجديد.
           </p>
         )}
         <div>
@@ -211,12 +207,22 @@ function GovLoginPageImpl({
       </form>
 
       {loginPage === "citizen" && (
-        <p className="mt-6 text-center text-sm text-slate-600">
-          ليس لديك حساب؟{" "}
-          <Link className="font-semibold text-emerald-800 underline-offset-2 hover:underline" href="/register">
-            إنشاء حساب جديد
-          </Link>
-        </p>
+        <div className="mt-6 space-y-3 text-center text-sm text-slate-600">
+          <p>
+            ليس لديك حساب؟{" "}
+            <Link className="font-semibold text-emerald-800 underline-offset-2 hover:underline" href="/register">
+              إنشاء حساب جديد
+            </Link>
+          </p>
+          <p>
+            <Link
+              className="font-medium text-emerald-900/90 underline-offset-2 hover:underline"
+              href="/citizen/forgot-password"
+            >
+              نسيت كلمة المرور؟
+            </Link>
+          </p>
+        </div>
       )}
 
       {extraFooter}

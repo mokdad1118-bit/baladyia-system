@@ -10,6 +10,7 @@ import {
 } from "@/lib/phone";
 import { verifyPassword } from "@/lib/password";
 import type { LoginPageSurface } from "@/lib/auth-portal";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
   if (surface === "citizen") return role === UserRole.CITIZEN;
@@ -18,8 +19,8 @@ function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
   return false;
 }
 
-/** بحث موحّد بالبريد أو الهاتف أو بريد الإشعارات (لجميع الأدوار) */
-async function findUserByIdentifier(identifier: string) {
+/** بحث موحّد بالبريد أو الهاتف أو بريد الإشعارات — للموظفين والمدير فقط */
+async function findStaffUserByIdentifier(identifier: string) {
   const id = identifier.trim();
   if (!id) return null;
   if (id.includes("@")) {
@@ -46,8 +47,28 @@ async function findUserByIdentifier(identifier: string) {
   return null;
 }
 
+/** دخول المواطن: رقم الهاتف فقط (بعد التطبيع) */
+async function findCitizenUserByPhone(identifier: string) {
+  const id = identifier.trim();
+  if (!id || id.includes("@")) return null;
+  const d = digitsOnly(id);
+  if (!d) return null;
+  const canonical = normalizeCitizenPhoneForStorage(id);
+  const variants = new Set([
+    ...citizenPhoneLookupKeys(d),
+    ...citizenPhoneLookupKeys(canonical),
+    canonical,
+  ]);
+  for (const phone of variants) {
+    if (!phone) continue;
+    const u = await db.user.findUnique({ where: { phone } });
+    if (u) return u;
+  }
+  return null;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET,
+  secret: getAuthSecret(),
   trustHost: true,
   useSecureCookies: process.env.NODE_ENV === "production",
   session: { strategy: "jwt" },
@@ -68,9 +89,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
         const id = String(credentials.identifier).trim();
         if (!id) return null;
-        const user = await findUserByIdentifier(id);
+        const user =
+          surface === "citizen" ? await findCitizenUserByPhone(id) : await findStaffUserByIdentifier(id);
         if (!user || !user.isActive) return null;
         if (!loginPageAllowsRole(surface, user.role)) return null;
+        if (surface === "citizen" && user.role === UserRole.CITIZEN && !user.isVerified) {
+          return null;
+        }
         const ok = await verifyPassword(String(credentials.password), user.passwordHash);
         if (!ok) return null;
         const isAdminRole = user.role === UserRole.ADMIN;
