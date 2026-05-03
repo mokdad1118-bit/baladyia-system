@@ -35,7 +35,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
       service: true,
       citizen: true,
       assignee: true,
-      files: { select: { storedName: true, mimeType: true } },
+      files: { select: { id: true, storedName: true, mimeType: true } },
     },
   });
 

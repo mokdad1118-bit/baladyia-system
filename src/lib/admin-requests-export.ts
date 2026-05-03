@@ -17,7 +17,7 @@ export type AdminRequestsExportSourceRow = {
 
 /** تسميات قصيرة للتصدير: صورة 1، PDF 1، … */
 export function buildRequestAttachmentExportLinks(
-  files: { storedName: string; mimeType: string }[],
+  files: { id: string; storedName: string; mimeType: string }[],
   baseUrl: string,
 ): AdminRequestAttachmentLink[] {
   const root = baseUrl.replace(/\/$/, "");
@@ -27,10 +27,10 @@ export function buildRequestAttachmentExportLinks(
   const out: AdminRequestAttachmentLink[] = [];
   for (const f of files) {
     const path = f.storedName.trim();
-    const href =
+    const resolvedHref =
       path.startsWith("http://") || path.startsWith("https://")
         ? path
-        : `${root}${path.startsWith("/") ? path : `/${path}`}`;
+        : `${root}/api/request-files/${f.id}`;
     const m = (f.mimeType || "").toLowerCase();
     let linkLabel: string;
     if (m.startsWith("image/")) {
@@ -43,7 +43,7 @@ export function buildRequestAttachmentExportLinks(
       other += 1;
       linkLabel = `ملف ${other}`;
     }
-    out.push({ href, linkLabel });
+    out.push({ href: resolvedHref, linkLabel });
   }
   return out;
 }

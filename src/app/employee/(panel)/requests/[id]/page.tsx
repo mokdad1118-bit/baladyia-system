@@ -149,7 +149,7 @@ export default async function EmployeeRequestDetailPage({ params, searchParams }
                 <span className="text-[var(--gov-muted)]">{f.serviceDocument.name}</span>
                 <a
                   className="font-medium text-[var(--gov-primary)] hover:underline"
-                  href={f.storedName}
+                  href={`/api/request-files/${f.id}`}
                   target="_blank"
                   rel="noreferrer"
                 >

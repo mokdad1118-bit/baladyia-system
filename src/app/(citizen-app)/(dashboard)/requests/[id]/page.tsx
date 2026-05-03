@@ -51,7 +51,7 @@ export default async function CitizenRequestDetailPage({ params }: P) {
                 <span className="text-[var(--gov-muted)]">{f.serviceDocument.name}</span>
                 <a
                   className="font-medium text-[var(--gov-primary)] hover:underline"
-                  href={f.storedName}
+                  href={`/api/request-files/${f.id}`}
                   target="_blank"
                   rel="noreferrer"
                 >

@@ -195,7 +195,7 @@ export default async function StaffRequestDetailPage({ params, searchParams }: P
                   <span className="text-slate-600">{f.serviceDocument.name}</span>
                   <a
                     className="font-medium text-teal-700 hover:underline"
-                    href={f.storedName}
+                    href={`/api/request-files/${f.id}`}
                     target="_blank"
                     rel="noreferrer"
                   >
