@@ -5,29 +5,39 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { IconGrid, IconInbox, IconBellSm } from "./citizen-icons";
 
-const tabs: { href: string; label: string; match: (p: string) => boolean; Icon: typeof IconGrid }[] = [
-  {
-    href: "/services",
-    label: "الخدمات",
-    match: (p) => p === "/services" || p.startsWith("/services/"),
-    Icon: IconGrid,
-  },
-  {
-    href: "/requests",
-    label: "طلباتي",
-    match: (p) => p === "/requests" || (p.startsWith("/requests/") && !p.includes("/new/")),
-    Icon: IconInbox,
-  },
-  {
-    href: "/notifications",
-    label: "تنبيهات",
-    match: (p) => p.startsWith("/notifications"),
-    Icon: IconBellSm,
-  },
-];
+function buildTabs(base: "" | "/citizen") {
+  const services = `${base}/services`;
+  const requests = `${base}/requests`;
+  const notifications = `${base}/notifications`;
+  return [
+    {
+      href: services,
+      label: "الخدمات",
+      match: (p: string) => p === services || p.startsWith(`${services}/`),
+      Icon: IconGrid,
+    },
+    {
+      href: requests,
+      label: "طلباتي",
+      match: (p: string) =>
+        p === requests ||
+        (p.startsWith(`${requests}/`) && !p.includes("/new/")),
+      Icon: IconInbox,
+    },
+    {
+      href: notifications,
+      label: "تنبيهات",
+      match: (p: string) => p === notifications || p.startsWith(`${notifications}/`),
+      Icon: IconBellSm,
+    },
+  ] as const;
+}
 
 export function CitizenBottomNav() {
   const path = usePathname() ?? "";
+  const base: "" | "/citizen" = path.startsWith("/citizen") ? "/citizen" : "";
+  const tabs = buildTabs(base);
+
   return (
     <nav
       className="fixed end-0 bottom-0 start-0 z-50 border-t border-[var(--gov-border)] bg-white md:hidden"
@@ -43,13 +53,21 @@ export function CitizenBottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "touch-manipulation flex min-h-[3.5rem] flex-col items-center justify-center gap-0.5 py-1.5 text-center active:opacity-80",
+                  "touch-manipulation flex min-h-[3.5rem] flex-col items-center justify-center py-1.5 text-center active:opacity-80",
                   active ? "text-[var(--gov-primary)]" : "text-[var(--gov-muted)]",
                 )}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon className={cn("h-6 w-6 shrink-0", active && "text-[var(--gov-primary)]")} />
-                <span className="text-[0.7rem] font-medium leading-tight sm:text-xs">{label}</span>
+                <span
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-0.5 rounded-full px-2.5 py-1 transition-shadow",
+                    active &&
+                      "ring-2 ring-[var(--gov-primary)] ring-offset-2 ring-offset-white shadow-[0_0_0_1px_rgba(0,0,0,0.04)]",
+                  )}
+                >
+                  <Icon className={cn("h-6 w-6 shrink-0", active && "text-[var(--gov-primary)]")} />
+                  <span className="text-[0.7rem] font-medium leading-tight sm:text-xs">{label}</span>
+                </span>
               </Link>
             </li>
           );

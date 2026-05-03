@@ -4,6 +4,7 @@ import { UserRole } from "@/generated/prisma/enums";
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
+import { CitizenDesktopNavLinks } from "@/components/citizen/CitizenDesktopNavLinks";
 
 export default async function CitizenDashboardLayout({ children }: { children: React.ReactNode }) {
   const s = await auth();
@@ -21,33 +22,7 @@ export default async function CitizenDashboardLayout({ children }: { children: R
               <p className="text-xs text-[var(--gov-muted)]">تطبيق المواطن</p>
             </div>
           </Link>
-          <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-            <Link className="text-[var(--gov-primary)] hover:underline" href="/services">
-              الخدمات
-            </Link>
-            {isCitizen ? (
-              <>
-                <Link className="text-[var(--gov-primary)] hover:underline" href="/requests">
-                  طلباتي
-                </Link>
-                <Link className="text-[var(--gov-primary)] hover:underline" href="/notifications">
-                  الإشعارات
-                </Link>
-                <Link className="text-[var(--gov-primary)] hover:underline" href="/">
-                  الرئيسية
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link className="text-[var(--gov-primary)] hover:underline" href="/citizen/login">
-                  تسجيل الدخول
-                </Link>
-                <Link className="text-[var(--gov-primary)] hover:underline" href="/register">
-                  تسجيل
-                </Link>
-              </>
-            )}
-          </nav>
+          <CitizenDesktopNavLinks isCitizen={isCitizen} />
         </div>
         <div className="gov-divider-flag mx-auto max-w-6xl opacity-70" aria-hidden />
       </div>
