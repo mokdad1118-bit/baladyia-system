@@ -1,5 +1,9 @@
 import nodemailer from "nodemailer";
 
+function resendConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY?.trim());
+}
+
 function smtpConfigured(): boolean {
   return Boolean(
     process.env.EMAIL_HOST?.trim() &&
@@ -9,7 +13,40 @@ function smtpConfigured(): boolean {
 }
 
 export function isMailerConfigured(): boolean {
-  return smtpConfigured();
+  return resendConfigured() || smtpConfigured();
+}
+
+async function sendViaResend(params: {
+  to: string;
+  subject: string;
+  textBody: string;
+  htmlBody: string;
+}): Promise<void> {
+  const key = process.env.RESEND_API_KEY!.trim();
+  /** نطاق موثّق في Resend؛ للتجربة يمكن استخدام onboarding@resend.dev */
+  const from =
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    process.env.EMAIL_USER?.trim() ||
+    "onboarding@resend.dev";
+  const fromHeader = from.includes("<") ? from : `Baladya <${from}>`;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: fromHeader,
+      to: [params.to],
+      subject: params.subject,
+      text: params.textBody,
+      html: params.htmlBody,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Resend ${res.status}: ${body.slice(0, 500)}`);
+  }
 }
 
 export async function sendCitizenOtpEmail(params: {
@@ -18,12 +55,17 @@ export async function sendCitizenOtpEmail(params: {
   textBody: string;
   htmlBody: string;
 }): Promise<void> {
+  if (resendConfigured()) {
+    await sendViaResend(params);
+    return;
+  }
+
   if (!smtpConfigured()) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("[mailer] SMTP غير مُضبط — محتوى الرسالة (تطوير فقط):\n", params.textBody);
+      console.warn("[mailer] لا Resend ولا SMTP — محتوى الرسالة (تطوير فقط):\n", params.textBody);
       return;
     }
-    throw new Error("SMTP غير مُضبط (EMAIL_HOST / EMAIL_USER / EMAIL_PASS)");
+    throw new Error("أضف RESEND_API_KEY أو SMTP (EMAIL_HOST / EMAIL_USER / EMAIL_PASS)");
   }
   const port = Number(process.env.EMAIL_PORT?.trim() || "587");
   const useSecure =

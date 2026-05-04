@@ -1,11 +1,14 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 
-/** على Render غالباً يُفعَّل RENDER=true — إيقاف PWA هناك يقلّل أخطاء client reference manifest مع Next 16 حتى يُصلح الإصدار. فعّل PWA بـ ENABLE_PWA=1 */
+/**
+ * PWA + Next 16 + مجموعات مسارات قد تُسبب client reference manifest لـ "/".
+ * في `next build` لا يُضمن وجود RENDER — لذلك نُعطّل PWA في كل بناء إنتاج ما لم يُفعَّل صراحةً.
+ */
 const pwaDisabled =
   process.env.NODE_ENV === "development" ||
   process.env.DISABLE_PWA === "1" ||
-  (process.env.RENDER === "true" && process.env.ENABLE_PWA !== "1");
+  process.env.ENABLE_PWA !== "1";
 
 const withPWA = withPWAInit({
   dest: "public",
