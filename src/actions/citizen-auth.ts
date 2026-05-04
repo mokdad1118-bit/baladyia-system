@@ -125,8 +125,14 @@ export async function registerCitizen(
     await sendVerificationOtpToEmail(email, code);
   } catch (e) {
     console.error("[registerCitizen] OTP/email", e);
-    const hint =
-      e instanceof Error ? e.message : "تعذّر إرسال البريد. استخدم «إعادة إرسال الرمز» بعد ضبط SMTP.";
+    const raw = e instanceof Error ? e.message : "";
+    let hint =
+      raw ||
+      "تعذّر إرسال البريد. استخدم «إعادة إرسال الرمز» بعد ضبط الإرسال.";
+    if (/ETIMEDOUT|timeout|ECONNREFUSED|CONN/i.test(raw)) {
+      hint +=
+        " على السيرفرات السحابية (مثل Render) غالباً يُمنع SMTP — أضف RESEND_API_KEY في متغيرات البيئة، وثبّت نطاقاً في Resend واضبط RESEND_FROM_EMAIL.";
+    }
     return { ok: true, warning: hint };
   }
 

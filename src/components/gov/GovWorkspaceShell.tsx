@@ -3,6 +3,7 @@ import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { LogoutForm } from "@/components/LogoutForm";
+import { NavigationWaitGate } from "@/components/NavigationWaitGate";
 
 export function GovWorkspaceShell({
   portalTitle,
@@ -19,7 +20,7 @@ export function GovWorkspaceShell({
   logoutCallbackUrl?: string;
 }) {
   return (
-    <div className="min-h-dvh">
+    <NavigationWaitGate className="min-h-dvh">
       <header className="gov-header">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link href={homeHref} className="flex items-center gap-3 no-underline">
@@ -44,6 +45,6 @@ export function GovWorkspaceShell({
         </aside>
         <div className="min-w-0">{children}</div>
       </div>
-    </div>
+    </NavigationWaitGate>
   );
 }

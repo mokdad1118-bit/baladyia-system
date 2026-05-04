@@ -30,6 +30,8 @@ export function CitizenRegisterForm({
 
   useEffect(() => {
     if (!st || !("ok" in st) || !st.ok) return;
+    /** لا تعيد التوجيه فوراً إن كان إرسال البريد فاشلاً — ليبقى التحذير ظاهراً */
+    if ("warning" in st && st.warning) return;
     router.replace(verifyHref);
   }, [st, verifyHref, router]);
 
@@ -68,7 +70,6 @@ export function CitizenRegisterForm({
           }}
         >
           {st && "error" in st && <p className={errBox}>{st.error}</p>}
-          {st && "ok" in st && st.ok && st.warning && <p className={warnBox}>{st.warning}</p>}
           <div>
             <label className={cn("mb-1.5 block text-sm font-medium", label)}>الاسم الثلاثي</label>
             <input
@@ -153,6 +154,24 @@ export function CitizenRegisterForm({
             {isPending ? "يرجى الانتظار…" : "إنشاء الحساب وإرسال رمز التفعيل"}
           </button>
         </form>
+        {st && "ok" in st && st.ok && st.warning && (
+          <div className={cn("mt-4 space-y-3 rounded-xl border px-4 py-3 text-sm", warnBox)}>
+            <p className="font-semibold">تم إنشاء الحساب، لكن تعذّر إرسال البريد أو تأخر:</p>
+            <p className="leading-relaxed">{st.warning}</p>
+            <p className="text-xs opacity-90">
+              بعد ضبط الإرسال (مثلاً Resend على السيرفر)، استخدم الرابط أدناه ثم «إعادة إرسال الرمز».
+            </p>
+            <Link
+              href={verifyHref}
+              className={cn(
+                "inline-block font-semibold underline-offset-2 hover:underline",
+                isEmerald ? "text-emerald-900" : "text-[var(--gov-primary)]",
+              )}
+            >
+              المتابعة إلى صفحة إدخال الرمز →
+            </Link>
+          </div>
+        )}
         <p className={cn("mt-6 text-center text-sm", isEmerald ? "text-slate-600" : "text-[var(--gov-muted)]")}>
           لديك حساب؟{" "}
           <Link

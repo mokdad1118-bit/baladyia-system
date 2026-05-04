@@ -23,12 +23,13 @@ async function sendViaResend(params: {
   htmlBody: string;
 }): Promise<void> {
   const key = process.env.RESEND_API_KEY!.trim();
-  /** نطاق موثّق في Resend؛ للتجربة يمكن استخدام onboarding@resend.dev */
-  const from =
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    process.env.EMAIL_USER?.trim() ||
-    "onboarding@resend.dev";
-  const fromHeader = from.includes("<") ? from : `Baladya <${from}>`;
+  /**
+   * لا نستخدم EMAIL_USER (غالباً Gmail) كمرسل عبر Resend — الخدمة لا ترسل من gmail.com إلا بعد توثيق نطاقك.
+   * RESEND_FROM_EMAIL = عنوان من نطاقك الموثّق في Resend؛ بدونه يُستخدم نطاق التجربة فقط.
+   */
+  const fromRaw =
+    process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";
+  const fromHeader = fromRaw.includes("<") ? fromRaw : `Baladya <${fromRaw}>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -45,7 +46,17 @@ async function sendViaResend(params: {
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Resend ${res.status}: ${body.slice(0, 500)}`);
+    let hint = "";
+    try {
+      const j = JSON.parse(body) as { message?: string };
+      if (j.message && /domain|verify|validation/i.test(j.message)) {
+        hint =
+          " — ثبّت نطاقاً في Resend واضبط RESEND_FROM_EMAIL (مثل noreply@نطاقك)، أو تأكد أن المستلم مسموح مع نطاق التجربة.";
+      }
+    } catch {
+      /* ignore */
+    }
+    throw new Error(`Resend ${res.status}: ${body.slice(0, 400)}${hint}`);
   }
 }
 

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { NavigationWaitGate } from "@/components/NavigationWaitGate";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 export function WorkspaceShell({
@@ -11,7 +12,7 @@ export function WorkspaceShell({
   children: ReactNode;
 }) {
   return (
-    <div className="grid gap-8 lg:grid-cols-[15.5rem_1fr] lg:items-start">
+    <NavigationWaitGate className="grid gap-8 lg:grid-cols-[15.5rem_1fr] lg:items-start">
       <aside className="lg:sticky lg:top-20">
         <Card className="overflow-hidden">
           <CardHeader>
@@ -21,6 +22,6 @@ export function WorkspaceShell({
         </Card>
       </aside>
       <div className="min-w-0">{children}</div>
-    </div>
+    </NavigationWaitGate>
   );
 }
