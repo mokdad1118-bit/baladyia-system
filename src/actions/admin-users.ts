@@ -85,3 +85,52 @@ export async function setUserActive(userId: string, isActive: boolean) {
   revalidatePath("/admin/citizens");
   return { ok: true as const };
 }
+
+/**
+ * حذف حساب مواطن بالكامل ليُفرّغ البريد/الهاتف/الرقم الوطني للتسجيل من جديد.
+ * يحذف أيضاً طلبات المواطن وجميع مرفقاتها وسجلّها (لا يمكن استرجاعها).
+ */
+export async function deleteCitizenAccount(userId: string) {
+  const s = await auth();
+  if (!staffCanManageUsers(s)) {
+    return { error: "غير مصرّح" } as const;
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+      email: true,
+      notificationEmail: true,
+    },
+  });
+  if (!user) return { error: "المستخدم غير موجود" } as const;
+  if (user.role !== UserRole.CITIZEN) {
+    return { error: "يمكن حذف حسابات المواطنين فقط" } as const;
+  }
+
+  const otpEmails = [user.email, user.notificationEmail].filter(
+    (e): e is string => Boolean(e?.trim()),
+  );
+
+  await db.$transaction(async (tx) => {
+    if (otpEmails.length > 0) {
+      await tx.emailOtp.deleteMany({
+        where: { email: { in: [...new Set(otpEmails)] } },
+      });
+    }
+
+    await tx.notification.deleteMany({ where: { userId } });
+
+    await tx.request.deleteMany({ where: { citizenId: userId } });
+
+    await tx.user.delete({ where: { id: userId, role: UserRole.CITIZEN } });
+  });
+
+  revalidatePath("/admin/citizens");
+  revalidatePath("/admin");
+  revalidatePath("/admin/requests");
+  revalidatePath("/admin/stats");
+  return { ok: true as const };
+}

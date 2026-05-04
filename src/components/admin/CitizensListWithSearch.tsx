@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { UserRole } from "@/generated/prisma/enums";
 import { userRoleAr } from "@/lib/labels";
 import { ToggleForm } from "@/app/admin/(panel)/users/ToggleForm";
+import { DeleteCitizenButton } from "@/components/admin/DeleteCitizenButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -114,7 +115,12 @@ export function CitizensListWithSearch({
                           )}
                         </p>
                       </div>
-                      {isAdmin ? <ToggleForm userId={u.id} isActive={u.isActive} /> : null}
+                      {isAdmin ? (
+                        <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+                          <ToggleForm userId={u.id} isActive={u.isActive} />
+                          <DeleteCitizenButton userId={u.id} name={u.name} />
+                        </div>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>
