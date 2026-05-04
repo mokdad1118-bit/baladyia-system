@@ -22,6 +22,7 @@ export function EmployeeNav() {
           <Link
             key={i.href}
             href={i.href}
+            prefetch={false}
             className={cn(
               "flex flex-col gap-0.5 border border-transparent px-2.5 py-2 text-start transition",
               active

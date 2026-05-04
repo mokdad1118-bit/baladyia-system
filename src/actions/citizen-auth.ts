@@ -11,7 +11,11 @@ import {
 import { OtpPurpose, UserRole } from "@/generated/prisma/enums";
 import { parseCitizenRegisterForm, otpCodeSchema } from "@/lib/citizen-auth-schemas";
 import { createAndStoreOtp, verifyOtpCode } from "@/lib/citizen-otp";
-import { buildArabicOtpEmailBodies, sendCitizenOtpEmail } from "@/lib/mailer";
+import {
+  buildArabicOtpEmailBodies,
+  friendlyCitizenMailFailure,
+  sendCitizenOtpEmail,
+} from "@/lib/mailer";
 import {
   CITIZEN_RESET_EMAIL_COOKIE,
   CITIZEN_RESET_TOKEN_COOKIE,
@@ -126,13 +130,7 @@ export async function registerCitizen(
   } catch (e) {
     console.error("[registerCitizen] OTP/email", e);
     const raw = e instanceof Error ? e.message : "";
-    let hint =
-      raw ||
-      "تعذّر إرسال البريد. استخدم «إعادة إرسال الرمز» بعد ضبط الإرسال.";
-    if (/ETIMEDOUT|timeout|ECONNREFUSED|CONN/i.test(raw)) {
-      hint +=
-        " على السيرفرات السحابية (مثل Render) غالباً يُمنع SMTP — أضف RESEND_API_KEY في متغيرات البيئة، وثبّت نطاقاً في Resend واضبط RESEND_FROM_EMAIL.";
-    }
+    const hint = friendlyCitizenMailFailure(raw);
     return { ok: true, warning: hint };
   }
 
@@ -176,8 +174,8 @@ export async function resendVerificationOtpAction(
     const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION);
     await sendVerificationOtpToEmail(email, code);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "تعذّر إرسال الرمز";
-    return { error: msg };
+    const msg = e instanceof Error ? e.message : "";
+    return { error: friendlyCitizenMailFailure(msg || "تعذّر إرسال الرمز") };
   }
   return { ok: true, message: "أُعيد إرسال الرمز إلى بريدك." };
 }
@@ -329,7 +327,8 @@ export async function resendPasswordResetOtpAction(
     const code = await createAndStoreOtp(email, OtpPurpose.PASSWORD_RESET);
     await sendPasswordResetOtpToEmail(email, code);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "تعذّر إرسال الرمز" };
+    const msg = e instanceof Error ? e.message : "";
+    return { error: friendlyCitizenMailFailure(msg || "تعذّر إرسال الرمز") };
   }
   return { ok: true, message: "أُعيد إرسال الرمز." };
 }

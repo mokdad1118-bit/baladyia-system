@@ -16,6 +16,36 @@ export function isMailerConfigured(): boolean {
   return resendConfigured() || smtpConfigured();
 }
 
+/**
+ * رسالة مفهومة للمستخدم/المسؤول بدل نص JSON الطويل من Resend.
+ * أهم حالة: 403 عند استخدام Resend بدون نطاق موثّق — التجارب تذهب فقط لبريد مالك الحساب.
+ */
+export function friendlyCitizenMailFailure(raw: string): string {
+  const r = raw || "";
+  if (
+    /Resend\s+403/i.test(r) &&
+    (/testing emails/i.test(r) ||
+      /only send testing/i.test(r) ||
+      (/validation_error/i.test(r) && /verify a domain/i.test(r)))
+  ) {
+    return (
+      "حساب Resend في وضع التجربة: يُسمح بإرسال الرسائل فقط إلى بريد مالك حساب Resend في لوحة التحكم. " +
+      "لإرسال رموز التفعيل لأي مواطن: افتح resend.com/domains وثبّت نطاقك (أضف سجلات DNS كما يظهر)، " +
+      "ثم في استضافة التطبيق (Render وغيرها) عيّن RESEND_FROM_EMAIL إلى عنوان من ذلك النطاق، مثل noreply@example.com."
+    );
+  }
+  if (/ETIMEDOUT|ECONNREFUSED|ECONNRESET|socket|timeout/i.test(r)) {
+    return (
+      "تعذّر الاتصال بخادم البريد. على السيرفرات السحابية غالباً يُمنع SMTP — استخدم RESEND_API_KEY " +
+      "وثبّت نطاقاً في Resend واضبط RESEND_FROM_EMAIL."
+    );
+  }
+  if (r.length > 380) {
+    return `${r.slice(0, 380)}…`;
+  }
+  return r || "تعذّر إرسال البريد.";
+}
+
 async function sendViaResend(params: {
   to: string;
   subject: string;

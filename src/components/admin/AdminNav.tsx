@@ -55,6 +55,7 @@ export function AdminNav({
           <Link
             key={i.internal}
             href={href}
+            prefetch={false}
             className={cn(
               "group flex flex-col gap-0.5 border border-transparent px-2.5 py-2 text-start transition",
               active

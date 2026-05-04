@@ -36,6 +36,8 @@ export function StaffNav({ showAdmin = false }: { showAdmin?: boolean }) {
 
         href={requestsHref}
 
+        prefetch={false}
+
         className={cn(
 
           "flex flex-col gap-0.5 rounded-xl border border-transparent px-3 py-2.5 text-start transition",
@@ -61,6 +63,8 @@ export function StaffNav({ showAdmin = false }: { showAdmin?: boolean }) {
         <Link
 
           href={adminHomeHref}
+
+          prefetch={false}
 
           className="mt-2 block rounded-xl border border-dashed border-slate-300/80 bg-slate-50/50 px-3 py-2 text-sm text-slate-600 transition hover:border-emerald-400 hover:bg-emerald-50/60"
 
