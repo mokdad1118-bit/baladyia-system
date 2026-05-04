@@ -30,8 +30,6 @@ export function CitizenRegisterForm({
 
   useEffect(() => {
     if (!st || !("ok" in st) || !st.ok) return;
-    /** لا تعيد التوجيه فوراً إن كان إرسال البريد فاشلاً — ليبقى التحذير ظاهراً */
-    if ("warning" in st && st.warning) return;
     router.replace(verifyHref);
   }, [st, verifyHref, router]);
 
@@ -44,9 +42,6 @@ export function CitizenRegisterForm({
   const errBox = isEmerald
     ? "rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900"
     : "border border-[var(--gov-flag-red)]/40 bg-[var(--gov-flag-red)]/5 px-3 py-2 text-sm";
-  const warnBox = isEmerald
-    ? "rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
-    : "border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm";
   const btn = isEmerald
     ? "w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-60"
     : "gov-btn-primary w-full px-4 py-3 text-sm font-semibold disabled:opacity-60";
@@ -57,7 +52,7 @@ export function CitizenRegisterForm({
       <div className={card}>
         <h1 className={cn("mb-1 text-lg font-bold", isEmerald ? "text-slate-900" : "")}>إنشاء حساب مواطن</h1>
         <p className={cn("mb-6 text-sm", isEmerald ? "text-slate-600" : "text-[var(--gov-muted)]")}>
-          بعد التسجيل يُرسل رمز تفعيل مكوّن من ٦ أرقام إلى بريدك الإلكتروني.
+          يُرسل إلى بريدك رمزاً من ٦ أرقام؛ بعد إدخاله الصحيح يُنشَأ حسابك ويُفعَّل.
         </p>
         <form
           action={act}
@@ -151,27 +146,9 @@ export function CitizenRegisterForm({
             <p className={errBox}>تأكيد كلمة المرور غير متطابق</p>
           )}
           <button type="submit" disabled={isPending || password !== confirm} className={btn}>
-            {isPending ? "يرجى الانتظار…" : "إنشاء الحساب وإرسال رمز التفعيل"}
+            {isPending ? "يرجى الانتظار…" : "متابعة وإرسال رمز التحقق"}
           </button>
         </form>
-        {st && "ok" in st && st.ok && st.warning && (
-          <div className={cn("mt-4 space-y-3 rounded-xl border px-4 py-3 text-sm", warnBox)}>
-            <p className="font-semibold">تم إنشاء الحساب، لكن تعذّر إرسال البريد أو تأخر:</p>
-            <p className="leading-relaxed">{st.warning}</p>
-            <p className="text-xs opacity-90">
-              بعد ضبط الإرسال (مثلاً Resend على السيرفر)، استخدم الرابط أدناه ثم «إعادة إرسال الرمز».
-            </p>
-            <Link
-              href={verifyHref}
-              className={cn(
-                "inline-block font-semibold underline-offset-2 hover:underline",
-                isEmerald ? "text-emerald-900" : "text-[var(--gov-primary)]",
-              )}
-            >
-              المتابعة إلى صفحة إدخال الرمز →
-            </Link>
-          </div>
-        )}
         <p className={cn("mt-6 text-center text-sm", isEmerald ? "text-slate-600" : "text-[var(--gov-muted)]")}>
           لديك حساب؟{" "}
           <Link

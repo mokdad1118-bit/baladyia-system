@@ -1,4 +1,5 @@
 import { createHmac, randomInt } from "node:crypto";
+import type { TransactionClient } from "@/generated/prisma/internal/prismaNamespace";
 import { db } from "@/lib/db";
 import { OtpPurpose } from "@/generated/prisma/enums";
 import { getAuthSecret } from "@/lib/auth-secret";
@@ -80,4 +81,28 @@ export async function verifyOtpCode(
   if (!row) return false;
   await db.emailOtp.update({ where: { id: row.id }, data: { used: true } });
   return true;
+}
+
+/**
+ * يجد صف رمز OTP صالحاً دون استهلاكه — لاستخدامه داخل معاملة قبل إنشاء المستخدم.
+ */
+export async function findValidOtpRowInTransaction(
+  tx: TransactionClient,
+  emailNorm: string,
+  purpose: OtpPurpose,
+  codeRaw: string,
+) {
+  const code = codeRaw.replace(/\D/g, "").trim();
+  if (code.length !== 6) return null;
+  const expectedHash = hashCitizenOtp(emailNorm, purpose, code);
+  return tx.emailOtp.findFirst({
+    where: {
+      email: emailNorm,
+      purpose,
+      used: false,
+      expiresAt: { gt: new Date() },
+      codeHash: expectedHash,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }

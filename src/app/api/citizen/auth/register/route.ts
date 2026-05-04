@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
   if (result && "ok" in result && result.ok) {
-    return NextResponse.json({ ok: true, warning: result.warning });
+    return NextResponse.json({ ok: true });
   }
   return NextResponse.json({ ok: false, error: "فشل غير متوقع" }, { status: 500 });
 }

@@ -43,6 +43,23 @@ model User {
   notifications      Notification[]
 }
 
+/// بيانات تسجيل مواطن قبل إتمام التحقق من البريد — لا يُنشأ User حتى يُدخل الرمز صحيحاً
+model PendingCitizenRegistration {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String
+  nationalId   String
+  /// نافذة لإكمال إدخال الرمز (أطول من صلاحية رمز OTP الواحد)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([phone])
+  @@index([nationalId])
+}
+
 /// رموز OTP للبريد (تفعيل الحساب أو استعادة كلمة المرور)
 model EmailOtp {
   id        String    @id @default(cuid())

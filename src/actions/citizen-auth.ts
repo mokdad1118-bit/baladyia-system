@@ -10,7 +10,11 @@ import {
 } from "@/lib/phone";
 import { OtpPurpose, UserRole } from "@/generated/prisma/enums";
 import { parseCitizenRegisterForm, otpCodeSchema } from "@/lib/citizen-auth-schemas";
-import { createAndStoreOtp, verifyOtpCode } from "@/lib/citizen-otp";
+import {
+  createAndStoreOtp,
+  findValidOtpRowInTransaction,
+  verifyOtpCode,
+} from "@/lib/citizen-otp";
 import {
   buildArabicOtpEmailBodies,
   friendlyCitizenMailFailure,
@@ -27,10 +31,38 @@ import {
 import { signPasswordResetToken, verifyPasswordResetToken } from "@/lib/citizen-reset-token";
 import { z } from "zod";
 
-export type RegisterCitizenState =
-  | { error: string }
-  | { ok: true; warning?: string }
-  | undefined;
+export type RegisterCitizenState = { error: string } | { ok: true } | undefined;
+
+/** نافذة إكمال التحقق من البريد وأخذ الرمز (أطول من صلاحية رمز واحد) */
+const PENDING_REGISTRATION_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function purgeExpiredPendingRegistrations() {
+  await db.pendingCitizenRegistration.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+}
+
+async function pendingRegistrationConflictMessage(
+  emailNorm: string,
+  nationalId: string,
+  phoneCandidates: Set<string>,
+): Promise<string | undefined> {
+  const clash = await db.pendingCitizenRegistration.findFirst({
+    where: {
+      expiresAt: { gt: new Date() },
+      NOT: { email: emailNorm },
+      OR: [
+        { nationalId },
+        ...[...phoneCandidates].filter(Boolean).map((phone) => ({ phone })),
+      ],
+    },
+    select: { id: true },
+  });
+  if (clash) {
+    return "هاتف أو رقم وطني مستخدَم في طلب تفعيل قيد الانتظار. انتظر أو استخدم بيانات أخرى.";
+  }
+  return undefined;
+}
 
 const forgotGenericMessage =
   "إن وُجد حساب مرتبط بالبيانات المدخلة، ستصلك رسالة على البريد الإلكتروني المسجّل خلال دقائق.";
@@ -38,12 +70,13 @@ const forgotGenericMessage =
 async function sendVerificationOtpToEmail(emailNorm: string, code: string) {
   const { textBody, htmlBody } = buildArabicOtpEmailBodies({
     code,
-    heading: "رمز تفعيل الحساب",
-    intro: "شكراً لتسجيلك في البوابة الإلكترونية لبلدية بصرى. استخدم الرمز التالي لتفعيل حسابك:",
+    heading: "رمز إتمام إنشاء الحساب",
+    intro:
+      "شكراً لتسجيلك في البوابة الإلكترونية لبلدية بصرى. أدخل الرمز التالي في الصفحة التالية لإنشاء حسابك وتفعيله:",
   });
   await sendCitizenOtpEmail({
     to: emailNorm,
-    subject: "رمز تفعيل الحساب — بلدية بصرى",
+    subject: "رمز إتمام التسجيل — بلدية بصرى",
     textBody,
     htmlBody,
   });
@@ -82,6 +115,12 @@ export async function registerCitizen(
     ...citizenPhoneLookupKeys(phone),
     phone,
   ]);
+
+  await purgeExpiredPendingRegistrations();
+
+  const pendingClash = await pendingRegistrationConflictMessage(email, nationalId, phoneVariants);
+  if (pendingClash) return { error: pendingClash };
+
   for (const p of phoneVariants) {
     if (!p) continue;
     const taken = await db.user.findUnique({ where: { phone: p } });
@@ -92,27 +131,29 @@ export async function registerCitizen(
   const nidTaken = await db.user.findUnique({ where: { nationalId } });
   if (nidTaken) return { error: "الرقم الوطني مسجّل مسبقاً" };
 
+  await db.pendingCitizenRegistration.deleteMany({ where: { email } });
+
+  const expiresAt = new Date(Date.now() + PENDING_REGISTRATION_TTL_MS);
+
   try {
-    await db.user.create({
+    await db.pendingCitizenRegistration.create({
       data: {
-        name: fullName,
         email,
+        name: fullName,
         phone,
         nationalId,
         passwordHash: await hashPassword(password),
-        role: UserRole.CITIZEN,
-        isVerified: false,
-        notificationEmail: null,
+        expiresAt,
       },
     });
   } catch (e: unknown) {
     const code =
       typeof e === "object" && e !== null && "code" in e ? String((e as { code: unknown }).code) : "";
     if (code === "P2002") {
-      return { error: "بريد أو هاتف أو رقم وطني مُستخدم مسبقاً" };
+      return { error: "بريد أو هاتف أو رقم وطني مُستخدم في طلب تفعيل قيد الانتظار" };
     }
-    console.error("[registerCitizen]", e);
-    return { error: "تعذّر حفظ الحساب. حاول مرة أخرى." };
+    console.error("[registerCitizen] pending", e);
+    return { error: "تعذّر حفظ طلب التسجيل. حاول مرة أخرى." };
   }
 
   const jar = await cookies();
@@ -129,9 +170,10 @@ export async function registerCitizen(
     await sendVerificationOtpToEmail(email, code);
   } catch (e) {
     console.error("[registerCitizen] OTP/email", e);
-    const raw = e instanceof Error ? e.message : "";
-    const hint = friendlyCitizenMailFailure(raw);
-    return { ok: true, warning: hint };
+    await db.pendingCitizenRegistration.deleteMany({ where: { email } });
+    jar.delete(CITIZEN_VERIFY_EMAIL_COOKIE);
+    const hint = friendlyCitizenMailFailure(e instanceof Error ? e.message : "");
+    return { error: hint };
   }
 
   return { ok: true };
@@ -151,16 +193,60 @@ export async function verifyCitizenEmailAction(
   const codeParsed = otpCodeSchema.safeParse(raw);
   if (!codeParsed.success) return { error: codeParsed.error.issues[0]?.message ?? "رمز غير صالح" };
 
-  const ok = await verifyOtpCode(email, OtpPurpose.EMAIL_VERIFICATION, codeParsed.data);
-  if (!ok) return { error: "الرمز غير صحيح أو منتهي الصلاحية" };
+  type VerifyOutcome = "ok" | "session" | "bad_code" | "dup";
+  let outcome: VerifyOutcome;
+  try {
+    outcome = await db.$transaction(async (tx): Promise<VerifyOutcome> => {
+      const pending = await tx.pendingCitizenRegistration.findUnique({ where: { email } });
+      if (!pending || pending.expiresAt < new Date()) return "session";
 
-  const u = await db.user.findFirst({
-    where: { email, role: UserRole.CITIZEN },
-  });
-  if (!u) return { error: "لم يُعثَر على الحساب" };
-  await db.user.update({ where: { id: u.id }, data: { isVerified: true } });
+      const otpRow = await findValidOtpRowInTransaction(
+        tx,
+        email,
+        OtpPurpose.EMAIL_VERIFICATION,
+        codeParsed.data,
+      );
+      if (!otpRow) return "bad_code";
+
+      try {
+        await tx.user.create({
+          data: {
+            name: pending.name,
+            email,
+            phone: pending.phone,
+            nationalId: pending.nationalId,
+            passwordHash: pending.passwordHash,
+            role: UserRole.CITIZEN,
+            isVerified: true,
+            notificationEmail: null,
+          },
+        });
+      } catch (e: unknown) {
+        const code =
+          typeof e === "object" && e !== null && "code" in e ? String((e as { code: unknown }).code) : "";
+        if (code === "P2002") return "dup";
+        throw e;
+      }
+
+      await tx.emailOtp.update({ where: { id: otpRow.id }, data: { used: true } });
+      await tx.pendingCitizenRegistration.delete({ where: { id: pending.id } });
+      return "ok";
+    });
+  } catch (e) {
+    console.error("[verifyCitizenEmailAction]", e);
+    return { error: "تعذّر إتمام التفعيل. حاول مرة أخرى." };
+  }
+
+  if (outcome === "session") {
+    return { error: "انتهت صلاحية طلب التسجيل. أعد إنشاء الحساب من البداية." };
+  }
+  if (outcome === "bad_code") return { error: "الرمز غير صحيح أو منتهي الصلاحية" };
+  if (outcome === "dup") {
+    return { error: "بريد أو هاتف أو رقم وطني مسجّل مسبقاً. سجّل الدخول أو استخدم بيانات أخرى." };
+  }
+
   jar.delete(CITIZEN_VERIFY_EMAIL_COOKIE);
-  return { ok: true, message: "تم تفعيل الحساب بنجاح. يمكنك تسجيل الدخول الآن." };
+  return { ok: true, message: "تم إنشاء الحساب وتفعيله. يمكنك تسجيل الدخول الآن." };
 }
 
 export async function resendVerificationOtpAction(
@@ -170,6 +256,14 @@ export async function resendVerificationOtpAction(
   const jar = await cookies();
   const email = jar.get(CITIZEN_VERIFY_EMAIL_COOKIE)?.value?.trim().toLowerCase();
   if (!email) return { error: "لا توجد جلسة تفعيل نشطة." };
+
+  await purgeExpiredPendingRegistrations();
+  const pending = await db.pendingCitizenRegistration.findUnique({ where: { email } });
+  if (!pending || pending.expiresAt < new Date()) {
+    jar.delete(CITIZEN_VERIFY_EMAIL_COOKIE);
+    return { error: "انتهت صلاحية طلب التسجيل. أعد إنشاء الحساب من البداية." };
+  }
+
   try {
     const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION);
     await sendVerificationOtpToEmail(email, code);
