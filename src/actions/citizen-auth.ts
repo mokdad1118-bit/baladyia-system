@@ -169,10 +169,11 @@ export async function registerCitizen(
     const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION);
     await sendVerificationOtpToEmail(email, code);
   } catch (e) {
-    console.error("[registerCitizen] OTP/email", e);
+    const raw = e instanceof Error ? e.message : "";
+    console.warn("[registerCitizen] mail failed:", raw.slice(0, 240));
     await db.pendingCitizenRegistration.deleteMany({ where: { email } });
     jar.delete(CITIZEN_VERIFY_EMAIL_COOKIE);
-    const hint = friendlyCitizenMailFailure(e instanceof Error ? e.message : "");
+    const hint = friendlyCitizenMailFailure(raw);
     return { error: hint };
   }
 

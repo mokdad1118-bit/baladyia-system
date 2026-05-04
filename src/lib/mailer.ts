@@ -24,9 +24,9 @@ export function friendlyCitizenMailFailure(raw: string): string {
   const r = raw || "";
   if (
     /Resend\s+403/i.test(r) &&
-    (/testing emails/i.test(r) ||
-      /only send testing/i.test(r) ||
-      (/validation_error/i.test(r) && /verify a domain/i.test(r)))
+    (/testing emails|only send testing|verify a domain|validation_error|sandbox only|set RESEND_FROM_EMAIL/i.test(
+      r,
+    ))
   ) {
     return (
       "حساب Resend في وضع التجربة: يُسمح بإرسال الرسائل فقط إلى بريد مالك حساب Resend في لوحة التحكم. " +
@@ -76,17 +76,22 @@ async function sendViaResend(params: {
   });
   if (!res.ok) {
     const body = await res.text();
-    let hint = "";
+    let parsed: { message?: string; name?: string } = {};
     try {
-      const j = JSON.parse(body) as { message?: string };
-      if (j.message && /domain|verify|validation/i.test(j.message)) {
-        hint =
-          " — ثبّت نطاقاً في Resend واضبط RESEND_FROM_EMAIL (مثل noreply@نطاقك)، أو تأكد أن المستلم مسموح مع نطاق التجربة.";
-      }
+      parsed = JSON.parse(body) as { message?: string; name?: string };
     } catch {
-      /* ignore */
+      throw new Error(`Resend ${res.status}: ${body.slice(0, 280)}`);
     }
-    throw new Error(`Resend ${res.status}: ${body.slice(0, 400)}${hint}`);
+    const msg = parsed.message ?? "";
+    if (
+      res.status === 403 &&
+      (/testing emails|only send testing|verify a domain/i.test(msg) || parsed.name === "validation_error")
+    ) {
+      throw new Error(
+        "Resend 403: verify a domain at resend.com/domains, set RESEND_FROM_EMAIL to an address on that domain (sandbox only delivers to your Resend login email).",
+      );
+    }
+    throw new Error(`Resend ${res.status}: ${msg.slice(0, 280) || body.slice(0, 280)}`);
   }
 }
 
