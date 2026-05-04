@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
 import { isPersistentDatabaseConfigured } from "@/lib/libsql-adapter";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 /**
  * فحص جاهزية الإنتاج (Render وغيره) — لا يُرجع أسراراً.
  * GET /api/health
  */
 export async function GET() {
-  const authSecret = Boolean(process.env.AUTH_SECRET?.trim());
+  const authSecretConfigured = Boolean(getAuthSecret());
   const databaseUrl = Boolean(process.env.DATABASE_URL?.trim());
   const persistentDatabase = isPersistentDatabaseConfigured();
   return NextResponse.json({
     ok: true,
-    authSecretConfigured: authSecret,
+    authSecretConfigured,
     databaseUrlConfigured: databaseUrl,
     persistentDatabaseConfigured: persistentDatabase,
     databaseMode: persistentDatabase ? "remote-libsql" : "local-file",
-    message: authSecret
+    message: authSecretConfigured
       ? "ok"
-      : "AUTH_SECRET غير مضبوط — تسجيل الدخول وواجهات الجلسة ستفشل حتى يُضاف في متغيرات البيئة.",
+      : "سر الجلسة غير مضبوط (AUTH_SECRET / NEXTAUTH_SECRET / JWT_SECRET) — غالب سبب Internal Server Error على Vercel.",
   });
 }

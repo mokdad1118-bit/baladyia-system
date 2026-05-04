@@ -8,9 +8,10 @@ export async function register() {
   const { isPersistentDatabaseConfiguredFromEnv } = await import(
     "@/lib/database-env-guard"
   );
-  if (!process.env.AUTH_SECRET?.trim()) {
+  const { getAuthSecret } = await import("@/lib/auth-secret");
+  if (!getAuthSecret()) {
     console.error(
-      "[eportal] AUTH_SECRET مفقود في الإنتاج — NextAuth يعيد خطأ Configuration حتى يُضبط على المستضيف (مثلاً Render → Environment).",
+      "[eportal] سر الجلسة مفقود في الإنتاج — عيّن AUTH_SECRET أو NEXTAUTH_SECRET أو JWT_SECRET (مثلاً Vercel → Environment). بدونها يظهر Internal Server Error عند فتح الموقع.",
     );
   }
   if (!isPersistentDatabaseConfiguredFromEnv()) {

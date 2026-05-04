@@ -163,6 +163,12 @@ function GovLoginPageImpl({
             تم تحديث كلمة المرور — سجّل الدخول باستخدام الرقم الجديد.
           </p>
         )}
+        {sp.get("config") && loginPage === "citizen" && (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+            إعداد الخادم غير مكتمل: أضف <strong>AUTH_SECRET</strong> أو <strong>NEXTAUTH_SECRET</strong> أو{" "}
+            <strong>JWT_SECRET</strong> في متغيرات البيئة على Vercel ثم أعد النشر.
+          </p>
+        )}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">{identifierLabel}</label>
           <input
