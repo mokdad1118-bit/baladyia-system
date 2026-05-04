@@ -30,11 +30,16 @@ export async function sendCitizenOtpEmail(params: {
     process.env.EMAIL_SECURE?.trim().toLowerCase() === "true" || port === 465;
   /** كلمات مرور تطبيق Google تُعرض أحياناً بمسافات؛ Nodemailer يحتاج السلسلة دون مسافات */
   const pass = process.env.EMAIL_PASS!.replace(/\s/g, "").trim();
+  const host = process.env.EMAIL_HOST!.trim();
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST!.trim(),
+    host,
     port: Number.isFinite(port) ? port : 587,
     secure: useSecure,
     requireTLS: !useSecure && port === 587,
+    connectionTimeout: 90_000,
+    greetingTimeout: 30_000,
+    socketTimeout: 90_000,
+    tls: { servername: host },
     auth: {
       user: process.env.EMAIL_USER!.trim(),
       pass,

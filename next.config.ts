@@ -1,9 +1,15 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 
+/** على Render غالباً يُفعَّل RENDER=true — إيقاف PWA هناك يقلّل أخطاء client reference manifest مع Next 16 حتى يُصلح الإصدار. فعّل PWA بـ ENABLE_PWA=1 */
+const pwaDisabled =
+  process.env.NODE_ENV === "development" ||
+  process.env.DISABLE_PWA === "1" ||
+  (process.env.RENDER === "true" && process.env.ENABLE_PWA !== "1");
+
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development",
+  disable: pwaDisabled,
   /** لا نُخزّن مرفقات المواطنين في الـ SW وقت البناء (تتغير بعد النشر وتسبب 404/نسخة قديمة). */
   publicExcludes: ["!uploads/**"],
   /** دمج قواعد التخزين الافتراضية مع قاعدة مرفقات لا تُخزَّن (قبل مسار «الصفحات» العام). */
