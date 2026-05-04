@@ -24,6 +24,8 @@ export default async function AdminCitizensPage() {
         email: u.email,
         notificationEmail: u.notificationEmail,
         phone: u.phone,
+        nationalId: u.nationalId,
+        isVerified: u.isVerified,
         role: u.role,
         isActive: u.isActive,
       }))}

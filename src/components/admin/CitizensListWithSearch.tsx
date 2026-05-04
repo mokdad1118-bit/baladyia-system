@@ -15,12 +15,23 @@ export type CitizenRow = {
   email: string | null;
   notificationEmail: string | null;
   phone: string | null;
+  nationalId: string | null;
+  isVerified: boolean;
   role: UserRole;
   isActive: boolean;
 };
 
 function haystack(u: CitizenRow): string {
-  return [u.name, u.email, u.notificationEmail, u.phone, userRoleAr[u.role], u.isActive ? "" : "معطّل"]
+  return [
+    u.name,
+    u.email,
+    u.notificationEmail,
+    u.phone,
+    u.nationalId,
+    userRoleAr[u.role],
+    u.isActive ? "" : "معطّل",
+    u.isVerified ? "" : "غير مُفعّل",
+  ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -48,7 +59,7 @@ export function CitizensListWithSearch({
         <AdminListSearchField
           id="admin-citizens-search"
           label="بحث في قائمة المواطنين"
-          placeholder="الاسم، البريد، الواتساب…"
+          placeholder="الاسم، البريد، الهاتف، الرقم الوطني…"
           value={q}
           onChange={setQ}
           className="mb-4"
@@ -64,13 +75,40 @@ export function CitizensListWithSearch({
                 <Card>
                   <CardContent className="!py-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
+                      <div className="min-w-0 space-y-1">
                         <p className="font-medium text-slate-900">{u.name}</p>
-                        <p className="text-sm text-slate-500">
-                          {u.email || u.notificationEmail || (u.phone ? `واتساب ${u.phone}` : "—")}
-                        </p>
+                        <dl className="text-sm text-slate-600">
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                            <dt className="font-medium text-slate-500">البريد</dt>
+                            <dd className="min-w-0 break-all">{u.email ?? "—"}</dd>
+                          </div>
+                          {u.notificationEmail &&
+                          u.notificationEmail !== (u.email ?? "").trim() ? (
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                              <dt className="font-medium text-slate-500">بريد الإشعارات</dt>
+                              <dd className="min-w-0 break-all">{u.notificationEmail}</dd>
+                            </div>
+                          ) : null}
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                            <dt className="font-medium text-slate-500">الهاتف</dt>
+                            <dd dir="ltr" className="min-w-0 text-start">
+                              {u.phone ?? "—"}
+                            </dd>
+                          </div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                            <dt className="font-medium text-slate-500">الرقم الوطني</dt>
+                            <dd dir="ltr" className="min-w-0 text-start">
+                              {u.nationalId ?? "—"}
+                            </dd>
+                          </div>
+                        </dl>
                         <p className="mt-1 flex flex-wrap items-center gap-1">
                           <Badge>{userRoleAr[u.role]}</Badge>
+                          {!u.isVerified && (
+                            <Badge className="border-amber-200/80 bg-amber-50 text-amber-900">
+                              بريد غير مُفعّل
+                            </Badge>
+                          )}
                           {!u.isActive && (
                             <Badge className="border-rose-200/80 bg-rose-50 text-rose-800">معطّل</Badge>
                           )}
