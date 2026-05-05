@@ -48,12 +48,10 @@ export default async function CitizenGasServicePage({ searchParams }: Props) {
         ) : (
           <GasRequestForm action={submitGasRequest} prefill={prefill ?? undefined} areas={areas} />
         )}
-        {prefill ? (
-          <p className="mt-3 text-xs text-[var(--gov-muted)]">
-            بياناتك الحالية: {prefill.name ?? "—"} / {prefill.phone ?? "—"} / {prefill.nationalId ?? "—"}
-          </p>
-        ) : null}
-        <Link href="/services" className="mt-4 inline-block text-sm font-semibold text-[var(--gov-primary)] hover:underline">
+        <Link
+          href="/services"
+          className="mt-4 inline-block rounded-md border border-slate-200/90 bg-white px-2 py-1.5 text-sm font-semibold text-[var(--gov-primary)] shadow-sm shadow-slate-900/10 no-underline transition hover:bg-slate-50/90 hover:shadow-md hover:shadow-slate-900/10"
+        >
           العودة إلى صفحة الخدمات
         </Link>
       </div>
