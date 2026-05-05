@@ -121,6 +121,7 @@ function GovLoginPageImpl({
             let dest = after ?? null;
             if (!dest) {
               if (role === UserRole.CITIZEN) dest = "/citizen";
+              else if (role === UserRole.GAS_AGENT) dest = "/gas-agent";
               else if (role === UserRole.EMPLOYEE) dest = "/staff";
               else if (role === UserRole.ADMIN) dest = "/admin";
               else dest = loginPage === "citizen" ? "/citizen" : loginPage === "staff" ? "/staff" : "/admin";

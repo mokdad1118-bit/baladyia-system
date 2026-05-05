@@ -42,6 +42,10 @@ model User {
   requestNotes       RequestNote[]      @relation("NoteAuthor")
   notifications      Notification[]
   gasRequests        GasRequest[]
+  assignedGasRequests GasRequest[] @relation("GasRequestAgent")
+
+  /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها (فريدة لكل معتمد)
+  gasArea            String?  @unique
 }
 
 /// بيانات تسجيل مواطن قبل إتمام التحقق من البريد — لا يُنشأ User حتى يُدخل الرمز صحيحاً
@@ -84,6 +88,7 @@ enum UserRole {
   ADMIN
   EMPLOYEE
   CITIZEN
+  GAS_AGENT
 }
 
 /// Future: departments, employee pools, per-service routing
@@ -237,6 +242,9 @@ model GasRequest {
   gasRequestNumber String   @unique
   citizenId        String
   citizen          User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  area             String
+  assignedAgentId  String?
+  assignedAgent    User?    @relation("GasRequestAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
   fullName         String
   phone            String
   nationalId       String
@@ -246,6 +254,8 @@ model GasRequest {
   @@index([createdAt])
   @@index([phone])
   @@index([nationalId])
+  @@index([area])
+  @@index([assignedAgentId])
 }
 
 /// عدّاد سنوي لطلبات الغاز: GAS-YYYY-NNNNN

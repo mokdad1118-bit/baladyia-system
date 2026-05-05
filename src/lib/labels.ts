@@ -19,4 +19,5 @@ export const userRoleAr = {
   ADMIN: "مدير النظام",
   EMPLOYEE: "موظف",
   CITIZEN: "مواطن",
+  GAS_AGENT: "معتمد غاز",
 } as const;

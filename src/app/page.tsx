@@ -10,6 +10,7 @@ export default async function HomePage() {
 
   if (!s?.user) redirect("/citizen/login?next=/");
   if (s.user.role === UserRole.CITIZEN) redirect("/citizen");
+  if (s.user.role === UserRole.GAS_AGENT) redirect("/gas-agent");
   if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");
   redirect("/admin");
 }

@@ -22,11 +22,28 @@ export async function submitGasRequest(
   const fullName = String(formData.get("fullName") ?? "").trim();
   const phone = digitsOnly(String(formData.get("phone") ?? ""));
   const nationalId = digitsOnly(String(formData.get("nationalId") ?? ""));
+  const area = String(formData.get("area") ?? "").trim();
 
   if (fullName.length < 3) return { error: "يرجى إدخال الاسم الثلاثي." };
   if (!isValidWhatsappLength(phone)) return { error: "رقم الهاتف غير صالح (أرقام فقط ٨-١٥)." };
   if (nationalId.length < 10 || nationalId.length > 11) {
     return { error: "الرقم الوطني يجب أن يكون 10 أو 11 رقماً." };
+  }
+  if (area.length < 2) {
+    return { error: "يرجى اختيار المنطقة." };
+  }
+
+  const agent = await db.user.findFirst({
+    where: {
+      role: UserRole.GAS_AGENT,
+      isActive: true,
+      gasArea: area,
+    },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!agent) {
+    return { error: "لا يوجد معتمد غاز مخصص لهذه المنطقة حالياً." };
   }
 
   const number = await nextGasRequestNumber();
@@ -34,6 +51,8 @@ export async function submitGasRequest(
     data: {
       gasRequestNumber: number,
       citizenId: session.user.id,
+      area,
+      assignedAgentId: agent.id,
       fullName,
       phone,
       nationalId,
@@ -41,6 +60,7 @@ export async function submitGasRequest(
   });
 
   revalidatePath("/admin/gas-services");
+  revalidatePath("/gas-agent");
   revalidatePath("/gas-services");
   revalidatePath("/services/gas");
   revalidatePath("/citizen/services/gas");

@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
+import { UserRole } from "@/generated/prisma/enums";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminGasRequestsTableWithSearch } from "@/components/admin/AdminGasRequestsTableWithSearch";
+import { GasAgentCreateForm } from "@/components/admin/GasAgentCreateForm";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 
@@ -13,6 +15,20 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
     where: d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {},
     orderBy: { createdAt: "desc" },
     take: 500,
+    include: {
+      assignedAgent: { select: { name: true } },
+    },
+  });
+  const agents = await db.user.findMany({
+    where: { role: UserRole.GAS_AGENT },
+    orderBy: [{ gasArea: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      gasArea: true,
+      isActive: true,
+    },
   });
 
   const filterForm = (
@@ -34,11 +50,49 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
   const rows = list.map((r) => ({
     id: r.id,
     gasRequestNumber: r.gasRequestNumber,
+    area: r.area,
+    agentName: r.assignedAgent?.name ?? "",
     fullName: r.fullName,
     phone: r.phone,
     nationalId: r.nationalId,
     createdAt: r.createdAt.toISOString(),
   }));
 
-  return <AdminGasRequestsTableWithSearch rows={rows} filterForm={filterForm} />;
+  return (
+    <div>
+      <GasAgentCreateForm />
+
+      <div className="gov-card mb-6 p-4">
+        <h2 className="mb-3 text-base font-bold text-[var(--gov-text)]">قائمة معتمدي الغاز</h2>
+        {agents.length === 0 ? (
+          <p className="text-sm text-[var(--gov-muted)]">لا يوجد معتمدون مضافون حالياً.</p>
+        ) : (
+          <div className="gov-table-wrap">
+            <table className="gov-table">
+              <thead>
+                <tr>
+                  <th>الاسم</th>
+                  <th>رقم الهاتف</th>
+                  <th>المنطقة</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agents.map((a) => (
+                  <tr key={a.id}>
+                    <td>{a.name}</td>
+                    <td dir="ltr">{a.phone ?? "—"}</td>
+                    <td>{a.gasArea ?? "—"}</td>
+                    <td>{a.isActive ? "مفعّل" : "معطّل"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <AdminGasRequestsTableWithSearch rows={rows} filterForm={filterForm} />
+    </div>
+  );
 }

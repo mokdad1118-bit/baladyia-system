@@ -86,6 +86,21 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith("/gas-agent")) {
+    if (!hasSession) {
+      const u = new URL("/citizen/login", req.url);
+      u.searchParams.set("next", pathname + search);
+      return NextResponse.redirect(u);
+    }
+    if (role !== UserRole.GAS_AGENT) {
+      if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+      if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+      if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
+      return NextResponse.redirect(new URL("/citizen/login", req.url));
+    }
+    return NextResponse.next();
+  }
+
   if (!isCitizenAppPath(pathname)) {
     return NextResponse.next();
   }
@@ -98,6 +113,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(u);
   }
   if (role !== UserRole.CITIZEN) {
+    if (role === UserRole.GAS_AGENT) return NextResponse.redirect(new URL("/gas-agent", req.url));
     if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
     if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
     return NextResponse.redirect(new URL("/citizen/login", req.url));
@@ -125,6 +141,8 @@ export const config = {
     "/admin",
     "/staff",
     "/staff/:path*",
+    "/gas-agent",
+    "/gas-agent/:path*",
     "/admin/:path*",
     "/users/:path*",
     "/stats/:path*",

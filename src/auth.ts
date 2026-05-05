@@ -13,7 +13,7 @@ import type { LoginPageSurface } from "@/lib/auth-portal";
 import { getAuthSecret } from "@/lib/auth-secret";
 
 function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
-  if (surface === "citizen") return role === UserRole.CITIZEN;
+  if (surface === "citizen") return role === UserRole.CITIZEN || role === UserRole.GAS_AGENT;
   if (surface === "staff") return role === UserRole.EMPLOYEE;
   if (surface === "admin") return role === UserRole.ADMIN;
   return false;

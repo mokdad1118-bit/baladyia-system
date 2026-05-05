@@ -59,6 +59,11 @@ export function UserBar({
       label: "لوحة التحكم",
       show: role === UserRole.EMPLOYEE || role === UserRole.ADMIN,
     },
+    {
+      href: "/gas-agent",
+      label: "طلبات الغاز",
+      show: role === UserRole.GAS_AGENT,
+    },
   ].filter((x) => x.show);
 
   return (

@@ -12,7 +12,9 @@ export type AdminGasRequestRow = GasRequestExportRow & {
 };
 
 function haystack(r: AdminGasRequestRow): string {
-  return [r.gasRequestNumber, r.fullName, r.phone, r.nationalId, r.createdAt].join(" ").toLowerCase();
+  return [r.gasRequestNumber, r.area, r.agentName, r.fullName, r.phone, r.nationalId, r.createdAt]
+    .join(" ")
+    .toLowerCase();
 }
 
 export function AdminGasRequestsTableWithSearch({
@@ -51,7 +53,7 @@ export function AdminGasRequestsTableWithSearch({
           <AdminListSearchField
             id="admin-gas-requests-search"
             label="بحث في طلبات الغاز"
-            placeholder="رقم الطلب، اسم المواطن، الرقم الوطني، رقم الهاتف…"
+            placeholder="رقم الطلب، المنطقة، المعتمد، اسم المواطن، الرقم الوطني، رقم الهاتف…"
             value={q}
             onChange={setQ}
             className="mb-0"
@@ -88,6 +90,8 @@ export function AdminGasRequestsTableWithSearch({
             <thead>
               <tr>
                 <th>رقم طلب الغاز</th>
+                <th>المنطقة</th>
+                <th>المعتمد</th>
                 <th>الاسم الثلاثي</th>
                 <th>رقم الهاتف</th>
                 <th>الرقم الوطني</th>
@@ -98,6 +102,8 @@ export function AdminGasRequestsTableWithSearch({
               {filtered.map((r) => (
                 <tr key={r.id}>
                   <td className="font-mono font-semibold text-[var(--gov-primary)]">{r.gasRequestNumber}</td>
+                  <td>{r.area}</td>
+                  <td>{r.agentName || "—"}</td>
                   <td>{r.fullName}</td>
                   <td dir="ltr">{r.phone}</td>
                   <td dir="ltr">{r.nationalId}</td>

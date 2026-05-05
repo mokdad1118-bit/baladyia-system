@@ -20,6 +20,12 @@ export default async function CitizenGasServiceMainPage({ searchParams }: Props)
     where: { id: s.user.id },
     select: { name: true, phone: true, nationalId: true },
   });
+  const areaRows = await db.user.findMany({
+    where: { role: UserRole.GAS_AGENT, isActive: true, gasArea: { not: null } },
+    select: { gasArea: true },
+    orderBy: { gasArea: "asc" },
+  });
+  const areas = [...new Set(areaRows.map((x) => x.gasArea).filter((x): x is string => Boolean(x?.trim())))];
 
   return (
     <div className="gov-panel w-full px-0">
@@ -35,7 +41,13 @@ export default async function CitizenGasServiceMainPage({ searchParams }: Props)
       ) : null}
 
       <div className="gov-card p-4 md:p-6">
-        <GasRequestForm action={submitGasRequest} prefill={prefill ?? undefined} />
+        {areas.length === 0 ? (
+          <p className="rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            لا توجد مناطق غاز مضافة حالياً. يرجى التواصل مع الإدارة.
+          </p>
+        ) : (
+          <GasRequestForm action={submitGasRequest} prefill={prefill ?? undefined} areas={areas} />
+        )}
         {prefill ? (
           <p className="mt-3 text-xs text-[var(--gov-muted)]">
             بياناتك الحالية: {prefill.name ?? "—"} / {prefill.phone ?? "—"} / {prefill.nationalId ?? "—"}
