@@ -23,74 +23,90 @@ export default async function CitizenServicesPage() {
         </p>
       </header>
       <GovStepIndicator currentStep={1} density="compact" />
-      {services.length === 0 ? (
-        <div className="gov-card p-6 text-center text-sm text-[var(--gov-muted)] md:p-8">
-          لا توجد خدمات مفعّلة حالياً.
+      <section className="gov-card mt-3 overflow-hidden p-0 md:mt-5">
+        <div className="border-b border-[var(--gov-border)] bg-[#f5faf7] px-3 py-3 md:px-5 md:py-4">
+          <div className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--gov-primary)] px-4 py-2 text-sm font-bold text-white shadow-sm md:text-base">
+            خدمات بلدية بصرى الشام
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
+            جميع الخدمات المتاحة ضمن هذا الزر، اختر الخدمة المناسبة ثم تابع تقديم الطلب.
+          </p>
         </div>
-      ) : (
-        <ul className="space-y-2 md:space-y-3">
-          {services.map((v) => (
-            <li key={v.id} className="min-w-0">
-              {isCitizen ? (
-                <Link
-                  href={`/requests/new/${v.id}`}
-                  aria-label={`تقديم طلب: ${v.name}`}
-                  className="gov-card flex items-start gap-2.5 p-3 no-underline transition-colors hover:bg-[#f7faf8] active:bg-[#eef6f1] md:gap-4 md:p-5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <h2 className="break-words text-sm font-bold leading-snug text-[var(--gov-text)] md:text-base">
-                      {v.name}
-                    </h2>
-                    {v.description ? (
-                      <p className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--gov-muted)] md:mt-1.5 md:line-clamp-none md:text-sm md:leading-relaxed">
-                        {v.description}
-                      </p>
-                    ) : null}
-                    <p className="mt-1.5 text-[0.7rem] text-[var(--gov-muted)] md:mt-2 md:text-xs">
-                      الرسوم{" "}
-                      <span className="font-mono font-semibold tabular-nums text-[var(--gov-text)]">{v.price}</span>{" "}
-                      ل.س
-                    </p>
-                  </div>
-                  <span className="gov-btn-primary mt-0.5 inline-flex min-h-9 min-w-[2.75rem] shrink-0 items-center justify-center self-start rounded-sm px-2 py-1.5 text-center text-[0.7rem] font-semibold leading-tight md:min-h-11 md:min-w-0 md:px-4 md:py-2.5 md:text-sm">
-                    <span className="md:hidden">طلب</span>
-                    <span className="hidden md:inline">تقديم طلب</span>
-                  </span>
-                </Link>
-              ) : (
-                <div className="gov-card flex flex-col gap-2 p-3 md:flex-row md:items-start md:justify-between md:gap-4 md:p-5">
-                  <div className="min-w-0">
-                    <h2 className="break-words text-sm font-bold leading-snug text-[var(--gov-text)] md:text-base">
-                      {v.name}
-                    </h2>
-                    {v.description ? (
-                      <p className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--gov-muted)] md:mt-1.5 md:line-clamp-none md:text-sm md:leading-relaxed">
-                        {v.description}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-xs text-[var(--gov-muted)] md:text-sm">—</p>
-                    )}
-                    <p className="mt-1.5 text-[0.7rem] text-[var(--gov-muted)] md:mt-2 md:text-xs">
-                      الرسوم{" "}
-                      <span className="font-mono font-semibold tabular-nums text-[var(--gov-text)]">{v.price}</span>{" "}
-                      ل.س
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-xs text-[var(--gov-muted)] md:text-sm">
+        <div className="p-3 md:p-5">
+          {services.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-6 text-center text-sm text-[var(--gov-muted)] md:p-8">
+              لا توجد خدمات مفعّلة حالياً.
+            </div>
+          ) : (
+            <ul className="space-y-2 md:space-y-3">
+              {services.map((v) => (
+                <li key={v.id} className="min-w-0">
+                  {isCitizen ? (
                     <Link
-                      href="/citizen/login?next=/services"
-                      className="font-semibold text-[var(--gov-primary)] hover:underline"
+                      href={`/requests/new/${v.id}`}
+                      aria-label={`تقديم طلب: ${v.name}`}
+                      className="gov-card flex items-start gap-2.5 p-3 no-underline transition-colors hover:bg-[#f7faf8] active:bg-[#eef6f1] md:gap-4 md:p-5"
                     >
-                      سجّل الدخول كمواطن
-                    </Link>{" "}
-                    لإرسال الطلب
-                  </p>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+                      <div className="min-w-0 flex-1">
+                        <h2 className="break-words text-sm font-bold leading-snug text-[var(--gov-text)] md:text-base">
+                          {v.name}
+                        </h2>
+                        {v.description ? (
+                          <p className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--gov-muted)] md:mt-1.5 md:line-clamp-none md:text-sm md:leading-relaxed">
+                            {v.description}
+                          </p>
+                        ) : null}
+                        <p className="mt-1.5 text-[0.7rem] text-[var(--gov-muted)] md:mt-2 md:text-xs">
+                          الرسوم{" "}
+                          <span className="font-mono font-semibold tabular-nums text-[var(--gov-text)]">
+                            {v.price}
+                          </span>{" "}
+                          ل.س
+                        </p>
+                      </div>
+                      <span className="gov-btn-primary mt-0.5 inline-flex min-h-9 min-w-[2.75rem] shrink-0 items-center justify-center self-start rounded-sm px-2 py-1.5 text-center text-[0.7rem] font-semibold leading-tight md:min-h-11 md:min-w-0 md:px-4 md:py-2.5 md:text-sm">
+                        <span className="md:hidden">طلب</span>
+                        <span className="hidden md:inline">تقديم طلب</span>
+                      </span>
+                    </Link>
+                  ) : (
+                    <div className="gov-card flex flex-col gap-2 p-3 md:flex-row md:items-start md:justify-between md:gap-4 md:p-5">
+                      <div className="min-w-0">
+                        <h2 className="break-words text-sm font-bold leading-snug text-[var(--gov-text)] md:text-base">
+                          {v.name}
+                        </h2>
+                        {v.description ? (
+                          <p className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--gov-muted)] md:mt-1.5 md:line-clamp-none md:text-sm md:leading-relaxed">
+                            {v.description}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs text-[var(--gov-muted)] md:text-sm">—</p>
+                        )}
+                        <p className="mt-1.5 text-[0.7rem] text-[var(--gov-muted)] md:mt-2 md:text-xs">
+                          الرسوم{" "}
+                          <span className="font-mono font-semibold tabular-nums text-[var(--gov-text)]">
+                            {v.price}
+                          </span>{" "}
+                          ل.س
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-xs text-[var(--gov-muted)] md:text-sm">
+                        <Link
+                          href="/citizen/login?next=/services"
+                          className="font-semibold text-[var(--gov-primary)] hover:underline"
+                        >
+                          سجّل الدخول كمواطن
+                        </Link>{" "}
+                        لإرسال الطلب
+                      </p>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
