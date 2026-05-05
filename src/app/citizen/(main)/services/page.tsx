@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { GovStepIndicator } from "@/components/gov/GovStepIndicator";
 
 export default async function CitizenServicesPage() {
   return (
@@ -8,7 +7,6 @@ export default async function CitizenServicesPage() {
         <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">الخدمات المتاحة</h1>
         <p className="mt-1 text-sm text-[var(--gov-muted)]">اختر الخدمة، ثم أكمل النموذج والمرفقات من بوابة الطلب.</p>
       </header>
-      <GovStepIndicator currentStep={1} />
       <section className="gov-card mt-4 p-4 text-center md:p-6">
         <p className="mb-4 text-sm text-[var(--gov-muted)]">
           اضغط على الزر لفتح صفحة خدمات بلدية بصرى الشام، ومنها يمكنك اختيار الخدمة ثم تقديم الطلب.

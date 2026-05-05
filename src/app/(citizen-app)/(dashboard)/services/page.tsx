@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { GovStepIndicator } from "@/components/gov/GovStepIndicator";
 
 export default async function CitizenServicesPage() {
   return (
@@ -12,10 +11,9 @@ export default async function CitizenServicesPage() {
           اختر خدمة ثم أكمل البيانات والمرفقات.
         </p>
       </header>
-      <GovStepIndicator currentStep={1} density="compact" />
       <section className="gov-card mt-3 p-4 text-center md:mt-5 md:p-6">
         <p className="mb-4 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
-          اضغط على الزر للدخول إلى صفحة خدمات بلدية بصرى الشام، حيث تظهر كل الخدمات الحالية وأي خدمات تُضاف لاحقاً.
+          اضغط على الزر للدخول إلى صفحة خدمات بلدية بصرى الشام.
         </p>
         <Link
           href="/services/bosra"
