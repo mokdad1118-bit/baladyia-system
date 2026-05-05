@@ -1,17 +1,7 @@
 import Link from "next/link";
-import { auth } from "@/auth";
-import { db } from "@/lib/db";
-import { UserRole } from "@/generated/prisma/enums";
 import { GovStepIndicator } from "@/components/gov/GovStepIndicator";
 
 export default async function CitizenServicesPage() {
-  const s = await auth();
-  const services = await db.service.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-  });
-  const isCitizen = s?.user?.role === UserRole.CITIZEN;
-
   return (
     <div className="w-full min-w-0 max-w-full">
       <header className="gov-page-heading mb-3 border-b border-[var(--gov-border)] pb-3 md:mb-6 md:pb-4">
@@ -23,90 +13,16 @@ export default async function CitizenServicesPage() {
         </p>
       </header>
       <GovStepIndicator currentStep={1} density="compact" />
-      <section className="gov-card mt-3 overflow-hidden p-3 md:mt-5 md:p-5">
-        <details open className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-[var(--gov-primary)] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-95 md:text-base">
-            <span>خدمات بلدية بصرى الشام</span>
-            <span className="text-xs opacity-90 transition group-open:rotate-180 md:text-sm">⌄</span>
-          </summary>
-          <p className="mt-3 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
-            كل الخدمات الحالية أو التي ستُضاف لاحقاً ستظهر هنا داخل زر خدمات بلدية بصرى الشام.
-          </p>
-          <div className="mt-3">
-          {services.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-6 text-center text-sm text-[var(--gov-muted)] md:p-8">
-              لا توجد خدمات مفعّلة حالياً.
-            </div>
-          ) : (
-            <ul className="space-y-2 md:space-y-3">
-              {services.map((v) => (
-                <li key={v.id} className="min-w-0">
-                  {isCitizen ? (
-                    <Link
-                      href={`/requests/new/${v.id}`}
-                      aria-label={`تقديم طلب: ${v.name}`}
-                      className="gov-card flex items-start gap-2.5 p-3 no-underline transition-colors hover:bg-[#f7faf8] active:bg-[#eef6f1] md:gap-4 md:p-5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <h2 className="break-words text-sm font-bold leading-snug text-[var(--gov-text)] md:text-base">
-                          {v.name}
-                        </h2>
-                        {v.description ? (
-                          <p className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--gov-muted)] md:mt-1.5 md:line-clamp-none md:text-sm md:leading-relaxed">
-                            {v.description}
-                          </p>
-                        ) : null}
-                        <p className="mt-1.5 text-[0.7rem] text-[var(--gov-muted)] md:mt-2 md:text-xs">
-                          الرسوم{" "}
-                          <span className="font-mono font-semibold tabular-nums text-[var(--gov-text)]">
-                            {v.price}
-                          </span>{" "}
-                          ل.س
-                        </p>
-                      </div>
-                      <span className="gov-btn-primary mt-0.5 inline-flex min-h-9 min-w-[2.75rem] shrink-0 items-center justify-center self-start rounded-sm px-2 py-1.5 text-center text-[0.7rem] font-semibold leading-tight md:min-h-11 md:min-w-0 md:px-4 md:py-2.5 md:text-sm">
-                        <span className="md:hidden">طلب</span>
-                        <span className="hidden md:inline">تقديم طلب</span>
-                      </span>
-                    </Link>
-                  ) : (
-                    <div className="gov-card flex flex-col gap-2 p-3 md:flex-row md:items-start md:justify-between md:gap-4 md:p-5">
-                      <div className="min-w-0">
-                        <h2 className="break-words text-sm font-bold leading-snug text-[var(--gov-text)] md:text-base">
-                          {v.name}
-                        </h2>
-                        {v.description ? (
-                          <p className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--gov-muted)] md:mt-1.5 md:line-clamp-none md:text-sm md:leading-relaxed">
-                            {v.description}
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-xs text-[var(--gov-muted)] md:text-sm">—</p>
-                        )}
-                        <p className="mt-1.5 text-[0.7rem] text-[var(--gov-muted)] md:mt-2 md:text-xs">
-                          الرسوم{" "}
-                          <span className="font-mono font-semibold tabular-nums text-[var(--gov-text)]">
-                            {v.price}
-                          </span>{" "}
-                          ل.س
-                        </p>
-                      </div>
-                      <p className="shrink-0 text-xs text-[var(--gov-muted)] md:text-sm">
-                        <Link
-                          href="/citizen/login?next=/services"
-                          className="font-semibold text-[var(--gov-primary)] hover:underline"
-                        >
-                          سجّل الدخول كمواطن
-                        </Link>{" "}
-                        لإرسال الطلب
-                      </p>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-          </div>
-        </details>
+      <section className="gov-card mt-3 p-4 text-center md:mt-5 md:p-6">
+        <p className="mb-4 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
+          اضغط على الزر للدخول إلى صفحة خدمات بلدية بصرى الشام، حيث تظهر كل الخدمات الحالية وأي خدمات تُضاف لاحقاً.
+        </p>
+        <Link
+          href="/services/bosra"
+          className="gov-btn-primary inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
+        >
+          خدمات بلدية بصرى الشام
+        </Link>
       </section>
     </div>
   );
