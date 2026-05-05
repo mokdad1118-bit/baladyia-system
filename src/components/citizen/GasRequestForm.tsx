@@ -58,7 +58,10 @@ export function GasRequestForm({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium">المنطقة</label>
+          <label className="mb-1.5 block text-sm font-medium">
+            المنطقة{" "}
+            <span className="font-normal text-[var(--gov-muted)]">(يرجى اختيار منطقتك بدقة)</span>
+          </label>
           <select name="area" required className="gov-input w-full px-3 py-2.5 text-sm">
             <option value="">اختر المنطقة</option>
             {areas.map((area) => (
