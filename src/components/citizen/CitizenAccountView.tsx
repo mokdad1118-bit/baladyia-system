@@ -39,20 +39,13 @@ export function CitizenAccountView({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {showPasswordInfo ? (
-              <div className="space-y-2 text-sm text-[var(--gov-text)]">
-                <p>
-                  لا يمكن عرض كلمة السر التي أدخلتها عند التسجيل؛ النظام يحفظها{" "}
-                  <span className="font-semibold">مشفّرة فقط</span> لأمان حسابك ولا يمكن استرجاع النص
-                  الأصلي لعرضه هنا.
-                </p>
-                <p className="text-[var(--gov-muted)]">
-                  إذا نسيت كلمة السر أو أردت تعيين كلمة جديدة، استخدم صفحة استعادة كلمة المرور.
-                </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                <p className="text-xs font-semibold text-[var(--gov-text)]">إعادة تعيين كلمة السر</p>
                 <Link
                   href={passwordRecoveryHref}
-                  className="inline-flex min-h-10 items-center font-semibold text-[var(--gov-primary)] hover:underline"
+                  className="gov-btn-primary inline-flex min-h-9 w-fit items-center justify-center rounded-sm px-3 py-1.5 text-xs font-semibold no-underline"
                 >
-                  الانتقال إلى استعادة كلمة المرور ←
+                  الانتقال لإعادة تعيين كلمة السر
                 </Link>
               </div>
             ) : (
@@ -70,7 +63,7 @@ export function CitizenAccountView({
             onClick={() => setShowPasswordInfo((v) => !v)}
             className="shrink-0 rounded-lg border border-[var(--gov-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--gov-primary)] hover:bg-[#f7faf8]"
           >
-            {showPasswordInfo ? "إخفاء معلومات كلمة السر" : "إظهار معلومات كلمة السر"}
+            {showPasswordInfo ? "إخفاء كلمة السر" : "إظهار كلمة السر"}
           </button>
         </div>
       </div>
