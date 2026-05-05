@@ -199,6 +199,8 @@ export async function submitRequest(
 
     revalidatePath("/requests");
     revalidatePath("/notifications");
+    revalidatePath("/citizen/requests");
+    revalidatePath("/citizen/notifications");
     revalidatePath("/admin/requests");
     revalidatePath("/admin");
 

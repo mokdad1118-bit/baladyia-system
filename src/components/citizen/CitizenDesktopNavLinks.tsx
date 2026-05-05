@@ -13,7 +13,13 @@ function linkClass(active: boolean) {
   );
 }
 
-export function CitizenDesktopNavLinks({ isCitizen }: { isCitizen: boolean }) {
+export function CitizenDesktopNavLinks({
+  isCitizen,
+  unreadNotifications = 0,
+}: {
+  isCitizen: boolean;
+  unreadNotifications?: number;
+}) {
   const path = usePathname() ?? "";
   const base: "" | "/citizen" = path.startsWith("/citizen") ? "/citizen" : "";
   const services = `${base}/services`;
@@ -40,7 +46,7 @@ export function CitizenDesktopNavLinks({ isCitizen }: { isCitizen: boolean }) {
             طلباتي
           </Link>
           <Link href={notifications} className={linkClass(activeNotifications)}>
-            الإشعارات
+            {unreadNotifications > 0 ? `الإشعارات (${unreadNotifications})` : "الإشعارات"}
           </Link>
           <Link href={account} className={linkClass(activeAccount)}>
             حسابي

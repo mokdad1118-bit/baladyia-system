@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { notifyUsers } from "@/lib/notify";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextGasRequestNumber } from "@/lib/gas-request-serial";
 
@@ -47,7 +48,7 @@ export async function submitGasRequest(
   }
 
   const number = await nextGasRequestNumber();
-  await db.gasRequest.create({
+  const created = await db.gasRequest.create({
     data: {
       gasRequestNumber: number,
       citizenId: session.user.id,
@@ -59,11 +60,27 @@ export async function submitGasRequest(
     },
   });
 
+  try {
+    await notifyUsers({
+      userIds: [session.user.id],
+      type: "GAS_SUBMITTED",
+      title: "تم استلام طلب الغاز",
+      message: `تم استلام طلب الغاز رقم ${number}. الحالة: قيد المتابعة.`,
+      gasRequestId: created.id,
+    });
+  } catch (e) {
+    console.warn("[submitGasRequest] notifyUsers:", e);
+  }
+
   revalidatePath("/admin/gas-services");
   revalidatePath("/gas-agent");
   revalidatePath("/gas-services");
   revalidatePath("/services/gas");
   revalidatePath("/citizen/services/gas");
+  revalidatePath("/notifications");
+  revalidatePath("/citizen/notifications");
+  revalidatePath("/requests");
+  revalidatePath("/citizen/requests");
 
   redirect(`/services/gas?ok=1&no=${encodeURIComponent(number)}`);
 }
@@ -78,7 +95,7 @@ export async function completeGasRequestAction(requestId: string): Promise<{ ok:
       id: requestId,
       assignedAgentId: session.user.id,
     },
-    select: { id: true, isCompleted: true },
+    select: { id: true, isCompleted: true, citizenId: true, gasRequestNumber: true },
   });
   if (!row) return { error: "الطلب غير موجود أو غير مخصص لك." };
   if (!row.isCompleted) {
@@ -89,8 +106,23 @@ export async function completeGasRequestAction(requestId: string): Promise<{ ok:
         completedAt: new Date(),
       },
     });
+    try {
+      await notifyUsers({
+        userIds: [row.citizenId],
+        type: "GAS_COMPLETED",
+        title: "تحديث طلب الغاز",
+        message: `تم تغيير حالة طلب الغاز ${row.gasRequestNumber} إلى: تم التسليم.`,
+        gasRequestId: row.id,
+      });
+    } catch (e) {
+      console.warn("[completeGasRequestAction] notifyUsers:", e);
+    }
   }
   revalidatePath("/gas-agent");
   revalidatePath("/admin/gas-services");
+  revalidatePath("/notifications");
+  revalidatePath("/citizen/notifications");
+  revalidatePath("/requests");
+  revalidatePath("/citizen/requests");
   return { ok: true };
 }

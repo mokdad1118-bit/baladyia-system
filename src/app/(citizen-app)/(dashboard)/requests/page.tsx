@@ -126,7 +126,7 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
           </div>
         </details>
 
-        <details open className="gov-card p-4">
+        <details id="citizen-gas-requests" open className="gov-card scroll-mt-24 p-4">
           <summary className="gov-btn-primary cursor-pointer list-none px-4 py-2 text-sm font-semibold md:text-base">
             طلباتك المخصصة لخدمات الغاز
           </summary>

@@ -1,5 +1,6 @@
 import { CitizenMobileShell } from "@/components/citizen/CitizenMobileShell";
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
@@ -13,6 +14,10 @@ export default async function CitizenMainChromeLayout({
 }) {
   const s = await auth();
   const isCitizen = s?.user?.role === UserRole.CITIZEN;
+  const unreadNotifications =
+    isCitizen && s.user?.id
+      ? await db.notification.count({ where: { userId: s.user.id, read: false } })
+      : 0;
 
   return (
     <div className="min-h-dvh">
@@ -25,12 +30,14 @@ export default async function CitizenMainChromeLayout({
               <p className="text-sm font-bold text-[var(--gov-text)]">{ENTITY_NAME_AR}</p>
             </div>
           </Link>
-          <CitizenDesktopNavLinks isCitizen={isCitizen} />
+          <CitizenDesktopNavLinks isCitizen={isCitizen} unreadNotifications={unreadNotifications} />
         </div>
         <div className="gov-divider-flag mx-auto max-w-6xl opacity-70" aria-hidden />
       </div>
       <div className="citizen-main-full mx-auto max-w-6xl px-0 md:px-4 md:py-6">
-        <CitizenMobileShell isCitizen={isCitizen}>{children}</CitizenMobileShell>
+        <CitizenMobileShell isCitizen={isCitizen} unreadNotifications={unreadNotifications}>
+          {children}
+        </CitizenMobileShell>
       </div>
     </div>
   );

@@ -227,7 +227,11 @@ model Notification {
   read       Boolean  @default(false)
   requestId  String?
   request    Request? @relation("RequestNotifications", fields: [requestId], references: [id], onDelete: SetNull)
+  gasRequestId String?
+  gasRequest   GasRequest? @relation(fields: [gasRequestId], references: [id], onDelete: SetNull)
   createdAt  DateTime @default(now())
+
+  @@index([gasRequestId])
 }
 
 /// Atomic yearly counter for request numbers: REQ-YYYY-NNNNN
@@ -245,6 +249,7 @@ model GasRequest {
   area             String
   assignedAgentId  String?
   assignedAgent    User?    @relation("GasRequestAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  notifications    Notification[]
   fullName         String
   phone            String
   nationalId       String

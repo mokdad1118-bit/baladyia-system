@@ -8,7 +8,7 @@ import { IconGrid, IconInbox, IconBellSm, IconUserSm } from "./citizen-icons";
 function buildTabs(base: "" | "/citizen") {
   const services = `${base}/services`;
   const requests = `${base}/requests`;
-  const notifications = `${base}/notifications`;
+  const notificationsPath = `${base}/notifications`;
   const account = `${base}/account`;
   return [
     {
@@ -26,9 +26,9 @@ function buildTabs(base: "" | "/citizen") {
       Icon: IconInbox,
     },
     {
-      href: notifications,
+      href: notificationsPath,
       label: "تنبيهات",
-      match: (p: string) => p === notifications || p.startsWith(`${notifications}/`),
+      match: (p: string) => p === notificationsPath || p.startsWith(`${notificationsPath}/`),
       Icon: IconBellSm,
     },
     {
@@ -40,7 +40,7 @@ function buildTabs(base: "" | "/citizen") {
   ] as const;
 }
 
-export function CitizenBottomNav() {
+export function CitizenBottomNav({ unreadNotifications = 0 }: { unreadNotifications?: number }) {
   const path = usePathname() ?? "";
   const base: "" | "/citizen" = path.startsWith("/citizen") ? "/citizen" : "";
   const tabs = buildTabs(base);
@@ -55,6 +55,10 @@ export function CitizenBottomNav() {
       <ul className="mx-auto flex max-w-lg items-stretch justify-around">
         {tabs.map(({ href, label, match, Icon }) => {
           const active = match(path);
+          const showUnreadBadge =
+            unreadNotifications > 0 && (href.endsWith("/notifications") || href === "/notifications");
+          const badge =
+            unreadNotifications > 99 ? "99+" : String(unreadNotifications);
           return (
             <li key={href} className="min-w-0 flex-1">
               <Link
@@ -64,15 +68,26 @@ export function CitizenBottomNav() {
                   active ? "text-[var(--gov-primary)]" : "text-[var(--gov-muted)]",
                 )}
                 aria-current={active ? "page" : undefined}
+                aria-label={
+                  showUnreadBadge ? `${label}، ${unreadNotifications} غير مقروء` : undefined
+                }
               >
                 <span
                   className={cn(
-                    "flex flex-col items-center justify-center gap-0.5 rounded-full px-2.5 py-1 transition-shadow",
+                    "relative flex flex-col items-center justify-center gap-0.5 rounded-full px-2.5 py-1 transition-shadow",
                     active &&
                       "ring-2 ring-[var(--gov-primary)] ring-offset-2 ring-offset-white shadow-[0_0_0_1px_rgba(0,0,0,0.04)]",
                   )}
                 >
                   <Icon className={cn("h-6 w-6 shrink-0", active && "text-[var(--gov-primary)]")} />
+                  {showUnreadBadge ? (
+                    <span
+                      className="absolute end-1 top-0 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[var(--gov-primary)] px-1 text-[0.65rem] font-bold leading-none text-white"
+                      aria-hidden
+                    >
+                      {badge}
+                    </span>
+                  ) : null}
                   <span className="text-[0.7rem] font-medium leading-tight sm:text-xs">{label}</span>
                 </span>
               </Link>

@@ -17,6 +17,8 @@ const STAFF_REVALIDATE = [
   "/admin",
   "/requests",
   "/notifications",
+  "/citizen/requests",
+  "/citizen/notifications",
   "/employee/requests",
   "/staff/requests",
 ] as const;
@@ -259,4 +261,5 @@ export async function markAllNotificationsRead() {
     data: { read: true },
   });
   revalidatePath("/notifications");
+  revalidatePath("/citizen/notifications");
 }

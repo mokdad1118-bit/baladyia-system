@@ -7,6 +7,7 @@ export async function notifyUsers(input: {
   title: string;
   message: string;
   requestId?: string;
+  gasRequestId?: string;
 }) {
   if (input.userIds.length === 0) return;
   await db.notification.createMany({
@@ -16,6 +17,7 @@ export async function notifyUsers(input: {
       title: input.title,
       message: input.message,
       requestId: input.requestId,
+      gasRequestId: input.gasRequestId,
     })),
   });
 }
