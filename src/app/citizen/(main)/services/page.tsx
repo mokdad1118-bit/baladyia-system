@@ -11,19 +11,23 @@ export default async function CitizenServicesPage() {
         <p className="mb-4 text-sm text-[var(--gov-muted)]">
           اضغط على الزر لفتح صفحة خدمات بلدية بصرى الشام، ومنها يمكنك اختيار الخدمة ثم تقديم الطلب.
         </p>
-        <div className="flex flex-col items-center gap-3">
-          <Link
-            href="/citizen/services/bosra"
-            className="gov-btn-primary inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
-          >
-            خدمات بلدية بصرى الشام
-          </Link>
-          <Link
-            href="/citizen/services/gas"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--gov-border)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--gov-primary)] no-underline transition hover:bg-[#f7faf8] md:text-base"
-          >
-            خدمات الغاز
-          </Link>
+        <div className="space-y-3">
+          <div className="flex justify-center">
+            <Link
+              href="/citizen/services/bosra"
+              className="gov-btn-primary inline-flex min-h-11 min-w-[16rem] items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
+            >
+              خدمات بلدية بصرى الشام
+            </Link>
+          </div>
+          <div className="flex justify-center">
+            <Link
+              href="/citizen/services/gas"
+              className="gov-btn-primary inline-flex min-h-11 min-w-[16rem] items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
+            >
+              خدمات الغاز
+            </Link>
+          </div>
         </div>
       </section>
     </div>
