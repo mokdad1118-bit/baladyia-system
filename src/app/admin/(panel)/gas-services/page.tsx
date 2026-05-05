@@ -3,6 +3,7 @@ import { UserRole } from "@/generated/prisma/enums";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminGasRequestsTableWithSearch } from "@/components/admin/AdminGasRequestsTableWithSearch";
 import { GasAgentCreateForm } from "@/components/admin/GasAgentCreateForm";
+import { GasAgentToggleButton } from "@/components/admin/GasAgentToggleButton";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 
@@ -76,6 +77,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
                   <th>رقم الهاتف</th>
                   <th>المنطقة</th>
                   <th>الحالة</th>
+                  <th>إجراء</th>
                 </tr>
               </thead>
               <tbody>
@@ -85,6 +87,9 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
                     <td dir="ltr">{a.phone ?? "—"}</td>
                     <td>{a.gasArea ?? "—"}</td>
                     <td>{a.isActive ? "مفعّل" : "معطّل"}</td>
+                    <td>
+                      <GasAgentToggleButton userId={a.id} isActive={a.isActive} name={a.name} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
