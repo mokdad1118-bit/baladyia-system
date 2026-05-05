@@ -19,12 +19,14 @@ export function CitizenDesktopNavLinks({ isCitizen }: { isCitizen: boolean }) {
   const services = `${base}/services`;
   const requests = `${base}/requests`;
   const notifications = `${base}/notifications`;
+  const account = `${base}/account`;
   const home = base === "/citizen" ? "/citizen" : "/";
 
   const activeServices = path === services || path.startsWith(`${services}/`);
   const activeRequests =
     path === requests || (path.startsWith(`${requests}/`) && !path.includes("/new/"));
   const activeNotifications = path === notifications || path.startsWith(`${notifications}/`);
+  const activeAccount = path === account || path.startsWith(`${account}/`);
   const activeHome = path === home;
 
   return (
@@ -39,6 +41,9 @@ export function CitizenDesktopNavLinks({ isCitizen }: { isCitizen: boolean }) {
           </Link>
           <Link href={notifications} className={linkClass(activeNotifications)}>
             الإشعارات
+          </Link>
+          <Link href={account} className={linkClass(activeAccount)}>
+            حسابي
           </Link>
           <Link href={home} className={linkClass(activeHome)}>
             الرئيسية

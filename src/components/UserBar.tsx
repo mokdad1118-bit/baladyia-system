@@ -49,6 +49,7 @@ export function UserBar({
   const items: { href: string; label: string; show: boolean }[] = [
     { href: "/services", label: "الخدمات", show: role === UserRole.CITIZEN },
     { href: "/requests", label: "طلباتي", show: role === UserRole.CITIZEN },
+    { href: "/account", label: "حسابي", show: role === UserRole.CITIZEN },
     {
       href: "/notifications",
       label: unread > 0 ? `إشعارات (${unread})` : "الإشعارات",

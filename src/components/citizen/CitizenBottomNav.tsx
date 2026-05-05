@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import { IconGrid, IconInbox, IconBellSm } from "./citizen-icons";
+import { IconGrid, IconInbox, IconBellSm, IconUserSm } from "./citizen-icons";
 
 function buildTabs(base: "" | "/citizen") {
   const services = `${base}/services`;
   const requests = `${base}/requests`;
   const notifications = `${base}/notifications`;
+  const account = `${base}/account`;
   return [
     {
       href: services,
@@ -29,6 +30,12 @@ function buildTabs(base: "" | "/citizen") {
       label: "تنبيهات",
       match: (p: string) => p === notifications || p.startsWith(`${notifications}/`),
       Icon: IconBellSm,
+    },
+    {
+      href: account,
+      label: "حسابي",
+      match: (p: string) => p === account || p.startsWith(`${account}/`),
+      Icon: IconUserSm,
     },
   ] as const;
 }
