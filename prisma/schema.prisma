@@ -41,6 +41,7 @@ model User {
   statusLogs         RequestStatusLog[] @relation("LogActor")
   requestNotes       RequestNote[]      @relation("NoteAuthor")
   notifications      Notification[]
+  gasRequests        GasRequest[]
 }
 
 /// بيانات تسجيل مواطن قبل إتمام التحقق من البريد — لا يُنشأ User حتى يُدخل الرمز صحيحاً
@@ -227,5 +228,28 @@ model Notification {
 /// Atomic yearly counter for request numbers: REQ-YYYY-NNNNN
 model RequestSerial {
   year  Int      @id
+  lastN Int
+}
+
+/// طلبات خدمات الغاز (نموذج بسيط مستقل عن طلبات الخدمات العامة)
+model GasRequest {
+  id               String   @id @default(cuid())
+  gasRequestNumber String   @unique
+  citizenId        String
+  citizen          User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  fullName         String
+  phone            String
+  nationalId       String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([phone])
+  @@index([nationalId])
+}
+
+/// عدّاد سنوي لطلبات الغاز: GAS-YYYY-NNNNN
+model GasRequestSerial {
+  year  Int @id
   lastN Int
 }

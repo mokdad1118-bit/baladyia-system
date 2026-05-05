@@ -1,0 +1,49 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { UserRole } from "@/generated/prisma/enums";
+import { db } from "@/lib/db";
+import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
+import { nextGasRequestNumber } from "@/lib/gas-request-serial";
+
+export type SubmitGasRequestState = { error: string } | undefined;
+
+export async function submitGasRequest(
+  _prev: SubmitGasRequestState,
+  formData: FormData,
+): Promise<SubmitGasRequestState> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== UserRole.CITIZEN) {
+    return { error: "يجب تسجيل الدخول كمواطن لتقديم طلب خدمات الغاز." };
+  }
+
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const phone = digitsOnly(String(formData.get("phone") ?? ""));
+  const nationalId = digitsOnly(String(formData.get("nationalId") ?? ""));
+
+  if (fullName.length < 3) return { error: "يرجى إدخال الاسم الثلاثي." };
+  if (!isValidWhatsappLength(phone)) return { error: "رقم الهاتف غير صالح (أرقام فقط ٨-١٥)." };
+  if (nationalId.length < 10 || nationalId.length > 11) {
+    return { error: "الرقم الوطني يجب أن يكون 10 أو 11 رقماً." };
+  }
+
+  const number = await nextGasRequestNumber();
+  await db.gasRequest.create({
+    data: {
+      gasRequestNumber: number,
+      citizenId: session.user.id,
+      fullName,
+      phone,
+      nationalId,
+    },
+  });
+
+  revalidatePath("/admin/gas-services");
+  revalidatePath("/gas-services");
+  revalidatePath("/services/gas");
+  revalidatePath("/citizen/services/gas");
+
+  redirect(`/services/gas?ok=1&no=${encodeURIComponent(number)}`);
+}

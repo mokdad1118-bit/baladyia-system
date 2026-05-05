@@ -15,12 +15,20 @@ export default async function CitizenServicesPage() {
         <p className="mb-4 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
           اضغط على الزر للدخول إلى صفحة خدمات بلدية بصرى الشام.
         </p>
-        <Link
-          href="/services/bosra"
-          className="gov-btn-primary inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
-        >
-          خدمات بلدية بصرى الشام
-        </Link>
+        <div className="flex flex-col items-center gap-3">
+          <Link
+            href="/services/bosra"
+            className="gov-btn-primary inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
+          >
+            خدمات بلدية بصرى الشام
+          </Link>
+          <Link
+            href="/services/gas"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--gov-border)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--gov-primary)] no-underline transition hover:bg-[#f7faf8] md:text-base"
+          >
+            خدمات الغاز
+          </Link>
+        </div>
       </section>
     </div>
   );

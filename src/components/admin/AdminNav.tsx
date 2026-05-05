@@ -15,6 +15,7 @@ const segments = [
     perm: "manageServices" as const,
   },
   { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: null },
+  { internal: "/admin/gas-services", label: "خدمات الغاز", desc: "طلبات خدمات الغاز", perm: null },
   {
     internal: "/admin/users",
     label: "حسابات الموظفين",
