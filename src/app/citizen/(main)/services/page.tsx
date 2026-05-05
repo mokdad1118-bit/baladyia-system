@@ -19,16 +19,16 @@ export default async function CitizenServicesPage() {
         <p className="mt-1 text-sm text-[var(--gov-muted)]">اختر الخدمة، ثم أكمل النموذج والمرفقات من بوابة الطلب.</p>
       </header>
       <GovStepIndicator currentStep={1} />
-      <section className="gov-card mt-4 overflow-hidden p-0">
-        <div className="border-b border-[var(--gov-border)] bg-[#f5faf7] px-4 py-4 md:px-5">
-          <div className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--gov-primary)] px-4 py-2 text-sm font-bold text-white shadow-sm md:text-base">
-            خدمات بلدية بصرى الشام
-          </div>
-          <p className="mt-2 text-sm text-[var(--gov-muted)]">
-            كل الخدمات داخل هذا الزر بشكل مرتب؛ اختر الخدمة المناسبة ثم أكمل تقديم الطلب.
+      <section className="gov-card mt-4 overflow-hidden p-4 md:p-5">
+        <details open className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-[var(--gov-primary)] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-95 md:text-base">
+            <span>خدمات بلدية بصرى الشام</span>
+            <span className="text-xs opacity-90 transition group-open:rotate-180 md:text-sm">⌄</span>
+          </summary>
+          <p className="mt-3 text-sm text-[var(--gov-muted)]">
+            كل الخدمات الحالية أو التي ستُضاف لاحقاً ستظهر هنا داخل هذا الزر.
           </p>
-        </div>
-        <div className="p-4 md:p-5">
+          <div className="mt-3">
           {services.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">
               لا توجد خدمات مفعّلة حالياً.
@@ -70,7 +70,8 @@ export default async function CitizenServicesPage() {
               ))}
             </ul>
           )}
-        </div>
+          </div>
+        </details>
       </section>
     </div>
   );

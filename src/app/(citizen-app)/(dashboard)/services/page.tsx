@@ -23,16 +23,16 @@ export default async function CitizenServicesPage() {
         </p>
       </header>
       <GovStepIndicator currentStep={1} density="compact" />
-      <section className="gov-card mt-3 overflow-hidden p-0 md:mt-5">
-        <div className="border-b border-[var(--gov-border)] bg-[#f5faf7] px-3 py-3 md:px-5 md:py-4">
-          <div className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--gov-primary)] px-4 py-2 text-sm font-bold text-white shadow-sm md:text-base">
-            خدمات بلدية بصرى الشام
-          </div>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
-            جميع الخدمات المتاحة ضمن هذا الزر، اختر الخدمة المناسبة ثم تابع تقديم الطلب.
+      <section className="gov-card mt-3 overflow-hidden p-3 md:mt-5 md:p-5">
+        <details open className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-[var(--gov-primary)] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-95 md:text-base">
+            <span>خدمات بلدية بصرى الشام</span>
+            <span className="text-xs opacity-90 transition group-open:rotate-180 md:text-sm">⌄</span>
+          </summary>
+          <p className="mt-3 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
+            كل الخدمات الحالية أو التي ستُضاف لاحقاً ستظهر هنا داخل زر خدمات بلدية بصرى الشام.
           </p>
-        </div>
-        <div className="p-3 md:p-5">
+          <div className="mt-3">
           {services.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-6 text-center text-sm text-[var(--gov-muted)] md:p-8">
               لا توجد خدمات مفعّلة حالياً.
@@ -105,7 +105,8 @@ export default async function CitizenServicesPage() {
               ))}
             </ul>
           )}
-        </div>
+          </div>
+        </details>
       </section>
     </div>
   );
