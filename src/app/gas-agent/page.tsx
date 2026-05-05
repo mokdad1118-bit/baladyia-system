@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { LogoutForm } from "@/components/LogoutForm";
+import { GasAgentRequestsTableWithSearch } from "@/components/gas-agent/GasAgentRequestsTableWithSearch";
 
 export default async function GasAgentHomePage() {
   const s = await auth();
@@ -36,38 +37,17 @@ export default async function GasAgentHomePage() {
         <LogoutForm callbackUrl="/citizen/login" />
       </div>
 
-      {rows.length === 0 ? (
-        <div className="gov-card p-10 text-center text-sm text-[var(--gov-muted)]">
-          لا توجد طلبات غاز مخصصة لك حالياً.
-        </div>
-      ) : (
-        <div className="gov-table-wrap">
-          <table className="gov-table">
-            <thead>
-              <tr>
-                <th>رقم طلب الغاز</th>
-                <th>الاسم الثلاثي</th>
-                <th>رقم الهاتف</th>
-                <th>الرقم الوطني</th>
-                <th>المنطقة</th>
-                <th>تاريخ التقديم</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td className="font-mono font-semibold text-[var(--gov-primary)]">{r.gasRequestNumber}</td>
-                  <td>{r.fullName}</td>
-                  <td dir="ltr">{r.phone}</td>
-                  <td dir="ltr">{r.nationalId}</td>
-                  <td>{r.area}</td>
-                  <td className="whitespace-nowrap text-[var(--gov-muted)]">{r.createdAt.toLocaleDateString("ar")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <GasAgentRequestsTableWithSearch
+        rows={rows.map((r) => ({
+          id: r.id,
+          gasRequestNumber: r.gasRequestNumber,
+          fullName: r.fullName,
+          phone: r.phone,
+          nationalId: r.nationalId,
+          area: r.area,
+          createdAt: r.createdAt.toISOString(),
+        }))}
+      />
     </div>
   );
 }
