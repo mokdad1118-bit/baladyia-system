@@ -144,6 +144,7 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
                       <th>الاسم الثلاثي</th>
                       <th>رقم الهاتف</th>
                       <th>الرقم الوطني</th>
+                      <th>الحالة</th>
                       <th>التاريخ</th>
                     </tr>
                   </thead>
@@ -154,6 +155,17 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
                         <td>{g.fullName}</td>
                         <td dir="ltr">{g.phone}</td>
                         <td dir="ltr">{g.nationalId}</td>
+                        <td>
+                          {g.isCompleted ? (
+                            <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">
+                              تم التسليم
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                              قيد المتابعة
+                            </span>
+                          )}
+                        </td>
                         <td className="whitespace-nowrap text-[var(--gov-muted)]">{g.createdAt.toLocaleDateString("ar")}</td>
                       </tr>
                     ))}
