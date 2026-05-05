@@ -5,6 +5,7 @@ export type GasRequestExportRow = {
   fullName: string;
   phone: string;
   nationalId: string;
+  isCompleted: boolean;
   createdAt: string;
 };
 
@@ -31,6 +32,7 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
     { header: "الاسم الثلاثي", key: "fullName", width: 30 },
     { header: "رقم الهاتف", key: "phone", width: 20 },
     { header: "الرقم الوطني", key: "nationalId", width: 20 },
+    { header: "الحالة", key: "statusLabel", width: 16 },
     { header: "تاريخ التقديم", key: "createdAtLabel", width: 18 },
   ];
 
@@ -51,6 +53,7 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
       fullName: r.fullName,
       phone: r.phone,
       nationalId: r.nationalId,
+      statusLabel: r.isCompleted ? "منتهي" : "قيد المعالجة",
       createdAtLabel: new Date(r.createdAt).toLocaleDateString("ar"),
     });
   }

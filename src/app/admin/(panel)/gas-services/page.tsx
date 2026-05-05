@@ -55,6 +55,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
     fullName: r.fullName,
     phone: r.phone,
     nationalId: r.nationalId,
+    isCompleted: r.isCompleted,
     createdAt: r.createdAt.toISOString(),
   }));
 
