@@ -3,9 +3,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { requestStatusAr } from "@/lib/labels";
-import { RequestStatus } from "@/generated/prisma/enums";
-import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 
 type S = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -15,32 +12,17 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
   const sp = await searchParams;
   const success = sp.success === "1";
   const no = typeof sp.no === "string" ? sp.no : null;
-  const statusRaw = typeof sp.status === "string" ? sp.status : "";
-  const dateFrom = typeof sp.dateFrom === "string" ? sp.dateFrom : undefined;
-  const dateTo = typeof sp.dateTo === "string" ? sp.dateTo : undefined;
 
-  const statusFilter =
-    statusRaw && Object.values(RequestStatus).includes(statusRaw as RequestStatus)
-      ? (statusRaw as RequestStatus)
-      : undefined;
-  const d0 = parseDateStartParam(dateFrom);
-  const d1 = parseDateEndParam(dateTo);
-
-  const list = await db.request.findMany({
+  const municipalityRequests = await db.request.findMany({
     where: {
       citizenId: s.user.id,
-      ...(statusFilter ? { status: statusFilter } : {}),
-      ...(d0 || d1
-        ? {
-            createdAt: {
-              ...(d0 ? { gte: d0 } : {}),
-              ...(d1 ? { lte: d1 } : {}),
-            },
-          }
-        : {}),
     },
     orderBy: { createdAt: "desc" },
     include: { service: true },
+  });
+  const gasRequests = await db.gasRequest.findMany({
+    where: { citizenId: s.user.id },
+    orderBy: { createdAt: "desc" },
   });
 
   return (
@@ -56,33 +38,6 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
         >
           + طلب جديد
         </Link>
-      </div>
-
-      <div className="gov-card mb-6 p-4">
-        <form className="flex flex-wrap items-end gap-3" method="get" action="/citizen/requests">
-          <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
-            <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">الحالة</label>
-            <select className="gov-input w-full px-3 py-2.5 text-sm" name="status" defaultValue={statusRaw}>
-              <option value="">الكل</option>
-              {(Object.keys(requestStatusAr) as RequestStatus[]).map((k) => (
-                <option key={k} value={k}>
-                  {requestStatusAr[k]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
-            <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">من تاريخ</label>
-            <input className="gov-input w-full px-3 py-2.5 text-sm" type="date" name="dateFrom" defaultValue={dateFrom ?? ""} />
-          </div>
-          <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
-            <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">إلى تاريخ</label>
-            <input className="gov-input w-full px-3 py-2.5 text-sm" type="date" name="dateTo" defaultValue={dateTo ?? ""} />
-          </div>
-          <button type="submit" className="gov-btn-primary px-5 py-2.5 text-sm font-semibold">
-            تطبيق
-          </button>
-        </form>
       </div>
 
       {success && (
@@ -101,41 +56,91 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
           </p>
         </div>
       )}
-      {list.length === 0 ? (
-        <div className="gov-card p-10 text-center text-sm text-[var(--gov-muted)]">لا طلبات مطابقة.</div>
-      ) : (
-        <div className="gov-table-wrap">
-          <table className="gov-table">
-            <thead>
-              <tr>
-                <th>الرقم</th>
-                <th>الخدمة</th>
-                <th>الحالة</th>
-                <th>التاريخ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <Link
-                      href={`/citizen/requests/${r.id}`}
-                      className="font-mono font-semibold text-[var(--gov-primary)] hover:underline"
-                    >
-                      {r.requestNumber}
-                    </Link>
-                  </td>
-                  <td>{r.service.name}</td>
-                  <td>
-                    <StatusBadge status={r.status} />
-                  </td>
-                  <td className="whitespace-nowrap text-[var(--gov-muted)]">{r.createdAt.toLocaleDateString("ar")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+
+      <section className="space-y-4">
+        <details open className="gov-card p-4">
+          <summary className="gov-btn-primary cursor-pointer list-none px-4 py-2 text-sm font-semibold md:text-base">
+            طلباتك المخصصة لخدمات البلدية
+          </summary>
+          <div className="mt-4">
+            {municipalityRequests.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">
+                لا توجد طلبات بلدية بعد.
+              </div>
+            ) : (
+              <div className="gov-table-wrap">
+                <table className="gov-table">
+                  <thead>
+                    <tr>
+                      <th>الرقم</th>
+                      <th>الخدمة</th>
+                      <th>الحالة</th>
+                      <th>التاريخ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {municipalityRequests.map((r) => (
+                      <tr key={r.id}>
+                        <td>
+                          <Link
+                            href={`/citizen/requests/${r.id}`}
+                            className="font-mono font-semibold text-[var(--gov-primary)] hover:underline"
+                          >
+                            {r.requestNumber}
+                          </Link>
+                        </td>
+                        <td>{r.service.name}</td>
+                        <td>
+                          <StatusBadge status={r.status} />
+                        </td>
+                        <td className="whitespace-nowrap text-[var(--gov-muted)]">{r.createdAt.toLocaleDateString("ar")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </details>
+
+        <details open className="gov-card p-4">
+          <summary className="gov-btn-primary cursor-pointer list-none px-4 py-2 text-sm font-semibold md:text-base">
+            طلباتك المخصصة لخدمات الغاز
+          </summary>
+          <div className="mt-4">
+            {gasRequests.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">
+                لا توجد طلبات غاز بعد.
+              </div>
+            ) : (
+              <div className="gov-table-wrap">
+                <table className="gov-table">
+                  <thead>
+                    <tr>
+                      <th>رقم طلب الغاز</th>
+                      <th>الاسم الثلاثي</th>
+                      <th>رقم الهاتف</th>
+                      <th>الرقم الوطني</th>
+                      <th>التاريخ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gasRequests.map((g) => (
+                      <tr key={g.id}>
+                        <td className="font-mono font-semibold text-[var(--gov-primary)]">{g.gasRequestNumber}</td>
+                        <td>{g.fullName}</td>
+                        <td dir="ltr">{g.phone}</td>
+                        <td dir="ltr">{g.nationalId}</td>
+                        <td className="whitespace-nowrap text-[var(--gov-muted)]">{g.createdAt.toLocaleDateString("ar")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </details>
+      </section>
     </div>
   );
 }
