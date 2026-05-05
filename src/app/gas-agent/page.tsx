@@ -46,6 +46,8 @@ export default async function GasAgentHomePage() {
           nationalId: r.nationalId,
           area: r.area,
           createdAt: r.createdAt.toISOString(),
+          isCompleted: r.isCompleted,
+          completedAt: r.completedAt?.toISOString() ?? null,
         }))}
       />
     </div>

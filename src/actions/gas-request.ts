@@ -67,3 +67,30 @@ export async function submitGasRequest(
 
   redirect(`/services/gas?ok=1&no=${encodeURIComponent(number)}`);
 }
+
+export async function completeGasRequestAction(requestId: string): Promise<{ ok: true } | { error: string }> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== UserRole.GAS_AGENT) {
+    return { error: "غير مصرح." };
+  }
+  const row = await db.gasRequest.findFirst({
+    where: {
+      id: requestId,
+      assignedAgentId: session.user.id,
+    },
+    select: { id: true, isCompleted: true },
+  });
+  if (!row) return { error: "الطلب غير موجود أو غير مخصص لك." };
+  if (!row.isCompleted) {
+    await db.gasRequest.update({
+      where: { id: row.id },
+      data: {
+        isCompleted: true,
+        completedAt: new Date(),
+      },
+    });
+  }
+  revalidatePath("/gas-agent");
+  revalidatePath("/admin/gas-services");
+  return { ok: true };
+}
