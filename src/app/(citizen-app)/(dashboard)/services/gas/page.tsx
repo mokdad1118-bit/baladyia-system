@@ -35,7 +35,7 @@ export default async function CitizenGasServicePage({ searchParams }: Props) {
       ) : null}
 
       <div className="gov-card p-4 md:p-6">
-        <GasRequestForm action={submitGasRequest} />
+        <GasRequestForm action={submitGasRequest} prefill={prefill ?? undefined} />
         {prefill ? (
           <p className="mt-3 text-xs text-[var(--gov-muted)]">
             بياناتك الحالية: {prefill.name ?? "—"} / {prefill.phone ?? "—"} / {prefill.nationalId ?? "—"}

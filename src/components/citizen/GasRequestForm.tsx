@@ -6,11 +6,17 @@ import type { SubmitGasRequestState } from "@/actions/gas-request";
 
 export function GasRequestForm({
   action,
+  prefill,
 }: {
   action: (
     prev: SubmitGasRequestState,
     formData: FormData,
   ) => Promise<SubmitGasRequestState>;
+  prefill?: {
+    name?: string | null;
+    phone?: string | null;
+    nationalId?: string | null;
+  };
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
 
@@ -31,6 +37,7 @@ export function GasRequestForm({
             required
             minLength={3}
             autoComplete="name"
+            defaultValue={prefill?.name ?? ""}
             className="gov-input w-full px-3 py-2.5 text-sm"
           />
         </div>
@@ -43,6 +50,7 @@ export function GasRequestForm({
             inputMode="numeric"
             autoComplete="tel"
             dir="ltr"
+            defaultValue={prefill?.phone ?? ""}
             className="gov-input w-full px-3 py-2.5 text-sm"
           />
         </div>
@@ -57,6 +65,7 @@ export function GasRequestForm({
             minLength={10}
             maxLength={11}
             pattern="[0-9]{10,11}"
+            defaultValue={prefill?.nationalId ?? ""}
             className="gov-input w-full px-3 py-2.5 text-sm"
           />
         </div>
