@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export function CitizenAccountView({
   user,
+  passwordRecoveryHref = "/citizen/forgot-password",
 }: {
   user: {
     name: string | null;
@@ -13,8 +15,10 @@ export function CitizenAccountView({
     notificationEmail: string | null;
     createdAt: string;
   };
+  /** صفحة استعادة/تغيير كلمة المرور (لا يُعرض النص الفعلي لأسباب أمنية) */
+  passwordRecoveryHref?: string;
 }) {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordInfo, setShowPasswordInfo] = useState(false);
 
   const rows: { label: string; value: string }[] = [
     { label: "الاسم الثلاثي", value: user.name ?? "—" },
@@ -32,16 +36,41 @@ export function CitizenAccountView({
 
       <div className="mb-4 rounded-xl border border-[var(--gov-border)] p-3">
         <p className="mb-2 text-sm font-medium text-[var(--gov-text)]">كلمة السر</p>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <code className="rounded bg-slate-100 px-2 py-1 text-sm">
-            {showPassword ? "********" : "••••••••"}
-          </code>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            {showPasswordInfo ? (
+              <div className="space-y-2 text-sm text-[var(--gov-text)]">
+                <p>
+                  لا يمكن عرض كلمة السر التي أدخلتها عند التسجيل؛ النظام يحفظها{" "}
+                  <span className="font-semibold">مشفّرة فقط</span> لأمان حسابك ولا يمكن استرجاع النص
+                  الأصلي لعرضه هنا.
+                </p>
+                <p className="text-[var(--gov-muted)]">
+                  إذا نسيت كلمة السر أو أردت تعيين كلمة جديدة، استخدم صفحة استعادة كلمة المرور.
+                </p>
+                <Link
+                  href={passwordRecoveryHref}
+                  className="inline-flex min-h-10 items-center font-semibold text-[var(--gov-primary)] hover:underline"
+                >
+                  الانتقال إلى استعادة كلمة المرور ←
+                </Link>
+              </div>
+            ) : (
+              <code
+                className="inline-block rounded bg-slate-100 px-2 py-1.5 text-base tracking-widest text-slate-700"
+                aria-hidden
+              >
+                ••••••••••••
+              </code>
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            className="rounded-lg border border-[var(--gov-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--gov-primary)] hover:bg-[#f7faf8]"
+            aria-pressed={showPasswordInfo}
+            onClick={() => setShowPasswordInfo((v) => !v)}
+            className="shrink-0 rounded-lg border border-[var(--gov-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--gov-primary)] hover:bg-[#f7faf8]"
           >
-            {showPassword ? "إخفاء كلمة السر" : "إظهار كلمة السر"}
+            {showPasswordInfo ? "إخفاء معلومات كلمة السر" : "إظهار معلومات كلمة السر"}
           </button>
         </div>
       </div>
