@@ -13,7 +13,7 @@ export default async function CitizenServicesPage() {
       </header>
       <section className="gov-card mt-3 p-4 text-center md:mt-5 md:p-6">
         <p className="mb-4 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
-          اضغط على الزر للدخول إلى صفحة خدمات بلدية بصرى الشام.
+          يرجى اخيتار الخدمة المطلوبة ثم تقديم الطلب
         </p>
         <div className="space-y-3">
           <div className="flex justify-center">
