@@ -2,10 +2,13 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
+import { ReturneeRegistrationStatusSelect } from "@/components/admin/ReturneeRegistrationStatusSelect";
 import {
   downloadAdminReturneeRegistrationsExcel,
   type ReturneeRegistrationExportRow,
 } from "@/lib/admin-returnee-registrations-export";
+import type { ReturneeRegistrationStatus } from "@/generated/prisma/enums";
+import { returneeRegistrationStatusLabelAr } from "@/lib/returnee-registration-labels";
 
 export type AdminReturneeRegistrationRow = {
   id: string;
@@ -17,6 +20,7 @@ export type AdminReturneeRegistrationRow = {
   email: string;
   returnStatementPath: string;
   createdAt: string;
+  status: ReturneeRegistrationStatus;
 };
 
 function haystack(r: AdminReturneeRegistrationRow): string {
@@ -28,6 +32,8 @@ function haystack(r: AdminReturneeRegistrationRow): string {
     r.email,
     r.birthDate,
     r.createdAt,
+    returneeRegistrationStatusLabelAr[r.status],
+    r.status,
   ]
     .join(" ")
     .toLowerCase();
@@ -58,6 +64,7 @@ export function AdminReturneeRegistrationsTableWithSearch({
       email: r.email,
       returnStatementPath: r.returnStatementPath,
       createdAt: r.createdAt,
+      statusLabel: returneeRegistrationStatusLabelAr[r.status],
     }));
   }, [filtered]);
 
@@ -117,7 +124,7 @@ export function AdminReturneeRegistrationsTableWithSearch({
         <p className="text-center text-sm text-[var(--gov-muted)]">لا نتائج مطابقة للبحث.</p>
       ) : (
         <div className="gov-table-wrap overflow-x-auto">
-          <table className="gov-table min-w-[56rem]">
+          <table className="gov-table min-w-[64rem]">
             <thead>
               <tr>
                 <th>رقم الطلب</th>
@@ -126,6 +133,7 @@ export function AdminReturneeRegistrationsTableWithSearch({
                 <th>الرقم الوطني</th>
                 <th>الهاتف</th>
                 <th>البريد</th>
+                <th>الحالة</th>
                 <th>بيان العودة</th>
                 <th>تاريخ التقديم</th>
               </tr>
@@ -140,6 +148,9 @@ export function AdminReturneeRegistrationsTableWithSearch({
                   <td dir="ltr">{r.phone}</td>
                   <td dir="ltr" className="max-w-[12rem] break-all text-sm">
                     {r.email}
+                  </td>
+                  <td className="align-middle">
+                    <ReturneeRegistrationStatusSelect registrationId={r.id} status={r.status} />
                   </td>
                   <td className="align-middle">
                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">

@@ -41,6 +41,7 @@ export default async function AdminReturneeRegistrationsPage({ searchParams }: S
     email: r.email,
     returnStatementPath: r.returnStatementPath,
     createdAt: r.createdAt.toISOString(),
+    status: r.status,
   }));
 
   return (

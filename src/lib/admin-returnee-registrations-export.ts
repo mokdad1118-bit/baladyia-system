@@ -7,6 +7,7 @@ export type ReturneeRegistrationExportRow = {
   email: string;
   returnStatementPath: string;
   createdAt: string;
+  statusLabel: string;
 };
 
 function fileStamp(): string {
@@ -34,6 +35,7 @@ export async function downloadAdminReturneeRegistrationsExcel(
     { header: "الرقم الوطني", key: "nationalId", width: 18 },
     { header: "رقم الهاتف", key: "phone", width: 18 },
     { header: "البريد الإلكتروني", key: "email", width: 28 },
+    { header: "الحالة", key: "statusLabel", width: 16 },
     { header: "مسار صورة بيان العودة", key: "returnStatementPath", width: 40 },
     { header: "تاريخ التقديم", key: "createdAtLabel", width: 18 },
   ];
@@ -55,6 +57,7 @@ export async function downloadAdminReturneeRegistrationsExcel(
       nationalId: r.nationalId,
       phone: r.phone,
       email: r.email,
+      statusLabel: r.statusLabel,
       returnStatementPath: r.returnStatementPath,
       createdAtLabel: new Date(r.createdAt).toLocaleDateString("ar"),
     });

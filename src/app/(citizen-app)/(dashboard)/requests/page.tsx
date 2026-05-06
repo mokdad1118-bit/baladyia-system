@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ReturneeRegistrationStatusBadge } from "@/components/citizen/ReturneeRegistrationStatusBadge";
 
 type S = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -200,6 +201,7 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
                       <th>الرقم الوطني</th>
                       <th>الهاتف</th>
                       <th>البريد</th>
+                      <th>الحالة</th>
                       <th>تاريخ التقديم</th>
                     </tr>
                   </thead>
@@ -213,6 +215,9 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
                         <td dir="ltr">{r.phone}</td>
                         <td dir="ltr" className="max-w-[10rem] break-all text-sm">
                           {r.email}
+                        </td>
+                        <td>
+                          <ReturneeRegistrationStatusBadge status={r.status} />
                         </td>
                         <td className="whitespace-nowrap text-[var(--gov-muted)]">{r.createdAt.toLocaleDateString("ar")}</td>
                       </tr>

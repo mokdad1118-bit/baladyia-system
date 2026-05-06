@@ -10,7 +10,7 @@ import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { FileKind, UserRole } from "@/generated/prisma/enums";
+import { FileKind, ReturneeRegistrationStatus, UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { acceptsForFileKind } from "@/lib/file-validation";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
@@ -158,4 +158,35 @@ export async function submitReturneeRegistration(
   revalidatePath("/admin");
 
   redirect(`${returnPath}?ok=1&no=${encodeURIComponent(number)}`);
+}
+
+const RETURNEE_STATUS_SET = new Set<string>(Object.values(ReturneeRegistrationStatus));
+
+export async function updateReturneeRegistrationStatusAction(
+  registrationId: string,
+  statusRaw: string,
+): Promise<{ ok: true } | { error: string }> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== UserRole.ADMIN) {
+    return { error: "غير مصرح." };
+  }
+  if (!RETURNEE_STATUS_SET.has(statusRaw)) {
+    return { error: "حالة غير صالحة." };
+  }
+  const status = statusRaw as ReturneeRegistrationStatus;
+  const row = await db.returneeRegistration.findFirst({
+    where: { id: registrationId },
+    select: { id: true },
+  });
+  if (!row) return { error: "الطلب غير موجود." };
+
+  await db.returneeRegistration.update({
+    where: { id: registrationId },
+    data: { status },
+  });
+
+  revalidatePath("/admin/returnee-registrations");
+  revalidatePath("/citizen/requests");
+  revalidatePath("/requests");
+  return { ok: true };
 }

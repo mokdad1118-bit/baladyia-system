@@ -276,6 +276,13 @@ model GasRequestSerial {
   lastN Int
 }
 
+enum ReturneeRegistrationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
 /// تسجيل العائدين — نموذج مستقل مع مرفق بيان العودة
 model ReturneeRegistration {
   id                       String   @id @default(cuid())
@@ -291,11 +298,14 @@ model ReturneeRegistration {
   returnStatementOriginal  String
   returnStatementMime      String
   returnStatementSize      Int
+  status                   ReturneeRegistrationStatus @default(PENDING)
   createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
   notifications            Notification[]
 
   @@index([createdAt])
   @@index([nationalId])
+  @@index([status])
 }
 
 model ReturneeRegistrationSerial {
