@@ -19,6 +19,23 @@ function splitSqlStatements(sql: string): string[] {
     .filter(Boolean);
 }
 
+function migrationErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    const any = err as Error & { cause?: { message?: string } };
+    const nested = any.cause?.message ?? "";
+    return `${err.message} ${nested}`.toLowerCase();
+  }
+  return String(err).toLowerCase();
+}
+
+/** ترحيل سبق تنفيذه جزئياً على LibSQL (إعادة نشر، انقطاع، إلخ) */
+function isBenignMigrationConflict(msg: string, stmt: string): boolean {
+  if (msg.includes("duplicate column")) return true;
+  const s = stmt.trimStart();
+  if (/^create\s+index\b/i.test(s) && msg.includes("already exists")) return true;
+  return false;
+}
+
 async function applyMigrationsToRemoteLibsql(url: string) {
   const authToken =
     process.env.TURSO_AUTH_TOKEN?.trim() || process.env.LIBSQL_AUTH_TOKEN?.trim();
@@ -54,7 +71,16 @@ async function applyMigrationsToRemoteLibsql(url: string) {
 
     try {
       for (const stmt of statements) {
-        await client.execute(stmt);
+        try {
+          await client.execute(stmt);
+        } catch (stmtErr: unknown) {
+          const msg = migrationErrorMessage(stmtErr);
+          if (isBenignMigrationConflict(msg, stmt)) {
+            console.warn(`[prepare-db] skip statement (already applied): ${stmt.slice(0, 120)}…`);
+            continue;
+          }
+          throw stmtErr;
+        }
       }
       await client.execute({
         sql: "INSERT INTO _app_migrations (name, appliedAt) VALUES (?, ?)",

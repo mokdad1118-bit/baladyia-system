@@ -4,5 +4,5 @@ ALTER TABLE "ReturneeRegistration" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'PE
 -- AlterTable
 ALTER TABLE "ReturneeRegistration" ADD COLUMN "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
--- CreateIndex
-CREATE INDEX "ReturneeRegistration_status_idx" ON "ReturneeRegistration"("status");
+-- CreateIndex (idempotent for redeploys / partial applies)
+CREATE INDEX IF NOT EXISTS "ReturneeRegistration_status_idx" ON "ReturneeRegistration"("status");
