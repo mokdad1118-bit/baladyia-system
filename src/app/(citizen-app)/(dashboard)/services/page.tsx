@@ -37,6 +37,14 @@ export default async function CitizenServicesPage() {
               خدمات الغاز
             </Link>
           </div>
+          <div className="flex justify-center">
+            <Link
+              href="/services/returnees"
+              className="gov-btn-primary inline-flex min-h-11 min-w-[16rem] items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
+            >
+              تسجيل العائدين
+            </Link>
+          </div>
         </div>
       </section>
     </div>

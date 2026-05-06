@@ -43,6 +43,7 @@ model User {
   notifications      Notification[]
   gasRequests        GasRequest[]
   assignedGasRequests GasRequest[] @relation("GasRequestAgent")
+  returneeRegistrations ReturneeRegistration[]
 
   /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها (فريدة لكل معتمد)
   gasArea            String?  @unique
@@ -268,6 +269,32 @@ model GasRequest {
 
 /// عدّاد سنوي لطلبات الغاز: GAS-YYYY-NNNNN
 model GasRequestSerial {
+  year  Int @id
+  lastN Int
+}
+
+/// تسجيل العائدين — نموذج مستقل مع مرفق بيان العودة
+model ReturneeRegistration {
+  id                       String   @id @default(cuid())
+  registrationNumber       String   @unique
+  citizenId                String
+  citizen                  User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  fullName                 String
+  birthDate                DateTime
+  nationalId               String
+  phone                    String
+  email                    String
+  returnStatementPath      String
+  returnStatementOriginal  String
+  returnStatementMime      String
+  returnStatementSize      Int
+  createdAt                DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([nationalId])
+}
+
+model ReturneeRegistrationSerial {
   year  Int @id
   lastN Int
 }

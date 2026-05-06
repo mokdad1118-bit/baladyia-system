@@ -17,6 +17,12 @@ const segments = [
   { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: null },
   { internal: "/admin/gas-services", label: "خدمات الغاز", desc: "طلبات خدمات الغاز", perm: null },
   {
+    internal: "/admin/returnee-registrations",
+    label: "تسجيل العائدين",
+    desc: "طلبات العائدين وبيان العودة",
+    perm: null,
+  },
+  {
     internal: "/admin/users",
     label: "حسابات الموظفين",
     desc: "الموظفون والمديرون والصلاحيات",
