@@ -13,6 +13,7 @@ import { auth } from "@/auth";
 import { FileKind, UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { acceptsForFileKind } from "@/lib/file-validation";
+import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextReturneeRegistrationNumber } from "@/lib/returnee-registration-serial";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
@@ -111,7 +112,7 @@ export async function submitReturneeRegistration(
   const rel = `/uploads/${new Date().getUTCFullYear()}/${stored}`;
 
   const number = await nextReturneeRegistrationNumber();
-  await db.returneeRegistration.create({
+  const created = await db.returneeRegistration.create({
     data: {
       registrationNumber: number,
       citizenId: session.user.id,
@@ -127,9 +128,34 @@ export async function submitReturneeRegistration(
     },
   });
 
+  try {
+    const staff = await getStaffToNotify();
+    await notifyUsers({
+      userIds: staff,
+      type: "RETURNEE_SUBMITTED",
+      title: "طلب تسجيل عائدين جديد",
+      message: `وصل طلب تسجيل عائدين رقم ${number} — ${fullName}.`,
+      returneeRegistrationId: created.id,
+    });
+    await notifyUsers({
+      userIds: [session.user.id],
+      type: "RETURNEE_SUBMITTED",
+      title: "تم استلام طلب تسجيل العائدين",
+      message: `تم استلام طلبك رقم ${number}. الحالة: قيد المتابعة.`,
+      returneeRegistrationId: created.id,
+    });
+  } catch (e) {
+    console.warn("[submitReturneeRegistration] notifyUsers:", e);
+  }
+
   revalidatePath("/admin/returnee-registrations");
   revalidatePath("/services/returnees");
   revalidatePath("/citizen/services/returnees");
+  revalidatePath("/notifications");
+  revalidatePath("/citizen/notifications");
+  revalidatePath("/requests");
+  revalidatePath("/citizen/requests");
+  revalidatePath("/admin");
 
   redirect(`${returnPath}?ok=1&no=${encodeURIComponent(number)}`);
 }

@@ -8,11 +8,16 @@ export type CitizenNotificationRow = {
   createdAt: Date;
   requestId: string | null;
   gasRequestId: string | null;
+  returneeRegistrationId: string | null;
   type: string;
 };
 
 function isGasNotification(n: CitizenNotificationRow) {
-  return n.gasRequestId != null || n.type.startsWith("GAS_");
+  return n.gasRequestId != null || (n.type.startsWith("GAS_") && !n.returneeRegistrationId);
+}
+
+function isReturneeNotification(n: CitizenNotificationRow) {
+  return n.returneeRegistrationId != null || n.type.startsWith("RETURNEE_");
 }
 
 function NotificationCard({
@@ -23,11 +28,16 @@ function NotificationCard({
   requestsBasePath: string;
 }) {
   const gas = isGasNotification(n);
+  const ret = isReturneeNotification(n);
   const href = gas
     ? `${requestsBasePath}#citizen-gas-requests`
-    : n.requestId
-      ? `${requestsBasePath}/${n.requestId}`
-      : undefined;
+    : ret
+      ? `${requestsBasePath}#citizen-returnee-requests`
+      : n.requestId
+        ? `${requestsBasePath}/${n.requestId}`
+        : undefined;
+
+  const linkLabel = gas ? "عرض طلبات الغاز ←" : ret ? "عرض طلبات تسجيل العائدين ←" : "فتح الطلب ←";
 
   return (
     <li className={`gov-card p-4 ${n.read ? "" : "border-s-[3px] border-s-[var(--gov-primary)]"}`}>
@@ -43,7 +53,7 @@ function NotificationCard({
           className="mt-2 inline-flex min-h-10 items-center text-sm font-semibold text-[var(--gov-primary)] hover:underline"
           href={href}
         >
-          {gas ? "عرض طلبات الغاز ←" : "فتح الطلب ←"}
+          {linkLabel}
         </Link>
       ) : null}
     </li>
@@ -58,10 +68,12 @@ export function CitizenNotificationsView({
   requestsBasePath: string;
 }) {
   const gasList = list.filter(isGasNotification);
-  const municipalList = list.filter((n) => !isGasNotification(n));
+  const returneeList = list.filter(isReturneeNotification);
+  const municipalList = list.filter((n) => !isGasNotification(n) && !isReturneeNotification(n));
 
   const unreadMunicipal = municipalList.filter((n) => !n.read).length;
   const unreadGas = gasList.filter((n) => !n.read).length;
+  const unreadReturnee = returneeList.filter((n) => !n.read).length;
 
   function sectionSummary(title: string, total: number, unread: number) {
     return (
@@ -103,6 +115,19 @@ export function CitizenNotificationsView({
             </p>
           ) : (
             <ul className="space-y-3">{gasList.map((n) => <NotificationCard key={n.id} n={n} requestsBasePath={requestsBasePath} />)}</ul>
+          )}
+        </div>
+      </details>
+
+      <details open className="gov-card p-4">
+        {sectionSummary("تنبيهات تسجيل العائدين", returneeList.length, unreadReturnee)}
+        <div className="mt-4">
+          {returneeList.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-[var(--gov-border)] p-6 text-center text-sm text-[var(--gov-muted)]">
+              لا تنبيهات لتسجيل العائدين حالياً.
+            </p>
+          ) : (
+            <ul className="space-y-3">{returneeList.map((n) => <NotificationCard key={n.id} n={n} requestsBasePath={requestsBasePath} />)}</ul>
           )}
         </div>
       </details>

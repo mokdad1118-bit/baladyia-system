@@ -24,6 +24,10 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
     where: { citizenId: s.user.id },
     orderBy: { createdAt: "desc" },
   });
+  const returneeRegistrations = await db.returneeRegistration.findMany({
+    where: { citizenId: s.user.id },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="w-full min-w-0 max-w-full">
@@ -167,6 +171,50 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
                           )}
                         </td>
                         <td className="whitespace-nowrap text-[var(--gov-muted)]">{g.createdAt.toLocaleDateString("ar")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </details>
+
+        <details id="citizen-returnee-requests" open className="gov-card scroll-mt-24 p-4">
+          <summary className="gov-btn-primary cursor-pointer list-none px-4 py-2 text-sm font-semibold md:text-base">
+            طلبات تسجيل العائدين
+          </summary>
+          <div className="mt-4">
+            {returneeRegistrations.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">
+                لا توجد طلبات تسجيل عائدين بعد.
+              </div>
+            ) : (
+              <div className="gov-table-wrap">
+                <table className="gov-table">
+                  <thead>
+                    <tr>
+                      <th>رقم الطلب</th>
+                      <th>الاسم الثلاثي</th>
+                      <th>تاريخ الميلاد</th>
+                      <th>الرقم الوطني</th>
+                      <th>الهاتف</th>
+                      <th>البريد</th>
+                      <th>تاريخ التقديم</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {returneeRegistrations.map((r) => (
+                      <tr key={r.id}>
+                        <td className="font-mono font-semibold text-[var(--gov-primary)]">{r.registrationNumber}</td>
+                        <td>{r.fullName}</td>
+                        <td className="whitespace-nowrap">{r.birthDate.toLocaleDateString("ar")}</td>
+                        <td dir="ltr">{r.nationalId}</td>
+                        <td dir="ltr">{r.phone}</td>
+                        <td dir="ltr" className="max-w-[10rem] break-all text-sm">
+                          {r.email}
+                        </td>
+                        <td className="whitespace-nowrap text-[var(--gov-muted)]">{r.createdAt.toLocaleDateString("ar")}</td>
                       </tr>
                     ))}
                   </tbody>

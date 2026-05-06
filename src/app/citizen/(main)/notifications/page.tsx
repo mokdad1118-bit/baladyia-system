@@ -22,6 +22,7 @@ export default async function CitizenNotificationsPage() {
       createdAt: true,
       requestId: true,
       gasRequestId: true,
+      returneeRegistrationId: true,
       type: true,
     },
   });
@@ -31,7 +32,7 @@ export default async function CitizenNotificationsPage() {
         <div>
           <h1 className="text-xl font-bold text-[var(--gov-text)]">الإشعارات</h1>
           <p className="mt-1 text-sm text-[var(--gov-muted)]">
-            تنبيهات خدمات بلدية بصرى الشام وخدمات الغاز في قسمين منفصلين.
+            تنبيهات خدمات بلدية بصرى الشام، وخدمات الغاز، وتسجيل العائدين في أقسام منفصلة.
           </p>
         </div>
         <form action={markAllNotificationsRead}>

@@ -230,9 +230,12 @@ model Notification {
   request    Request? @relation("RequestNotifications", fields: [requestId], references: [id], onDelete: SetNull)
   gasRequestId String?
   gasRequest   GasRequest? @relation(fields: [gasRequestId], references: [id], onDelete: SetNull)
+  returneeRegistrationId String?
+  returneeRegistration ReturneeRegistration? @relation(fields: [returneeRegistrationId], references: [id], onDelete: SetNull)
   createdAt  DateTime @default(now())
 
   @@index([gasRequestId])
+  @@index([returneeRegistrationId])
 }
 
 /// Atomic yearly counter for request numbers: REQ-YYYY-NNNNN
@@ -289,6 +292,7 @@ model ReturneeRegistration {
   returnStatementMime      String
   returnStatementSize      Int
   createdAt                DateTime @default(now())
+  notifications            Notification[]
 
   @@index([createdAt])
   @@index([nationalId])

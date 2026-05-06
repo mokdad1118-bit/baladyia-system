@@ -2,6 +2,10 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
+import {
+  downloadAdminReturneeRegistrationsExcel,
+  type ReturneeRegistrationExportRow,
+} from "@/lib/admin-returnee-registrations-export";
 
 export type AdminReturneeRegistrationRow = {
   id: string;
@@ -37,11 +41,25 @@ export function AdminReturneeRegistrationsTableWithSearch({
   filterForm: ReactNode;
 }) {
   const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return rows;
     return rows.filter((r) => haystack(r).includes(n));
   }, [rows, q]);
+
+  const filteredForExport = useMemo((): ReturneeRegistrationExportRow[] => {
+    return filtered.map((r) => ({
+      registrationNumber: r.registrationNumber,
+      fullName: r.fullName,
+      birthDate: r.birthDate,
+      nationalId: r.nationalId,
+      phone: r.phone,
+      email: r.email,
+      returnStatementPath: r.returnStatementPath,
+      createdAt: r.createdAt,
+    }));
+  }, [filtered]);
 
   return (
     <div>
@@ -61,15 +79,36 @@ export function AdminReturneeRegistrationsTableWithSearch({
 
       <div className="gov-card mb-6 p-4">{filterForm}</div>
 
-      <div className="mb-4">
-        <AdminListSearchField
-          id="admin-returnee-search"
-          label="بحث في الطلبات"
-          placeholder="رقم الطلب، الاسم، الرقم الوطني، الهاتف، البريد…"
-          value={q}
-          onChange={setQ}
-          className="mb-0"
-        />
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <AdminListSearchField
+            id="admin-returnee-search"
+            label="بحث في الطلبات"
+            placeholder="رقم الطلب، الاسم، الرقم الوطني، الهاتف، البريد…"
+            value={q}
+            onChange={setQ}
+            className="mb-0"
+          />
+        </div>
+
+        <button
+          type="button"
+          disabled={filteredForExport.length === 0 || busy}
+          className="gov-btn-primary min-h-10 rounded-sm border-0 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await downloadAdminReturneeRegistrationsExcel(filteredForExport);
+            } catch (e) {
+              console.error(e);
+              alert("تعذر تصدير Excel. حاول مرة أخرى.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "جاري التصدير…" : "تصدير Excel"}
+        </button>
       </div>
 
       {rows.length === 0 ? (
