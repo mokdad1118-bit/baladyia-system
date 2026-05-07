@@ -87,14 +87,14 @@ function NotificationsDialog({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={title}
       onClick={onClose}
     >
       <div
-        className="gov-card max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-2xl"
+        className="gov-card my-auto w-full max-w-3xl overflow-hidden rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[var(--gov-border)] px-4 py-3">
@@ -107,7 +107,7 @@ function NotificationsDialog({
             إغلاق
           </button>
         </div>
-        <div className="max-h-[calc(85vh-74px)] overflow-auto p-4">
+        <div className="max-h-[min(78dvh,calc(100vh-120px))] overflow-auto p-4">
           {list.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--gov-border)] p-6 text-center text-sm text-[var(--gov-muted)]">
               لا توجد تنبيهات في هذا القسم حالياً.
