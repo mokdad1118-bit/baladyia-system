@@ -31,6 +31,8 @@ function migrationErrorMessage(err: unknown): string {
 /** ترحيل سبق تنفيذه جزئياً على LibSQL (إعادة نشر، انقطاع، إلخ) */
 function isBenignMigrationConflict(msg: string, stmt: string): boolean {
   if (msg.includes("duplicate column")) return true;
+  /** نسخة قديمة من migration.sql استخدمت CURRENT_TIMESTAMP على ADD COLUMN */
+  if (msg.includes("non-constant default")) return true;
   const s = stmt.trimStart();
   if (/^create\s+index\b/i.test(s) && msg.includes("already exists")) return true;
   return false;
