@@ -174,38 +174,59 @@ export function CitizenRequestsView({
         );
       }
       return (
-        <div className="gov-table-wrap">
-          <table className="gov-table">
-            <thead>
-              <tr>
-                <th>رقم طلب الغاز</th>
-                <th>الاسم الثلاثي</th>
-                <th>رقم الهاتف</th>
-                <th>الرقم الوطني</th>
-                <th>الحالة</th>
-                <th>التاريخ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gasRequests.map((g) => (
-                <tr key={g.id}>
-                  <td className="font-mono font-semibold text-[var(--gov-primary)]">{g.gasRequestNumber}</td>
-                  <td>{g.fullName}</td>
-                  <td dir="ltr">{g.phone}</td>
-                  <td dir="ltr">{g.nationalId}</td>
-                  <td>
-                    {g.isCompleted ? (
-                      <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">تم التسليم</span>
-                    ) : (
-                      <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">قيد المتابعة</span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap text-[var(--gov-muted)]">{new Date(g.createdAt).toLocaleDateString("ar")}</td>
+        <>
+          <ul className="space-y-2 md:hidden">
+            {gasRequests.map((g) => (
+              <li key={g.id} className="gov-card p-4 text-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <span className="font-mono font-semibold text-[var(--gov-primary)]">{g.gasRequestNumber}</span>
+                  {g.isCompleted ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">تم التسليم</span>
+                  ) : (
+                    <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">قيد المتابعة</span>
+                  )}
+                </div>
+                <p className="mt-2 break-words text-[var(--gov-text)]">{g.fullName}</p>
+                <p className="mt-1 text-[var(--gov-text)]" dir="ltr">
+                  {g.phone}
+                </p>
+                <time className="mt-1 block text-xs text-[var(--gov-muted)]" dateTime={g.createdAt}>
+                  {new Date(g.createdAt).toLocaleDateString("ar")}
+                </time>
+              </li>
+            ))}
+          </ul>
+          <div className="gov-table-wrap hidden md:block">
+            <table className="gov-table">
+              <thead>
+                <tr>
+                  <th>رقم الطلب</th>
+                  <th>الاسم الثلاثي</th>
+                  <th>رقم الهاتف</th>
+                  <th>الحالة</th>
+                  <th>تاريخ التقديم</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {gasRequests.map((g) => (
+                  <tr key={g.id}>
+                    <td className="font-mono font-semibold text-[var(--gov-primary)]">{g.gasRequestNumber}</td>
+                    <td>{g.fullName}</td>
+                    <td dir="ltr">{g.phone}</td>
+                    <td>
+                      {g.isCompleted ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">تم التسليم</span>
+                      ) : (
+                        <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">قيد المتابعة</span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap text-[var(--gov-muted)]">{new Date(g.createdAt).toLocaleDateString("ar")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       );
     }
 
@@ -218,40 +239,51 @@ export function CitizenRequestsView({
         );
       }
       return (
-        <div className="gov-table-wrap">
-          <table className="gov-table">
-            <thead>
-              <tr>
-                <th>رقم الطلب</th>
-                <th>الاسم الثلاثي</th>
-                <th>تاريخ الميلاد</th>
-                <th>الرقم الوطني</th>
-                <th>الهاتف</th>
-                <th>البريد</th>
-                <th>الحالة</th>
-                <th>تاريخ التقديم</th>
-              </tr>
-            </thead>
-            <tbody>
-              {returneeRegistrations.map((r) => (
-                <tr key={r.id}>
-                  <td className="font-mono font-semibold text-[var(--gov-primary)]">{r.registrationNumber}</td>
-                  <td>{r.fullName}</td>
-                  <td className="whitespace-nowrap">{new Date(r.birthDate).toLocaleDateString("ar")}</td>
-                  <td dir="ltr">{r.nationalId}</td>
-                  <td dir="ltr">{r.phone}</td>
-                  <td dir="ltr" className="max-w-[10rem] break-all text-sm">
-                    {r.email}
-                  </td>
-                  <td>
-                    <ReturneeRegistrationStatusBadge status={r.status} />
-                  </td>
-                  <td className="whitespace-nowrap text-[var(--gov-muted)]">{new Date(r.createdAt).toLocaleDateString("ar")}</td>
+        <>
+          <ul className="space-y-2 md:hidden">
+            {returneeRegistrations.map((r) => (
+              <li key={r.id} className="gov-card p-4 text-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <span className="font-mono font-semibold text-[var(--gov-primary)]">{r.registrationNumber}</span>
+                  <ReturneeRegistrationStatusBadge status={r.status} />
+                </div>
+                <p className="mt-2 break-words text-[var(--gov-text)]">{r.fullName}</p>
+                <p className="mt-1 text-[var(--gov-text)]" dir="ltr">
+                  {r.phone}
+                </p>
+                <time className="mt-1 block text-xs text-[var(--gov-muted)]" dateTime={r.createdAt}>
+                  {new Date(r.createdAt).toLocaleDateString("ar")}
+                </time>
+              </li>
+            ))}
+          </ul>
+          <div className="gov-table-wrap hidden md:block">
+            <table className="gov-table">
+              <thead>
+                <tr>
+                  <th>رقم الطلب</th>
+                  <th>الاسم الثلاثي</th>
+                  <th>رقم الهاتف</th>
+                  <th>الحالة</th>
+                  <th>تاريخ التقديم</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {returneeRegistrations.map((r) => (
+                  <tr key={r.id}>
+                    <td className="font-mono font-semibold text-[var(--gov-primary)]">{r.registrationNumber}</td>
+                    <td>{r.fullName}</td>
+                    <td dir="ltr">{r.phone}</td>
+                    <td>
+                      <ReturneeRegistrationStatusBadge status={r.status} />
+                    </td>
+                    <td className="whitespace-nowrap text-[var(--gov-muted)]">{new Date(r.createdAt).toLocaleDateString("ar")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       );
     }
 
