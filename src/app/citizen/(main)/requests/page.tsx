@@ -2,8 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { ReturneeRegistrationStatusBadge } from "@/components/citizen/ReturneeRegistrationStatusBadge";
+import { CitizenRequestsView } from "@/components/citizen/CitizenRequestsView";
 
 type S = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -62,150 +61,36 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
         </div>
       )}
 
-      <section className="space-y-4">
-        <details open className="gov-card p-4">
-          <summary className="gov-btn-primary cursor-pointer list-none px-4 py-2 text-sm font-semibold md:text-base">
-            طلباتك المخصصة لخدمات البلدية
-          </summary>
-          <div className="mt-4">
-            {municipalityRequests.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">
-                لا توجد طلبات بلدية بعد.
-              </div>
-            ) : (
-              <div className="gov-table-wrap">
-                <table className="gov-table">
-                  <thead>
-                    <tr>
-                      <th>الرقم</th>
-                      <th>الخدمة</th>
-                      <th>الحالة</th>
-                      <th>التاريخ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {municipalityRequests.map((r) => (
-                      <tr key={r.id}>
-                        <td>
-                          <Link
-                            href={`/citizen/requests/${r.id}`}
-                            className="font-mono font-semibold text-[var(--gov-primary)] hover:underline"
-                          >
-                            {r.requestNumber}
-                          </Link>
-                        </td>
-                        <td>{r.service.name}</td>
-                        <td>
-                          <StatusBadge status={r.status} />
-                        </td>
-                        <td className="whitespace-nowrap text-[var(--gov-muted)]">{r.createdAt.toLocaleDateString("ar")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </details>
-
-        <details id="citizen-gas-requests" open className="gov-card scroll-mt-24 p-4">
-          <summary className="gov-btn-primary cursor-pointer list-none px-4 py-2 text-sm font-semibold md:text-base">
-            طلباتك المخصصة لخدمات الغاز
-          </summary>
-          <div className="mt-4">
-            {gasRequests.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">
-                لا توجد طلبات غاز بعد.
-              </div>
-            ) : (
-              <div className="gov-table-wrap">
-                <table className="gov-table">
-                  <thead>
-                    <tr>
-                      <th>رقم طلب الغاز</th>
-                      <th>الاسم الثلاثي</th>
-                      <th>رقم الهاتف</th>
-                      <th>الرقم الوطني</th>
-                      <th>الحالة</th>
-                      <th>التاريخ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {gasRequests.map((g) => (
-                      <tr key={g.id}>
-                        <td className="font-mono font-semibold text-[var(--gov-primary)]">{g.gasRequestNumber}</td>
-                        <td>{g.fullName}</td>
-                        <td dir="ltr">{g.phone}</td>
-                        <td dir="ltr">{g.nationalId}</td>
-                        <td>
-                          {g.isCompleted ? (
-                            <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">
-                              تم التسليم
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                              قيد المتابعة
-                            </span>
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap text-[var(--gov-muted)]">{g.createdAt.toLocaleDateString("ar")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </details>
-
-        <details id="citizen-returnee-requests" open className="gov-card scroll-mt-24 p-4">
-          <summary className="gov-btn-primary cursor-pointer list-none px-4 py-2 text-sm font-semibold md:text-base">
-            طلبات تسجيل العائدين
-          </summary>
-          <div className="mt-4">
-            {returneeRegistrations.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">
-                لا توجد طلبات تسجيل عائدين بعد.
-              </div>
-            ) : (
-              <div className="gov-table-wrap">
-                <table className="gov-table">
-                  <thead>
-                    <tr>
-                      <th>رقم الطلب</th>
-                      <th>الاسم الثلاثي</th>
-                      <th>تاريخ الميلاد</th>
-                      <th>الرقم الوطني</th>
-                      <th>الهاتف</th>
-                      <th>البريد</th>
-                      <th>الحالة</th>
-                      <th>تاريخ التقديم</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {returneeRegistrations.map((r) => (
-                      <tr key={r.id}>
-                        <td className="font-mono font-semibold text-[var(--gov-primary)]">{r.registrationNumber}</td>
-                        <td>{r.fullName}</td>
-                        <td className="whitespace-nowrap">{r.birthDate.toLocaleDateString("ar")}</td>
-                        <td dir="ltr">{r.nationalId}</td>
-                        <td dir="ltr">{r.phone}</td>
-                        <td dir="ltr" className="max-w-[10rem] break-all text-sm">
-                          {r.email}
-                        </td>
-                        <td>
-                          <ReturneeRegistrationStatusBadge status={r.status} />
-                        </td>
-                        <td className="whitespace-nowrap text-[var(--gov-muted)]">{r.createdAt.toLocaleDateString("ar")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </details>
-      </section>
+      <CitizenRequestsView
+        requestsBasePath="/citizen/requests"
+        municipalityRequests={municipalityRequests.map((r) => ({
+          id: r.id,
+          requestNumber: r.requestNumber,
+          serviceName: r.service.name,
+          status: r.status,
+          createdAt: r.createdAt.toISOString(),
+        }))}
+        gasRequests={gasRequests.map((g) => ({
+          id: g.id,
+          gasRequestNumber: g.gasRequestNumber,
+          fullName: g.fullName,
+          phone: g.phone,
+          nationalId: g.nationalId,
+          isCompleted: g.isCompleted,
+          createdAt: g.createdAt.toISOString(),
+        }))}
+        returneeRegistrations={returneeRegistrations.map((r) => ({
+          id: r.id,
+          registrationNumber: r.registrationNumber,
+          fullName: r.fullName,
+          birthDate: r.birthDate.toISOString(),
+          nationalId: r.nationalId,
+          phone: r.phone,
+          email: r.email,
+          status: r.status,
+          createdAt: r.createdAt.toISOString(),
+        }))}
+      />
     </div>
   );
 }
