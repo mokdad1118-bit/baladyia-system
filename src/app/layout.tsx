@@ -15,12 +15,12 @@ export const metadata: Metadata = {
   title: `${ENTITY_NAME_AR} — البوابة الإلكترونية`,
   description:
     "بوابة مواطنين منفصلة (/) عن لوحة تحكم الموظفين والمديرين (/admin) — مسارات وواجهات وتسجيل دخول مختلفة لكل طرف",
-  applicationName: "بلدية بصرى",
+  applicationName: "بلدية بصرى الشام",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "بلدية بصرى",
+    title: "بلدية بصرى الشام",
   },
   formatDetection: { telephone: false },
   icons: {
