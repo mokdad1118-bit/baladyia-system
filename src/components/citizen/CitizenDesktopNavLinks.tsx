@@ -6,10 +6,10 @@ import { cn } from "@/lib/cn";
 
 function linkClass(active: boolean) {
   return cn(
-    "inline-flex items-center justify-center rounded-full px-3 py-1.5 text-sm font-semibold transition-[color,box-shadow]",
+    "inline-flex min-h-10 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition-[color,box-shadow,transform,background-color] duration-300 ease-out",
     active
-      ? "text-[var(--gov-primary)] ring-2 ring-[var(--gov-primary)] ring-offset-2 ring-offset-white"
-      : "text-[var(--gov-primary)] hover:underline",
+      ? "scale-[1.02] text-[var(--gov-primary)] shadow-[0_2px_10px_-2px_rgba(18,74,56,0.12),0_8px_24px_-8px_rgba(18,74,56,0.12),inset_0_1px_0_rgba(255,255,255,0.92)] ring-1 ring-[var(--gov-primary)]/45 ring-offset-[3px] ring-offset-[var(--gov-page-bg)] bg-gradient-to-b from-white to-emerald-50/55"
+      : "text-[var(--gov-muted)] hover:text-[var(--gov-primary)] hover:bg-emerald-50/45 hover:shadow-[0_2px_10px_-4px_rgba(18,74,56,0.08)]",
   );
 }
 
