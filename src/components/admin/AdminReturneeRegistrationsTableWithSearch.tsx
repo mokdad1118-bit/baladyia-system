@@ -153,22 +153,14 @@ export function AdminReturneeRegistrationsTableWithSearch({
                     <ReturneeRegistrationStatusSelect registrationId={r.id} status={r.status} />
                   </td>
                   <td className="align-middle">
-                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={r.returnStatementPath}
-                        alt={`بيان العودة — ${r.registrationNumber}`}
-                        className="max-h-24 max-w-[10rem] rounded-lg border border-[var(--gov-border)] object-contain"
-                      />
-                      <a
-                        href={r.returnStatementPath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-semibold text-[var(--gov-primary)] underline-offset-2 hover:underline"
-                      >
-                        عرض بالحجم الكامل
-                      </a>
-                    </div>
+                    <a
+                      href={r.returnStatementPath}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-10 items-center rounded-lg border border-[var(--gov-border)] bg-white px-3 text-sm font-semibold text-[var(--gov-primary)] no-underline hover:bg-[#f3f5f7]"
+                    >
+                      عرض المرفق
+                    </a>
                   </td>
                   <td className="whitespace-nowrap text-[var(--gov-muted)]">
                     {new Date(r.createdAt).toLocaleDateString("ar")}
