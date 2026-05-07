@@ -20,7 +20,7 @@ export default async function CitizenMainChromeLayout({
       : 0;
 
   return (
-    <div className="min-h-dvh">
+    <div className="notranslate min-h-dvh" translate="no">
       <div className="citizen-hide-global-chrome hidden border-b border-[var(--gov-border)] bg-white md:block">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link href="/citizen" className="flex items-center gap-3 no-underline">
