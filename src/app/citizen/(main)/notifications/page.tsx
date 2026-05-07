@@ -32,7 +32,7 @@ export default async function CitizenNotificationsPage() {
         <div>
           <h1 className="text-xl font-bold text-[var(--gov-text)]">الإشعارات</h1>
           <p className="mt-1 text-sm text-[var(--gov-muted)]">
-            تنبيهات خدمات بلدية بصرى الشام، وخدمات الغاز، وتسجيل العائدين في أقسام منفصلة.
+            تنبيهات الغاز وتسجيل العائدين والخدمات البلدية في أقسام منفصلة؛ استخدم أزرار التنقل للانتقال السريع بين الأقسام.
           </p>
         </div>
         <form action={markAllNotificationsRead}>

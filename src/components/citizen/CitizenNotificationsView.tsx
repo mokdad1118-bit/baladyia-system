@@ -12,12 +12,20 @@ export type CitizenNotificationRow = {
   type: string;
 };
 
+function isReturneeNotification(n: CitizenNotificationRow) {
+  return n.returneeRegistrationId != null || n.type.startsWith("RETURNEE_");
+}
+
 function isGasNotification(n: CitizenNotificationRow) {
   return n.gasRequestId != null || (n.type.startsWith("GAS_") && !n.returneeRegistrationId);
 }
 
-function isReturneeNotification(n: CitizenNotificationRow) {
-  return n.returneeRegistrationId != null || n.type.startsWith("RETURNEE_");
+/** تقسيم بدون ازدواجية: العائدين أولاً ثم الغاز ثم البلدية */
+function partitionNotifications(list: CitizenNotificationRow[]) {
+  const returneeList = list.filter(isReturneeNotification);
+  const gasList = list.filter((n) => !isReturneeNotification(n) && isGasNotification(n));
+  const municipalList = list.filter((n) => !isReturneeNotification(n) && !isGasNotification(n));
+  return { returneeList, gasList, municipalList };
 }
 
 function NotificationCard({
@@ -27,7 +35,7 @@ function NotificationCard({
   n: CitizenNotificationRow;
   requestsBasePath: string;
 }) {
-  const gas = isGasNotification(n);
+  const gas = !isReturneeNotification(n) && isGasNotification(n);
   const ret = isReturneeNotification(n);
   const href = gas
     ? `${requestsBasePath}#citizen-gas-requests`
@@ -67,9 +75,7 @@ export function CitizenNotificationsView({
   list: CitizenNotificationRow[];
   requestsBasePath: string;
 }) {
-  const gasList = list.filter(isGasNotification);
-  const returneeList = list.filter(isReturneeNotification);
-  const municipalList = list.filter((n) => !isGasNotification(n) && !isReturneeNotification(n));
+  const { municipalList, gasList, returneeList } = partitionNotifications(list);
 
   const unreadMunicipal = municipalList.filter((n) => !n.read).length;
   const unreadGas = gasList.filter((n) => !n.read).length;
@@ -93,20 +99,41 @@ export function CitizenNotificationsView({
 
   return (
     <div className="space-y-4">
-      <details open className="gov-card p-4">
-        {sectionSummary("تنبيهات خدمات بلدية بصرى الشام", municipalList.length, unreadMunicipal)}
-        <div className="mt-4">
-          {municipalList.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-[var(--gov-border)] p-6 text-center text-sm text-[var(--gov-muted)]">
-              لا تنبيهات للخدمات البلدية حالياً.
-            </p>
-          ) : (
-            <ul className="space-y-3">{municipalList.map((n) => <NotificationCard key={n.id} n={n} requestsBasePath={requestsBasePath} />)}</ul>
-          )}
-        </div>
-      </details>
+      <nav
+        aria-label="التنقل بين أقسام الإشعارات"
+        className="gov-card flex flex-wrap items-center justify-center gap-2 p-3 sm:justify-start"
+      >
+        <span className="w-full text-center text-xs text-[var(--gov-muted)] sm:w-auto sm:text-start">انتقل سريعاً إلى:</span>
+        <a
+          href="#citizen-notifications-gas"
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--gov-primary)] no-underline shadow-sm hover:bg-[#f3f5f7]"
+        >
+          تنبيهات الغاز
+          {unreadGas > 0 ? (
+            <span className="me-1 rounded-full bg-[var(--gov-primary)] px-2 py-0.5 text-xs text-white">{unreadGas}</span>
+          ) : null}
+        </a>
+        <a
+          href="#citizen-notifications-returnee"
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--gov-primary)] no-underline shadow-sm hover:bg-[#f3f5f7]"
+        >
+          تنبيهات العائدين
+          {unreadReturnee > 0 ? (
+            <span className="me-1 rounded-full bg-[var(--gov-primary)] px-2 py-0.5 text-xs text-white">{unreadReturnee}</span>
+          ) : null}
+        </a>
+        <a
+          href="#citizen-notifications-municipal"
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--gov-text)] no-underline shadow-sm hover:bg-[#f3f5f7]"
+        >
+          تنبيهات البلدية
+          {unreadMunicipal > 0 ? (
+            <span className="me-1 rounded-full bg-[var(--gov-primary)] px-2 py-0.5 text-xs text-white">{unreadMunicipal}</span>
+          ) : null}
+        </a>
+      </nav>
 
-      <details open className="gov-card p-4">
+      <details id="citizen-notifications-gas" open className="gov-card scroll-mt-24 p-4">
         {sectionSummary("تنبيهات خدمات الغاز", gasList.length, unreadGas)}
         <div className="mt-4">
           {gasList.length === 0 ? (
@@ -119,7 +146,7 @@ export function CitizenNotificationsView({
         </div>
       </details>
 
-      <details open className="gov-card p-4">
+      <details id="citizen-notifications-returnee" open className="gov-card scroll-mt-24 p-4">
         {sectionSummary("تنبيهات تسجيل العائدين", returneeList.length, unreadReturnee)}
         <div className="mt-4">
           {returneeList.length === 0 ? (
@@ -128,6 +155,19 @@ export function CitizenNotificationsView({
             </p>
           ) : (
             <ul className="space-y-3">{returneeList.map((n) => <NotificationCard key={n.id} n={n} requestsBasePath={requestsBasePath} />)}</ul>
+          )}
+        </div>
+      </details>
+
+      <details id="citizen-notifications-municipal" open className="gov-card scroll-mt-24 p-4">
+        {sectionSummary("تنبيهات خدمات بلدية بصرى الشام", municipalList.length, unreadMunicipal)}
+        <div className="mt-4">
+          {municipalList.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-[var(--gov-border)] p-6 text-center text-sm text-[var(--gov-muted)]">
+              لا تنبيهات للخدمات البلدية حالياً.
+            </p>
+          ) : (
+            <ul className="space-y-3">{municipalList.map((n) => <NotificationCard key={n.id} n={n} requestsBasePath={requestsBasePath} />)}</ul>
           )}
         </div>
       </details>
