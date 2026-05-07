@@ -16,6 +16,7 @@ import { acceptsForFileKind } from "@/lib/file-validation";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextReturneeRegistrationNumber } from "@/lib/returnee-registration-serial";
+import { returneeRegistrationStatusLabelAr } from "@/lib/returnee-registration-labels";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
 
 export type SubmitReturneeRegistrationState = { error: string } | undefined;
@@ -176,16 +177,35 @@ export async function updateReturneeRegistrationStatusAction(
   const status = statusRaw as ReturneeRegistrationStatus;
   const row = await db.returneeRegistration.findFirst({
     where: { id: registrationId },
-    select: { id: true },
+    select: {
+      id: true,
+      status: true,
+      citizenId: true,
+      registrationNumber: true,
+    },
   });
   if (!row) return { error: "الطلب غير موجود." };
+  if (row.status === status) return { ok: true };
 
   await db.returneeRegistration.update({
     where: { id: registrationId },
     data: { status },
   });
+  try {
+    await notifyUsers({
+      userIds: [row.citizenId],
+      type: "RETURNEE_STATUS_CHANGE",
+      title: "تحديث حالة طلب تسجيل العائدين",
+      message: `تم تحديث حالة طلب تسجيل العائدين ${row.registrationNumber} إلى: ${returneeRegistrationStatusLabelAr[status]}.`,
+      returneeRegistrationId: row.id,
+    });
+  } catch (e) {
+    console.warn("[updateReturneeRegistrationStatusAction] notifyUsers:", e);
+  }
 
   revalidatePath("/admin/returnee-registrations");
+  revalidatePath("/notifications");
+  revalidatePath("/citizen/notifications");
   revalidatePath("/citizen/requests");
   revalidatePath("/requests");
   return { ok: true };
