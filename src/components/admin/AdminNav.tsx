@@ -8,13 +8,6 @@ import type { StaffNavPermissions } from "@/lib/staff-permissions";
 const segments = [
   { internal: "/admin", label: "لوحة التحكم", desc: "نظرة عامة", perm: null },
   { internal: "/admin/requests", label: "الطلبات", desc: "مراجعة وتحديث الحالة", perm: null },
-  {
-    internal: "/admin/services",
-    label: "الخدمات",
-    desc: "النماذج والمستندات والأسعار",
-    perm: "manageServices" as const,
-  },
-  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: null },
   { internal: "/admin/gas-services", label: "خدمات الغاز", desc: "طلبات خدمات الغاز", perm: null },
   {
     internal: "/admin/returnee-registrations",
@@ -22,6 +15,13 @@ const segments = [
     desc: "طلبات العائدين وبيان العودة",
     perm: null,
   },
+  {
+    internal: "/admin/services",
+    label: "الخدمات",
+    desc: "النماذج والمستندات والأسعار",
+    perm: "manageServices" as const,
+  },
+  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: null },
   {
     internal: "/admin/users",
     label: "حسابات الموظفين",
