@@ -102,7 +102,9 @@ export function ReturneeRegistrationForm({
         <div>
           <label className="mb-1.5 block text-sm font-medium">
             صورة بيان العودة{" "}
-            <span className="font-normal text-[var(--gov-muted)]">(صورة فقط — JPG أو PNG أو WebP)</span>
+            <span className="font-normal text-[var(--gov-muted)]">
+              (يرجى ارفاق صورة البيان بشكل واضح) (صورة فقط — JPG أو PNG أو WebP)
+            </span>
           </label>
           <input
             name="returnStatement"
