@@ -1,6 +1,12 @@
+import type { Viewport } from "next";
+
 /**
- * طبقة خلفية كاملة فوراً لتجنّب وميض خلفية الموقع (#ecf4ef) أو أي عنصر قبل تحميل الواجهة الترحيبية.
+ * طبقة خلفية كاملة فوراً + لون شريط الحالة يطابق الترحيب (يتلاشى ظهور الشعار الافتراضي للتطبيق).
  */
+export const viewport: Viewport = {
+  themeColor: "#0B2B26",
+};
+
 export default function CitizenWelcomeLayout({
   children,
 }: Readonly<{

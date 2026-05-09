@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Tajawal } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { ENTITY_NAME_AR } from "@/lib/entity";
+import { cn } from "@/lib/cn";
 
 const tajawal = Tajawal({
   subsets: ["arabic", "latin"],
@@ -41,15 +43,21 @@ export const viewport: Viewport = {
   themeColor: "#006c35",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const welcomeShell = (await headers()).get("x-welcome-route") === "1";
+
   return (
-    <html lang="ar" dir="rtl" className={`h-full ${tajawal.variable}`}>
+    <html lang="ar" dir="rtl" className={cn("h-full", welcomeShell && "bg-[#0B2B26]")}>
       <body
-        className={`gov-page min-h-full ${tajawal.className} antialiased [font-feature-settings:'tnum']`}
+        className={cn(
+          "min-h-full antialiased [font-feature-settings:'tnum']",
+          tajawal.className,
+          welcomeShell ? "welcome-route-shell bg-[#0B2B26]" : "gov-page",
+        )}
       >
         <Providers>{children}</Providers>
       </body>

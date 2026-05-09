@@ -105,7 +105,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (isCitizenPublicPath(pathname)) return NextResponse.next();
+  if (isCitizenPublicPath(pathname)) {
+    if (pathname === "/citizen/welcome") {
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-welcome-route", "1");
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
+    return NextResponse.next();
+  }
 
   if (!hasSession) {
     const u = new URL("/citizen/welcome", req.url);

@@ -26,6 +26,100 @@ body {
   min-height: 100dvh;
 }
 
+/**
+ * صفحة الترحيب (/citizen/welcome): يضبطها الـ middleware عبر ترويسة داخلية
+ * لتجنّب وميض الخلفية الفاتحة أو أيقونة التطبيق قبل تحميل الواجهة.
+ */
+body.welcome-route-shell {
+  background-color: #0b2b26 !important;
+  background-image: none !important;
+}
+
+@keyframes citizen-welcome-btn-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes citizen-welcome-btn-shine {
+  0% {
+    transform: translateX(-130%) skewX(-16deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-16deg);
+  }
+}
+
+@keyframes citizen-welcome-btn-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(197, 179, 130, 0.55),
+      0 8px 28px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 10px rgba(197, 179, 130, 0),
+      0 12px 36px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.citizen-welcome-start-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 2px solid rgba(212, 197, 154, 0.95);
+  background: linear-gradient(155deg, #e3d6ae 0%, #c5b382 42%, #a89462 100%);
+  color: #0b2b26;
+  animation: citizen-welcome-btn-ring 2.8s ease-in-out infinite;
+}
+
+.citizen-welcome-start-btn__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 120% 80% at 50% 115%, rgba(255, 255, 255, 0.55), transparent 52%);
+  animation: citizen-welcome-btn-glow 3s ease-in-out infinite;
+}
+
+.citizen-welcome-start-btn__shine {
+  position: absolute;
+  inset: -40% -60%;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.citizen-welcome-start-btn__shine-inner {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  margin-inline-start: -12%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 38%,
+    rgba(255, 255, 255, 0.72) 50%,
+    rgba(255, 255, 255, 0.08) 62%,
+    transparent 100%
+  );
+  animation: citizen-welcome-btn-shine 2.6s ease-in-out infinite;
+}
+
+.citizen-welcome-start-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.citizen-welcome-start-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 ::selection {
   background: rgba(18, 74, 56, 0.22);
   color: var(--foreground);
