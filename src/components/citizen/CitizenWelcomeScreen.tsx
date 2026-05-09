@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getSession } from "next-auth/react";
 import { safePostLoginRedirectPath } from "@/lib/portal-paths";
+import { setCitizenWelcomeGatePassed } from "@/lib/citizen-welcome-gate";
 import { cn } from "@/lib/cn";
 
 function CitizenWelcomeScreenInner() {
@@ -32,6 +33,7 @@ function CitizenWelcomeScreenInner() {
     try {
       const session = await getSession();
       if (session?.user) {
+        setCitizenWelcomeGatePassed();
         const dest = safePostLoginRedirectPath(nextParam, "citizen") ?? "/citizen";
         router.replace(dest);
       } else {

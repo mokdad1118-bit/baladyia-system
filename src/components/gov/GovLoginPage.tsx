@@ -14,6 +14,7 @@ import { navigateTopLevel } from "@/lib/navigate-client";
 import { AsyncWaitOverlay } from "@/components/ui/AsyncWaitOverlay";
 import { PasswordRevealField } from "@/components/PasswordRevealField";
 import { UserRole } from "@/generated/prisma/enums";
+import { setCitizenWelcomeGatePassed } from "@/lib/citizen-welcome-gate";
 
 export type GovLoginPageProps = {
   loginPage: LoginPageSurface;
@@ -127,6 +128,9 @@ function GovLoginPageImpl({
               else dest = loginPage === "citizen" ? "/citizen" : loginPage === "staff" ? "/staff" : "/admin";
             }
             const absolute = new URL(dest, window.location.origin).href;
+            if (role === UserRole.CITIZEN) {
+              setCitizenWelcomeGatePassed();
+            }
             await new Promise((r) => setTimeout(r, 120));
             navigateTopLevel(absolute);
           } catch (caught) {
