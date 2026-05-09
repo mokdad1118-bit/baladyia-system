@@ -9,7 +9,7 @@ type P = { params: Promise<{ id: string }> };
 
 export default async function CitizenRequestDetailPage({ params }: P) {
   const s = await auth();
-  if (!s?.user) redirect("/citizen/login?next=/requests");
+  if (!s?.user) redirect("/citizen/welcome?next=/requests");
   const { id } = await params;
   const r = await db.request.findFirst({
     where: { id, citizenId: s.user.id },

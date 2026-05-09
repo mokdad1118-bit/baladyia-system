@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** المسار القديم /login — يُوجَّه إلى /citizen/login مع الحفاظ على الاستعلام */
+/** المسار القديم /login — يُوجَّه إلى /citizen/welcome مع الحفاظ على الاستعلام */
 export default async function LegacyLoginRedirect({
   searchParams,
 }: {
@@ -13,5 +13,5 @@ export default async function LegacyLoginRedirect({
     else if (Array.isArray(v)) v.forEach((x) => q.append(k, x));
   }
   const suffix = q.toString() ? `?${q.toString()}` : "";
-  redirect(`/citizen/login${suffix}`);
+  redirect(`/citizen/welcome${suffix}`);
 }

@@ -8,7 +8,7 @@ import { CitizenNotificationsView } from "@/components/citizen/CitizenNotificati
 export default async function CitizenNotificationsPage() {
   const s = await auth();
   if (!s?.user || s.user.role !== UserRole.CITIZEN) {
-    redirect("/citizen/login?next=/citizen/notifications");
+    redirect("/citizen/welcome?next=/citizen/notifications");
   }
   const list = await db.notification.findMany({
     where: { userId: s.user.id },

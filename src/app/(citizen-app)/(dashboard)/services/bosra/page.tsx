@@ -78,7 +78,7 @@ export default async function BosraMunicipalServicesPage() {
                   </div>
                   <p className="shrink-0 text-xs text-[var(--gov-muted)] md:text-sm">
                     <Link
-                      href="/citizen/login?next=/services/bosra"
+                      href="/citizen/welcome?next=/services/bosra"
                       className="font-semibold text-[var(--gov-primary)] hover:underline"
                     >
                       سجّل الدخول كمواطن

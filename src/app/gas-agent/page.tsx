@@ -7,7 +7,7 @@ import { GasAgentRequestsTableWithSearch } from "@/components/gas-agent/GasAgent
 
 export default async function GasAgentHomePage() {
   const s = await auth();
-  if (!s?.user) redirect("/citizen/login?next=/gas-agent");
+  if (!s?.user) redirect("/citizen/welcome?next=/gas-agent");
   if (s.user.role !== UserRole.GAS_AGENT) {
     if (s.user.role === UserRole.ADMIN) redirect("/admin");
     if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");
@@ -34,7 +34,7 @@ export default async function GasAgentHomePage() {
             {me?.name ?? "معتمد غاز"} - المنطقة: <span className="font-semibold">{me?.gasArea ?? "—"}</span>
           </p>
         </header>
-        <LogoutForm callbackUrl="/citizen/login" />
+        <LogoutForm callbackUrl="/citizen/welcome" />
       </div>
 
       <GasAgentRequestsTableWithSearch

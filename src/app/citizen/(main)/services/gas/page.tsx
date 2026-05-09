@@ -12,7 +12,7 @@ type Props = {
 
 export default async function CitizenGasServiceMainPage({ searchParams }: Props) {
   const s = await auth();
-  if (!s?.user) redirect("/citizen/login?next=/citizen/services/gas");
+  if (!s?.user) redirect("/citizen/welcome?next=/citizen/services/gas");
   if (s.user.role !== UserRole.CITIZEN) redirect("/");
 
   const sp = await searchParams;

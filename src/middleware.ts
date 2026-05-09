@@ -1,6 +1,6 @@
 /**
- * ثلاث صفحات دخول على نفس الدومين:
- * /citizen/login للمواطن، /staff/login للموظف، /admin/login للمدير.
+ * صفحات الدخول على نفس الدومين:
+ * /citizen/welcome ثم /citizen/login للمواطن، /staff/login للموظف، /admin/login للمدير.
  * وكل لوحة محمية حسب role فقط.
  */
 import { NextResponse, type NextRequest } from "next/server";
@@ -43,7 +43,7 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/uploads")) return NextResponse.next();
   if (pathname === "/login") {
     const u = req.nextUrl.clone();
-    u.pathname = "/citizen/login";
+    u.pathname = "/citizen/welcome";
     return NextResponse.redirect(u);
   }
   if (pathname === "/employee/login") {
@@ -66,7 +66,7 @@ export async function middleware(req: NextRequest) {
     if (role !== UserRole.ADMIN) {
       if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
-      return NextResponse.redirect(new URL("/citizen/login", req.url));
+      return NextResponse.redirect(new URL("/citizen/welcome", req.url));
     }
     return NextResponse.next();
   }
@@ -81,14 +81,14 @@ export async function middleware(req: NextRequest) {
     if (role !== UserRole.EMPLOYEE) {
       if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
-      return NextResponse.redirect(new URL("/citizen/login", req.url));
+      return NextResponse.redirect(new URL("/citizen/welcome", req.url));
     }
     return NextResponse.next();
   }
 
   if (pathname.startsWith("/gas-agent")) {
     if (!hasSession) {
-      const u = new URL("/citizen/login", req.url);
+      const u = new URL("/citizen/welcome", req.url);
       u.searchParams.set("next", pathname + search);
       return NextResponse.redirect(u);
     }
@@ -96,7 +96,7 @@ export async function middleware(req: NextRequest) {
       if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
       if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
-      return NextResponse.redirect(new URL("/citizen/login", req.url));
+      return NextResponse.redirect(new URL("/citizen/welcome", req.url));
     }
     return NextResponse.next();
   }
@@ -108,7 +108,7 @@ export async function middleware(req: NextRequest) {
   if (isCitizenPublicPath(pathname)) return NextResponse.next();
 
   if (!hasSession) {
-    const u = new URL("/citizen/login", req.url);
+    const u = new URL("/citizen/welcome", req.url);
     u.searchParams.set("next", pathname + search);
     return NextResponse.redirect(u);
   }
@@ -116,7 +116,7 @@ export async function middleware(req: NextRequest) {
     if (role === UserRole.GAS_AGENT) return NextResponse.redirect(new URL("/gas-agent", req.url));
     if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
     if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
-    return NextResponse.redirect(new URL("/citizen/login", req.url));
+    return NextResponse.redirect(new URL("/citizen/welcome", req.url));
   }
   return NextResponse.next();
 }
@@ -127,6 +127,7 @@ export const config = {
     "/",
     "/login",
     "/citizen/login",
+    "/citizen/welcome",
     "/citizen/forgot-password",
     "/citizen/forgot-password/:path*",
     "/staff/login",

@@ -14,6 +14,7 @@ export function isCitizenAppPath(pathname: string) {
   return (
     pathname === "/" ||
     pathname === "/citizen/login" ||
+    pathname === "/citizen/welcome" ||
     pathname.startsWith("/register") ||
     pathname.startsWith("/services") ||
     pathname.startsWith("/requests") ||
@@ -29,6 +30,7 @@ export function isCitizenPublicPath(pathname: string) {
     pathname.startsWith("/register") ||
     pathname.startsWith("/services") ||
     pathname === "/citizen/login" ||
+    pathname === "/citizen/welcome" ||
     pathname.startsWith("/citizen/register") ||
     pathname === "/citizen/forgot-password" ||
     pathname.startsWith("/citizen/forgot-password/")

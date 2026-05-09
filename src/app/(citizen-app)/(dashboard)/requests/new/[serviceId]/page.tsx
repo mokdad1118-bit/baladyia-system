@@ -11,7 +11,7 @@ export default async function CitizenNewRequestPage({ params }: Props) {
   const { serviceId } = await params;
   const s = await auth();
   if (!s?.user) {
-    redirect(`/citizen/login?next=${encodeURIComponent(`/requests/new/${serviceId}`)}`);
+    redirect(`/citizen/welcome?next=${encodeURIComponent(`/requests/new/${serviceId}`)}`);
   }
   if (s.user.role !== UserRole.CITIZEN) {
     redirect(s.user.role === UserRole.EMPLOYEE || s.user.role === UserRole.ADMIN ? "/admin" : "/");

@@ -29,7 +29,7 @@ export default async function AdminPanelLayout({
   if (s.user.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/citizen");
   if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");
   if (s.user.role !== UserRole.ADMIN) {
-    redirect("/citizen/login");
+    redirect("/citizen/welcome");
   }
   const staffPerms = staffNavPermissions(s);
   const homeHref = staffRoot ? "/" : "/admin";

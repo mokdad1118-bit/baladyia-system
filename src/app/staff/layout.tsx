@@ -17,7 +17,7 @@ export default async function StaffLayout({
   if (s.user.role === UserRole.CITIZEN) redirect("/citizen");
   if (s.user.role === UserRole.ADMIN) redirect("/admin");
   if (s.user.role !== UserRole.EMPLOYEE) {
-    redirect("/citizen/login");
+    redirect("/citizen/welcome");
   }
   const p = staffNavPermissions(s);
   return (

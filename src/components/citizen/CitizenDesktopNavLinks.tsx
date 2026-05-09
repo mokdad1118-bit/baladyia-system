@@ -57,7 +57,7 @@ export function CitizenDesktopNavLinks({
         </>
       ) : (
         <>
-          <Link href="/citizen/login" className="text-[var(--gov-primary)] hover:underline">
+          <Link href="/citizen/welcome" className="text-[var(--gov-primary)] hover:underline">
             تسجيل الدخول
           </Link>
           <Link

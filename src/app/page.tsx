@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const s = await auth();
 
-  if (!s?.user) redirect("/citizen/login?next=/");
+  if (!s?.user) redirect("/citizen/welcome?next=/");
   if (s.user.role === UserRole.CITIZEN) redirect("/citizen");
   if (s.user.role === UserRole.GAS_AGENT) redirect("/gas-agent");
   if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");

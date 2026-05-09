@@ -7,7 +7,7 @@ import { CitizenAccountView } from "@/components/citizen/CitizenAccountView";
 export default async function CitizenMainAccountPage() {
   const s = await auth();
   if (!s?.user || s.user.role !== UserRole.CITIZEN) {
-    redirect("/citizen/login?next=/citizen/account");
+    redirect("/citizen/welcome?next=/citizen/account");
   }
 
   const me = await db.user.findUnique({

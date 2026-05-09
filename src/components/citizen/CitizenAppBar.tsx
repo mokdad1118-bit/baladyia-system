@@ -34,7 +34,7 @@ export function CitizenAppBar({ isCitizen }: { isCitizen: boolean }) {
   const { t, backHref } = getTitleForPath(path);
   const onCitizenPath = path.startsWith("/citizen");
   const homeHref = onCitizenPath ? "/citizen" : "/";
-  const loginHref = "/citizen/login";
+  const loginHref = "/citizen/welcome";
 
   return (
     <div
