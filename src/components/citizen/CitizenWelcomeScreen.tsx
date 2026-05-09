@@ -34,14 +34,14 @@ function CitizenWelcomeScreenInner() {
       <div className="flex max-w-md flex-col items-center gap-6">
         <img
           src="/images/syrian-republic-emblem.png"
-          alt="الجمهورية العربية السورية — Syrian Arab Republic"
-          width={288}
-          height={352}
+          alt="الجمهورية العربية السورية — النسر والشعار الرسمي والنصان العربي والإنكليزي"
+          width={380}
+          height={420}
           fetchPriority="high"
           decoding="async"
           onLoad={() => setEmblemReady(true)}
           className={cn(
-            "h-auto w-[min(72vw,288px)] object-contain transition-opacity duration-700 ease-out",
+            "h-auto max-h-[min(52vh,440px)] w-full max-w-[min(92vw,380px)] object-contain transition-opacity duration-700 ease-out",
             emblemReady ? "opacity-100" : "opacity-0",
           )}
         />
