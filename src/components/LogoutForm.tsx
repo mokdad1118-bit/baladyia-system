@@ -27,7 +27,17 @@ export function LogoutForm({
       )}
       aria-label="تسجيل الخروج"
       onClick={() => {
-        void signOut({ callbackUrl: callbackUrl ?? "/" });
+        void (async () => {
+          try {
+            await fetch(`${window.location.origin}/api/citizen/welcome-pass`, {
+              method: "DELETE",
+              credentials: "include",
+            });
+          } catch {
+            /* noop */
+          }
+          void signOut({ callbackUrl: callbackUrl ?? "/" });
+        })();
       }}
     >
       {compact ? "خروج" : "تسجيل خروج"}

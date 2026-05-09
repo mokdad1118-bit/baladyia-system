@@ -8,6 +8,7 @@ import { getToken } from "next-auth/jwt";
 import { UserRole } from "@/generated/prisma/enums";
 import { isCitizenAppPath, isCitizenPublicPath } from "@/lib/portal-paths";
 import { getAuthSecret } from "@/lib/auth-secret";
+import { CITIZEN_WELCOME_PASS_COOKIE, CITIZEN_WELCOME_PASS_VALUE } from "@/lib/citizen-welcome-pass";
 
 /**
  * يجب أن يطابق اسم كوكي الجلسة ما يضبطه NextAuth (`useSecureCookies`).
@@ -124,6 +125,13 @@ export async function middleware(req: NextRequest) {
     if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
     if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
     return NextResponse.redirect(new URL("/citizen/welcome", req.url));
+  }
+  /** بدون كوكي عبور الترحيب لا تُرسَل لوحة المواطن — يُمنع وميض الواجهة قبل شاشة الترحيب */
+  const welcomePassOk = req.cookies.get(CITIZEN_WELCOME_PASS_COOKIE)?.value === CITIZEN_WELCOME_PASS_VALUE;
+  if (!welcomePassOk) {
+    const u = new URL("/citizen/welcome", req.url);
+    u.searchParams.set("next", pathname + search);
+    return NextResponse.redirect(u);
   }
   return NextResponse.next();
 }
