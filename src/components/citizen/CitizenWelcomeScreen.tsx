@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getSession } from "next-auth/react";
 import { safePostLoginRedirectPath } from "@/lib/portal-paths";
 import { cn } from "@/lib/cn";
@@ -13,6 +13,19 @@ function CitizenWelcomeScreenInner() {
   const nextParam = useMemo(() => new URLSearchParams(spQuery).get("next"), [spQuery]);
   const [busy, setBusy] = useState(false);
   const [emblemReady, setEmblemReady] = useState(false);
+  const emblemImgRef = useRef<HTMLImageElement>(null);
+
+  /** صورة من الكاش قد تكون «مكتملة» قبل onLoad فيُبقى opacity-0 — نتحقق بعد الإدراج مباشرة. */
+  useLayoutEffect(() => {
+    const el = emblemImgRef.current;
+    if (!el) return;
+    const reveal = () => {
+      if (el.complete && el.naturalHeight > 0) setEmblemReady(true);
+    };
+    reveal();
+    el.addEventListener("load", reveal);
+    return () => el.removeEventListener("load", reveal);
+  }, []);
 
   const onStart = useCallback(async () => {
     setBusy(true);
@@ -33,6 +46,7 @@ function CitizenWelcomeScreenInner() {
     <div className="flex min-h-dvh flex-col items-center justify-center gap-10 px-6 py-12 text-center">
       <div className="flex max-w-md flex-col items-center gap-6">
         <img
+          ref={emblemImgRef}
           src="/images/syrian-republic-emblem.png"
           alt="الجمهورية العربية السورية — النسر والشعار الرسمي والنصان العربي والإنكليزي"
           width={380}
@@ -40,6 +54,7 @@ function CitizenWelcomeScreenInner() {
           fetchPriority="high"
           decoding="async"
           onLoad={() => setEmblemReady(true)}
+          onError={() => setEmblemReady(true)}
           className={cn(
             "h-auto max-h-[min(52vh,440px)] w-full max-w-[min(92vw,380px)] object-contain transition-opacity duration-700 ease-out",
             emblemReady ? "opacity-100" : "opacity-0",
