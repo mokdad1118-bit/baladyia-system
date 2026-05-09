@@ -2,7 +2,7 @@
   "name": "بلدية بصرى الشام",
   "short_name": "بصرى الشام",
   "description": "البوابة الإلكترونية للخدمات البلدية — تطبيق المواطن",
-  "start_url": "/citizen",
+  "start_url": "/citizen/welcome",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
