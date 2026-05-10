@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { db } from "@/lib/db";
 import { staffNavPermissions } from "@/lib/staff-permissions";
 import { GovWorkspaceShell } from "@/components/gov/GovWorkspaceShell";
 import {
@@ -32,12 +33,19 @@ export default async function AdminPanelLayout({
     redirect("/citizen/welcome");
   }
   const staffPerms = staffNavPermissions(s);
+  const newRequestsCount = await db.notification.count({
+    where: {
+      userId: s.user.id,
+      read: false,
+      type: "REQUEST_SUBMIT",
+    },
+  });
   const homeHref = staffRoot ? "/" : "/admin";
   const logoutCallbackUrl = "/admin/login";
   return (
     <GovWorkspaceShell
       portalTitle="لوحة التحكم"
-      nav={<AdminNav staffPerms={staffPerms} staffRoot={staffRoot} />}
+      nav={<AdminNav staffPerms={staffPerms} staffRoot={staffRoot} newRequestsCount={newRequestsCount} />}
       homeHref={homeHref}
       logoutCallbackUrl={logoutCallbackUrl}
     >

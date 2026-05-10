@@ -53,9 +53,11 @@ function navActive(staffRoot: boolean, internal: string, path: string) {
 export function AdminNav({
   staffPerms,
   staffRoot,
+  newRequestsCount = 0,
 }: {
   staffPerms: StaffNavPermissions;
   staffRoot: boolean;
+  newRequestsCount?: number;
 }) {
   const path = usePathname() ?? "";
   const items = segments.filter((i) => !i.perm || staffPerms[i.perm]);
@@ -78,11 +80,19 @@ export function AdminNav({
           >
             <span
               className={cn(
-                "text-sm font-semibold",
+                "flex items-center gap-2 text-sm font-semibold",
                 active ? "text-[var(--gov-primary)]" : "text-[var(--gov-text)]",
               )}
             >
               {i.label}
+              {i.internal === "/admin/requests" && newRequestsCount > 0 ? (
+                <span
+                  className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--gov-primary)] px-1.5 py-0.5 text-[0.65rem] leading-none text-white"
+                  aria-label={`يوجد ${newRequestsCount} طلب جديد`}
+                >
+                  {newRequestsCount > 99 ? "99+" : newRequestsCount}
+                </span>
+              ) : null}
             </span>
             <span className="text-[0.7rem] text-[var(--gov-muted)]">{i.desc}</span>
           </Link>
