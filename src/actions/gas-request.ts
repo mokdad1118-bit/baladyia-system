@@ -23,28 +23,29 @@ export async function submitGasRequest(
   const fullName = String(formData.get("fullName") ?? "").trim();
   const phone = digitsOnly(String(formData.get("phone") ?? ""));
   const nationalId = digitsOnly(String(formData.get("nationalId") ?? ""));
-  const area = String(formData.get("area") ?? "").trim();
+  const gasAgentId = String(formData.get("gasAgentId") ?? "").trim();
 
   if (fullName.length < 3) return { error: "يرجى إدخال الاسم الثلاثي." };
   if (!isValidWhatsappLength(phone)) return { error: "رقم الهاتف غير صالح (أرقام فقط ٨-١٥)." };
   if (nationalId.length < 10 || nationalId.length > 11) {
     return { error: "الرقم الوطني يجب أن يكون 10 أو 11 رقماً." };
   }
-  if (area.length < 2) {
-    return { error: "يرجى اختيار المنطقة." };
+  if (!gasAgentId) {
+    return { error: "يرجى اختيار معتمد الغاز." };
   }
 
   const agent = await db.user.findFirst({
     where: {
+      id: gasAgentId,
       role: UserRole.GAS_AGENT,
       isActive: true,
-      gasArea: area,
+      gasArea: { not: null },
     },
-    orderBy: { createdAt: "asc" },
-    select: { id: true },
+    select: { id: true, gasArea: true },
   });
-  if (!agent) {
-    return { error: "لا يوجد معتمد غاز مخصص لهذه المنطقة حالياً." };
+  const area = agent?.gasArea?.trim() ?? "";
+  if (!agent || area.length < 2) {
+    return { error: "معتمد الغاز المختار غير متاح حالياً." };
   }
 
   const number = await nextGasRequestNumber();

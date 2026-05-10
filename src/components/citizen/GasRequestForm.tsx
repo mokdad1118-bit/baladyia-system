@@ -7,7 +7,7 @@ import type { SubmitGasRequestState } from "@/actions/gas-request";
 export function GasRequestForm({
   action,
   prefill,
-  areas,
+  gasAgents,
 }: {
   action: (
     prev: SubmitGasRequestState,
@@ -18,7 +18,7 @@ export function GasRequestForm({
     phone?: string | null;
     nationalId?: string | null;
   };
-  areas: string[];
+  gasAgents: { id: string; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
 
@@ -59,14 +59,14 @@ export function GasRequestForm({
 
         <div>
           <label className="mb-1.5 block text-sm font-medium">
-            المنطقة{" "}
-            <span className="font-normal text-[var(--gov-muted)]">(يرجى اختيار منطقتك بدقة)</span>
+            معتمد الغاز{" "}
+            <span className="font-normal text-[var(--gov-muted)]">(يُعرض اسم المعتمد المسؤول عن منطقتك)</span>
           </label>
-          <select name="area" required className="gov-input w-full px-3 py-2.5 text-sm">
-            <option value="">اختر المنطقة</option>
-            {areas.map((area) => (
-              <option key={area} value={area}>
-                {area}
+          <select name="gasAgentId" required className="gov-input w-full px-3 py-2.5 text-sm">
+            <option value="">اختر المعتمد</option>
+            {gasAgents.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
               </option>
             ))}
           </select>
