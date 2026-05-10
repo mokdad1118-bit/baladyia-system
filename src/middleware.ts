@@ -152,6 +152,8 @@ export const config = {
     "/services/:path*",
     "/requests/:path*",
     "/notifications/:path*",
+    "/feedback",
+    "/feedback/:path*",
     "/citizen",
     "/citizen/:path*",
     "/admin",
@@ -161,6 +163,7 @@ export const config = {
     "/gas-agent/:path*",
     "/admin/:path*",
     "/users/:path*",
+    "/citizen-feedback/:path*",
     "/stats/:path*",
   ],
 };

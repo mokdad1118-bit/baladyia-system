@@ -36,6 +36,15 @@ export function IconUserSm({ className }: { className?: string }) {
   );
 }
 
+export function IconMessageSm({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M4 5h16a1 1 0 011 1v10a1 1 0 01-1 1H9l-5 3v-3H4a1 1 0 01-1-1V6a1 1 0 011-1z" />
+      <path d="M8 10h8M8 13h5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function IconBack({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>

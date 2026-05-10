@@ -19,6 +19,7 @@ export function isCitizenAppPath(pathname: string) {
     pathname.startsWith("/services") ||
     pathname.startsWith("/requests") ||
     pathname.startsWith("/notifications") ||
+    pathname.startsWith("/feedback") ||
     pathname === "/citizen" ||
     pathname.startsWith("/citizen/")
   );

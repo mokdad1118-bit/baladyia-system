@@ -25,6 +25,7 @@ export function CitizenDesktopNavLinks({
   const services = `${base}/services`;
   const requests = `${base}/requests`;
   const notifications = `${base}/notifications`;
+  const feedback = `${base}/feedback`;
   const account = `${base}/account`;
   const home = base === "/citizen" ? "/citizen" : "/";
 
@@ -32,6 +33,7 @@ export function CitizenDesktopNavLinks({
   const activeRequests =
     path === requests || (path.startsWith(`${requests}/`) && !path.includes("/new/"));
   const activeNotifications = path === notifications || path.startsWith(`${notifications}/`);
+  const activeFeedback = path === feedback || path.startsWith(`${feedback}/`);
   const activeAccount = path === account || path.startsWith(`${account}/`);
   const activeHome = path === home;
 
@@ -47,6 +49,9 @@ export function CitizenDesktopNavLinks({
           </Link>
           <Link href={notifications} className={linkClass(activeNotifications)}>
             {unreadNotifications > 0 ? `الإشعارات (${unreadNotifications})` : "الإشعارات"}
+          </Link>
+          <Link href={feedback} className={linkClass(activeFeedback)}>
+            الشكاوي والمقترحات
           </Link>
           <Link href={account} className={linkClass(activeAccount)}>
             حسابي

@@ -41,12 +41,25 @@ model User {
   statusLogs         RequestStatusLog[] @relation("LogActor")
   requestNotes       RequestNote[]      @relation("NoteAuthor")
   notifications      Notification[]
+  citizenFeedbacks   CitizenFeedback[]
   gasRequests        GasRequest[]
   assignedGasRequests GasRequest[] @relation("GasRequestAgent")
   returneeRegistrations ReturneeRegistration[]
 
   /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها (فريدة لكل معتمد)
   gasArea            String?  @unique
+}
+
+/// شكاوى ومقترحات المواطنين بخصوص التطبيق والخدمات
+model CitizenFeedback {
+  id        String   @id @default(cuid())
+  citizenId String
+  citizen   User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([citizenId])
+  @@index([createdAt])
 }
 
 /// بيانات تسجيل مواطن قبل إتمام التحقق من البريد — لا يُنشأ User حتى يُدخل الرمز صحيحاً
