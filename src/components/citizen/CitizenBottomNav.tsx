@@ -33,16 +33,16 @@ function buildTabs(base: "" | "/citizen") {
       Icon: IconBellSm,
     },
     {
-      href: feedback,
-      label: "شكاوي",
-      match: (p: string) => p === feedback || p.startsWith(`${feedback}/`),
-      Icon: IconMessageSm,
-    },
-    {
       href: account,
       label: "حسابي",
       match: (p: string) => p === account || p.startsWith(`${account}/`),
       Icon: IconUserSm,
+    },
+    {
+      href: feedback,
+      label: "شكاوي",
+      match: (p: string) => p === feedback || p.startsWith(`${feedback}/`),
+      Icon: IconMessageSm,
     },
   ] as const;
 }

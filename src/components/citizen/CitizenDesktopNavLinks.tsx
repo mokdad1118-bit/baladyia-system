@@ -50,11 +50,11 @@ export function CitizenDesktopNavLinks({
           <Link href={notifications} className={linkClass(activeNotifications)}>
             {unreadNotifications > 0 ? `الإشعارات (${unreadNotifications})` : "الإشعارات"}
           </Link>
-          <Link href={feedback} className={linkClass(activeFeedback)}>
-            الشكاوي والمقترحات
-          </Link>
           <Link href={account} className={linkClass(activeAccount)}>
             حسابي
+          </Link>
+          <Link href={feedback} className={linkClass(activeFeedback)}>
+            الشكاوي والمقترحات
           </Link>
           <Link href={home} className={linkClass(activeHome)}>
             الرئيسية
