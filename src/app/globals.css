@@ -26,15 +26,6 @@ body {
   min-height: 100dvh;
 }
 
-/**
- * صفحة الترحيب (/citizen/welcome): يضبطها الـ middleware عبر ترويسة داخلية
- * لتجنّب وميض الخلفية الفاتحة أو أيقونة التطبيق قبل تحميل الواجهة.
- */
-body.welcome-route-shell {
-  background-color: #0b2b26 !important;
-  background-image: none !important;
-}
-
 @keyframes citizen-welcome-btn-glow {
   0%,
   100% {
