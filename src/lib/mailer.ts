@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { APP_NAME_AR } from "@/lib/entity";
 
 function resendConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
@@ -59,7 +60,7 @@ async function sendViaResend(params: {
    */
   const fromRaw =
     process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";
-  const fromHeader = fromRaw.includes("<") ? fromRaw : `Baladya <${fromRaw}>`;
+  const fromHeader = fromRaw.includes("<") ? fromRaw : `${APP_NAME_AR} <${fromRaw}>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -134,7 +135,7 @@ export async function sendCitizenOtpEmail(params: {
     },
   });
   await transporter.sendMail({
-    from: `"بلدية بصرى" <${process.env.EMAIL_USER!.trim()}>`,
+    from: `"${APP_NAME_AR}" <${process.env.EMAIL_USER!.trim()}>`,
     to: params.to,
     subject: params.subject,
     text: params.textBody,

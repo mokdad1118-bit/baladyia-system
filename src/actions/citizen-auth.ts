@@ -29,6 +29,7 @@ import {
   VERIFY_COOKIE_MAX_AGE,
 } from "@/lib/citizen-auth-cookies";
 import { signPasswordResetToken, verifyPasswordResetToken } from "@/lib/citizen-reset-token";
+import { APP_NAME_AR } from "@/lib/entity";
 import { z } from "zod";
 
 export type RegisterCitizenState = { error: string } | { ok: true } | undefined;
@@ -71,12 +72,11 @@ async function sendVerificationOtpToEmail(emailNorm: string, code: string) {
   const { textBody, htmlBody } = buildArabicOtpEmailBodies({
     code,
     heading: "رمز إتمام إنشاء الحساب",
-    intro:
-      "شكراً لتسجيلك في البوابة الإلكترونية لبلدية بصرى. أدخل الرمز التالي في الصفحة التالية لإنشاء حسابك وتفعيله:",
+    intro: `شكراً لتسجيلك في البوابة الإلكترونية ل${APP_NAME_AR}. أدخل الرمز التالي في الصفحة التالية لإنشاء حسابك وتفعيله:`,
   });
   await sendCitizenOtpEmail({
     to: emailNorm,
-    subject: "رمز إتمام التسجيل — بلدية بصرى",
+    subject: `رمز إتمام التسجيل — ${APP_NAME_AR}`,
     textBody,
     htmlBody,
   });
@@ -90,7 +90,7 @@ async function sendPasswordResetOtpToEmail(emailNorm: string, code: string) {
   });
   await sendCitizenOtpEmail({
     to: emailNorm,
-    subject: "رمز استعادة كلمة المرور — بلدية بصرى",
+    subject: `رمز استعادة كلمة المرور — ${APP_NAME_AR}`,
     textBody,
     htmlBody,
   });

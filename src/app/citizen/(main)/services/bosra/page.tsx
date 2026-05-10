@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import { GovStepIndicator } from "@/components/gov/GovStepIndicator";
+import { APP_NAME_AR } from "@/lib/entity";
 
 export default async function BosraMunicipalServicesPage() {
   const s = await auth();
@@ -15,7 +16,7 @@ export default async function BosraMunicipalServicesPage() {
   return (
     <div className="w-full px-3 md:px-0">
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
-        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">خدمات بلدية بصرى الشام</h1>
+        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">خدمات {APP_NAME_AR}</h1>
         <p className="mt-1 text-sm text-[var(--gov-muted)]">اختر الخدمة، ثم أكمل النموذج والمرفقات من بوابة الطلب.</p>
       </header>
       <GovStepIndicator currentStep={1} />

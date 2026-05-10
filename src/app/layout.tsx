@@ -3,7 +3,7 @@ import { Tajawal } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-import { ENTITY_NAME_AR } from "@/lib/entity";
+import { APP_NAME_AR } from "@/lib/entity";
 import { cn } from "@/lib/cn";
 
 const tajawal = Tajawal({
@@ -14,15 +14,15 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: `${ENTITY_NAME_AR} — البوابة الإلكترونية`,
+  title: `${APP_NAME_AR} — البوابة الإلكترونية`,
   description:
-    "بوابة مواطنين منفصلة (/) عن لوحة تحكم الموظفين والمديرين (/admin) — مسارات وواجهات وتسجيل دخول مختلفة لكل طرف",
-  applicationName: "بلدية بصرى الشام",
+    `بوابة ${APP_NAME_AR} للمواطنين — مسارات منفصلة عن لوحة الموظفين والمديرين.`,
+  applicationName: APP_NAME_AR,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "بلدية بصرى الشام",
+    title: APP_NAME_AR,
   },
   formatDetection: { telephone: false },
   icons: {

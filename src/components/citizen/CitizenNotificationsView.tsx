@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { APP_NAME_AR } from "@/lib/entity";
 
 export type CitizenNotificationRow = {
   id: string;
@@ -147,7 +148,7 @@ export function CitizenNotificationsView({
       : openSection === "returnee"
         ? "تنبيهات تسجيل العائدين"
         : openSection === "municipal"
-          ? "تنبيهات خدمات بلدية بصرى الشام"
+          ? `تنبيهات خدمات ${APP_NAME_AR}`
           : "";
 
   if (list.length === 0) {

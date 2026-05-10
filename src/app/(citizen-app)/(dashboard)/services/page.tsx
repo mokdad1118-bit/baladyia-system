@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
+import { APP_NAME_AR, ENTITY_NAME_AR } from "@/lib/entity";
 
 export default async function CitizenServicesPage() {
   return (
@@ -7,7 +8,7 @@ export default async function CitizenServicesPage() {
       <header className="gov-page-heading mb-3 border-b border-[var(--gov-border)] pb-3 md:mb-6 md:pb-4">
         <div className="mb-3 flex items-center justify-center gap-3">
           <StateEmblem height={52} />
-          <p className="text-sm font-bold text-[var(--gov-text)] md:text-base">مجلس مدينة بصرى الشام</p>
+          <p className="text-sm font-bold text-[var(--gov-text)] md:text-base">{ENTITY_NAME_AR}</p>
         </div>
         <h1 className="text-base font-bold text-[var(--gov-text)] md:text-lg md:font-bold xl:text-xl">
           الخدمات المتاحة
@@ -26,7 +27,7 @@ export default async function CitizenServicesPage() {
               href="/services/bosra"
               className="gov-btn-primary inline-flex min-h-11 min-w-[16rem] items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
             >
-              خدمات بلدية بصرى الشام
+              خدمات {APP_NAME_AR}
             </Link>
           </div>
           <div className="flex justify-center">
