@@ -15,7 +15,7 @@ export default async function CitizenFeedbackPage() {
       <header className="gov-page-heading mb-4 border-b border-[var(--gov-border)] pb-4">
         <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">الشكاوي والمقترحات</h1>
         <p className="mt-1 text-sm text-[var(--gov-muted)]">
-          اكتب شكواك أو اقتراحك بخصوص التطبيق. سيتم إرسالها مباشرة إلى لوحة تحكم الأدمن.
+          اكتب شكواك أو اقتراحك بخصوص التطبيق. سيتم ارسالها مباشرة الى الادارة.
         </p>
       </header>
 
