@@ -110,7 +110,8 @@ export async function submitSocialServiceCase(
     const husbandBirth = parseBirthDate(String(formData.get("husbandBirthDate") ?? ""));
     const wifeBirth = parseBirthDate(String(formData.get("wifeBirthDate") ?? ""));
     if (husbandFullName.length < 3 || wifeFullName.length < 3) return { error: "يرجى إدخال الاسم الثلاثي للزوج والزوجة." };
-    if (!husbandBirth.ok || !wifeBirth.ok) return { error: !husbandBirth.ok ? husbandBirth.error : wifeBirth.error };
+    if (!husbandBirth.ok) return { error: husbandBirth.error };
+    if (!wifeBirth.ok) return { error: wifeBirth.error };
     if (husbandNationalId.length < 10 || husbandNationalId.length > 11 || wifeNationalId.length < 10 || wifeNationalId.length > 11) {
       return { error: "الرقم الوطني للزوج والزوجة يجب أن يكون 10 أو 11 رقماً." };
     }
