@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ReturneeRegistrationStatusBadge } from "@/components/citizen/ReturneeRegistrationStatusBadge";
+import { SocialServiceCaseStatusBadge } from "@/components/citizen/SocialServiceCaseStatusBadge";
 
 type MunicipalityRequestRow = {
   id: string;
@@ -31,6 +32,16 @@ type ReturneeRequestRow = {
   nationalId: string;
   phone: string;
   email: string;
+  status: "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
+  createdAt: string;
+};
+
+type SocialServiceRequestRow = {
+  id: string;
+  caseNumber: string;
+  categoryLabel: string;
+  fullName: string;
+  phone: string;
   status: "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
   createdAt: string;
 };
@@ -77,18 +88,21 @@ export function CitizenRequestsView({
   municipalityRequests,
   gasRequests,
   returneeRegistrations,
+  socialServiceCases,
 }: {
   requestsBasePath: string;
   municipalityRequests: MunicipalityRequestRow[];
   gasRequests: GasRequestRow[];
   returneeRegistrations: ReturneeRequestRow[];
+  socialServiceCases: SocialServiceRequestRow[];
 }) {
-  const [openSection, setOpenSection] = useState<"municipal" | "gas" | "returnee" | null>(null);
+  const [openSection, setOpenSection] = useState<"municipal" | "gas" | "returnee" | "social" | null>(null);
 
   useEffect(() => {
     const hash = window.location.hash;
     if (hash === "#citizen-gas-requests") setOpenSection("gas");
     if (hash === "#citizen-returnee-requests") setOpenSection("returnee");
+    if (hash === "#citizen-social-requests") setOpenSection("social");
   }, []);
 
   const currentTitle =
@@ -98,6 +112,8 @@ export function CitizenRequestsView({
         ? "طلباتك المخصصة لخدمات الغاز"
         : openSection === "returnee"
           ? "طلبات تسجيل العائدين"
+          : openSection === "social"
+            ? "طلبات الخدمات الاجتماعية"
           : "";
 
   const currentBody = useMemo(() => {
@@ -286,18 +302,42 @@ export function CitizenRequestsView({
         </>
       );
     }
+    if (openSection === "social") {
+      if (socialServiceCases.length === 0) {
+        return <div className="rounded-xl border border-dashed border-[var(--gov-border)] p-8 text-center text-sm text-[var(--gov-muted)]">لا توجد طلبات خدمات اجتماعية بعد.</div>;
+      }
+      return (
+        <div className="gov-table-wrap">
+          <table className="gov-table">
+            <thead><tr><th>رقم الطلب</th><th>القسم</th><th>الاسم</th><th>الهاتف</th><th>الحالة</th><th>تاريخ التقديم</th></tr></thead>
+            <tbody>
+              {socialServiceCases.map((r) => (
+                <tr key={r.id}>
+                  <td className="font-mono font-semibold text-[var(--gov-primary)]">{r.caseNumber}</td>
+                  <td>{r.categoryLabel}</td>
+                  <td>{r.fullName}</td>
+                  <td dir="ltr">{r.phone}</td>
+                  <td><SocialServiceCaseStatusBadge status={r.status} /></td>
+                  <td className="whitespace-nowrap text-[var(--gov-muted)]">{new Date(r.createdAt).toLocaleDateString("ar")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
 
     return null;
-  }, [openSection, municipalityRequests, gasRequests, returneeRegistrations, requestsBasePath]);
+  }, [openSection, municipalityRequests, gasRequests, returneeRegistrations, socialServiceCases, requestsBasePath]);
 
   const total =
-    municipalityRequests.length + gasRequests.length + returneeRegistrations.length;
+    municipalityRequests.length + gasRequests.length + returneeRegistrations.length + socialServiceCases.length;
 
   return (
     <section className="space-y-4">
       <div className="gov-card space-y-3 p-4">
         <p className="text-sm text-[var(--gov-muted)]">اختر القسم المطلوب لعرض طلباتك داخل نافذة منبثقة. إجمالي الطلبات: {total}.</p>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-4">
           <button
             type="button"
             onClick={() => setOpenSection("municipal")}
@@ -318,6 +358,13 @@ export function CitizenRequestsView({
             className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 text-sm font-semibold text-[var(--gov-primary)] hover:bg-[#f3f5f7]"
           >
             اضغط لعرض طلبات العائدين ({returneeRegistrations.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpenSection("social")}
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 text-sm font-semibold text-[var(--gov-primary)] hover:bg-[#f3f5f7]"
+          >
+            اضغط لعرض الخدمات الاجتماعية ({socialServiceCases.length})
           </button>
         </div>
       </div>

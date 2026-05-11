@@ -150,6 +150,7 @@ export async function submitReturneeRegistration(
   }
 
   revalidatePath("/admin/returnee-registrations");
+  revalidatePath("/admin/social-services");
   revalidatePath("/services/returnees");
   revalidatePath("/citizen/services/returnees");
   revalidatePath("/notifications");
@@ -204,6 +205,7 @@ export async function updateReturneeRegistrationStatusAction(
   }
 
   revalidatePath("/admin/returnee-registrations");
+  revalidatePath("/admin/social-services");
   revalidatePath("/notifications");
   revalidatePath("/citizen/notifications");
   revalidatePath("/citizen/requests");

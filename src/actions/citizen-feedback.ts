@@ -37,6 +37,8 @@ export async function submitCitizenFeedback(
   revalidatePath("/admin/citizen-feedback");
   revalidatePath("/citizen/feedback");
   revalidatePath("/feedback");
+  revalidatePath("/notifications");
+  revalidatePath("/citizen/notifications");
 
   return { ok: true, message: "شكراً لملاحظاتكم وتعاونكم معنا..." };
 }

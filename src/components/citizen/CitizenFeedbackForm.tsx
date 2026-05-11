@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { SubmitCitizenFeedbackState } from "@/actions/citizen-feedback";
 
 export function CitizenFeedbackForm({
@@ -11,7 +12,14 @@ export function CitizenFeedbackForm({
     formData: FormData,
   ) => Promise<SubmitCitizenFeedbackState>;
 }) {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(action, undefined);
+
+  useEffect(() => {
+    if (state && "ok" in state) {
+      router.refresh();
+    }
+  }, [state, router]);
 
   return (
     <form action={formAction} className="space-y-4">

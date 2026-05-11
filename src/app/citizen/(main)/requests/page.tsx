@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { CitizenRequestsView } from "@/components/citizen/CitizenRequestsView";
+import { socialServiceCategoryLabelAr } from "@/lib/social-service-labels";
 
 type S = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -25,6 +26,10 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
     orderBy: { createdAt: "desc" },
   });
   const returneeRegistrations = await db.returneeRegistration.findMany({
+    where: { citizenId: s.user.id },
+    orderBy: { createdAt: "desc" },
+  });
+  const socialServiceCases = await db.socialServiceCase.findMany({
     where: { citizenId: s.user.id },
     orderBy: { createdAt: "desc" },
   });
@@ -87,6 +92,15 @@ export default async function CitizenRequestsPage({ searchParams }: S) {
           nationalId: r.nationalId,
           phone: r.phone,
           email: r.email,
+          status: r.status,
+          createdAt: r.createdAt.toISOString(),
+        }))}
+        socialServiceCases={socialServiceCases.map((r) => ({
+          id: r.id,
+          caseNumber: r.caseNumber,
+          categoryLabel: socialServiceCategoryLabelAr[r.category],
+          fullName: r.fullName || `${r.husbandFullName ?? ""} / ${r.wifeFullName ?? ""}`.trim(),
+          phone: r.phone,
           status: r.status,
           createdAt: r.createdAt.toISOString(),
         }))}

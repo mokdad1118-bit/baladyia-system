@@ -10,9 +10,9 @@ const segments = [
   { internal: "/admin/requests", label: "الطلبات", desc: "مراجعة وتحديث الحالة", perm: null },
   { internal: "/admin/gas-services", label: "خدمات الغاز", desc: "طلبات خدمات الغاز", perm: null },
   {
-    internal: "/admin/returnee-registrations",
-    label: "تسجيل العائدين",
-    desc: "طلبات العائدين وبيان العودة",
+    internal: "/admin/social-services",
+    label: "الخدمات الاجتماعية",
+    desc: "العائدين وباقي الأقسام الاجتماعية",
     perm: null,
   },
   {

@@ -9,6 +9,8 @@ export async function notifyUsers(input: {
   requestId?: string;
   gasRequestId?: string;
   returneeRegistrationId?: string;
+  socialServiceCaseId?: string;
+  citizenFeedbackId?: string;
 }) {
   if (input.userIds.length === 0) return;
   await db.notification.createMany({
@@ -20,6 +22,8 @@ export async function notifyUsers(input: {
       requestId: input.requestId,
       gasRequestId: input.gasRequestId,
       returneeRegistrationId: input.returneeRegistrationId,
+      socialServiceCaseId: input.socialServiceCaseId,
+      citizenFeedbackId: input.citizenFeedbackId,
     })),
   });
 }

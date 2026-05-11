@@ -23,6 +23,8 @@ export default async function CitizenNotificationsPage() {
       requestId: true,
       gasRequestId: true,
       returneeRegistrationId: true,
+      socialServiceCaseId: true,
+      citizenFeedbackId: true,
       type: true,
     },
   });
@@ -44,7 +46,11 @@ export default async function CitizenNotificationsPage() {
           </button>
         </form>
       </div>
-      <CitizenNotificationsView list={list} requestsBasePath="/citizen/requests" />
+      <CitizenNotificationsView
+        list={list}
+        requestsBasePath="/citizen/requests"
+        feedbackBasePath="/citizen/feedback"
+      />
     </div>
   );
 }

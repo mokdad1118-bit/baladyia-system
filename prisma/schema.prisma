@@ -41,10 +41,12 @@ model User {
   statusLogs         RequestStatusLog[] @relation("LogActor")
   requestNotes       RequestNote[]      @relation("NoteAuthor")
   notifications      Notification[]
-  citizenFeedbacks   CitizenFeedback[]
+  citizenFeedbacks        CitizenFeedback[]
+  citizenFeedbackReplies CitizenFeedback[] @relation("CitizenFeedbackRepliedBy")
   gasRequests        GasRequest[]
   assignedGasRequests GasRequest[] @relation("GasRequestAgent")
   returneeRegistrations ReturneeRegistration[]
+  socialServiceCases SocialServiceCase[]
 
   /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها (فريدة لكل معتمد)
   gasArea            String?  @unique
@@ -58,8 +60,16 @@ model CitizenFeedback {
   message   String
   createdAt DateTime @default(now())
 
+  /// رد الإدارة على نفس الشكوى/المقترح
+  adminReply       String?
+  adminReplyAt     DateTime?
+  adminRepliedById String?
+  adminRepliedBy   User?    @relation("CitizenFeedbackRepliedBy", fields: [adminRepliedById], references: [id], onDelete: SetNull)
+  notifications    Notification[]
+
   @@index([citizenId])
   @@index([createdAt])
+  @@index([adminRepliedById])
 }
 
 /// بيانات تسجيل مواطن قبل إتمام التحقق من البريد — لا يُنشأ User حتى يُدخل الرمز صحيحاً
@@ -245,10 +255,16 @@ model Notification {
   gasRequest   GasRequest? @relation(fields: [gasRequestId], references: [id], onDelete: SetNull)
   returneeRegistrationId String?
   returneeRegistration ReturneeRegistration? @relation(fields: [returneeRegistrationId], references: [id], onDelete: SetNull)
+  socialServiceCaseId String?
+  socialServiceCase   SocialServiceCase? @relation(fields: [socialServiceCaseId], references: [id], onDelete: SetNull)
+  citizenFeedbackId String?
+  citizenFeedback   CitizenFeedback? @relation(fields: [citizenFeedbackId], references: [id], onDelete: SetNull)
   createdAt  DateTime @default(now())
 
   @@index([gasRequestId])
   @@index([returneeRegistrationId])
+  @@index([socialServiceCaseId])
+  @@index([citizenFeedbackId])
 }
 
 /// Atomic yearly counter for request numbers: REQ-YYYY-NNNNN
@@ -319,6 +335,64 @@ model ReturneeRegistration {
   @@index([createdAt])
   @@index([nationalId])
   @@index([status])
+}
+
+enum SocialServiceCategory {
+  DIVORCED
+  WIDOWS
+  ORPHANS
+  DISABILITIES
+  CHRONIC_DISEASES
+  FAMILY_CENSUS
+}
+
+enum SocialServiceCaseStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model SocialServiceCase {
+  id                    String   @id @default(cuid())
+  caseNumber            String   @unique
+  category              SocialServiceCategory
+  citizenId             String
+  citizen               User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  fullName              String?
+  birthDate             DateTime?
+  nationalId            String?
+  phone                 String
+  husbandFullName       String?
+  husbandBirthDate      DateTime?
+  husbandNationalId     String?
+  wifeFullName          String?
+  wifeBirthDate         DateTime?
+  wifeNationalId        String?
+  familyBookNumber      String?
+  email                 String
+  attachmentsJson       String   @default("[]")
+  status                SocialServiceCaseStatus @default(PENDING)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  notifications         Notification[]
+
+  @@index([createdAt])
+  @@index([category])
+  @@index([status])
+  @@index([nationalId])
+  @@index([husbandNationalId])
+  @@index([wifeNationalId])
+  @@index([familyBookNumber])
+  @@unique([category, nationalId])
+  @@unique([category, husbandNationalId])
+  @@unique([category, wifeNationalId])
+  @@unique([category, familyBookNumber])
+}
+
+model SocialServiceCaseSerial {
+  year  Int @id
+  lastN Int
 }
 
 model ReturneeRegistrationSerial {

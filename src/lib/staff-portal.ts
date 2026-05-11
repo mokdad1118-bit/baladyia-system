@@ -101,6 +101,8 @@ export function staffBrowserPathToInternalPathname(pathname: string): string | n
     pathname === "/" ||
     pathname === "/login" ||
     pathname.startsWith("/requests") ||
+    pathname.startsWith("/social-services") ||
+    pathname.startsWith("/returnee-registrations") ||
     pathname.startsWith("/services") ||
     pathname.startsWith("/users") ||
     pathname.startsWith("/citizens") ||

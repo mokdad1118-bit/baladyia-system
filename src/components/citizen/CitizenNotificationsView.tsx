@@ -13,6 +13,8 @@ export type CitizenNotificationRow = {
   requestId: string | null;
   gasRequestId: string | null;
   returneeRegistrationId: string | null;
+  socialServiceCaseId: string | null;
+  citizenFeedbackId: string | null;
   type: string;
 };
 
@@ -24,32 +26,64 @@ function isGasNotification(n: CitizenNotificationRow) {
   return n.gasRequestId != null || (n.type.startsWith("GAS_") && !n.returneeRegistrationId);
 }
 
-/** تقسيم بدون ازدواجية: العائدين أولاً ثم الغاز ثم البلدية */
+function isFeedbackNotification(n: CitizenNotificationRow) {
+  return n.citizenFeedbackId != null || n.type.startsWith("FEEDBACK_");
+}
+
+function isSocialNotification(n: CitizenNotificationRow) {
+  return n.socialServiceCaseId != null || n.type.startsWith("SOCIAL_SERVICE_");
+}
+
+/** تقسيم بدون ازدواجية: العائدين ثم الغاز ثم الشكاوي ثم البلدية */
 function partitionNotifications(list: CitizenNotificationRow[]) {
   const returneeList = list.filter(isReturneeNotification);
   const gasList = list.filter((n) => !isReturneeNotification(n) && isGasNotification(n));
-  const municipalList = list.filter((n) => !isReturneeNotification(n) && !isGasNotification(n));
-  return { returneeList, gasList, municipalList };
+  const socialList = list.filter(
+    (n) => !isReturneeNotification(n) && !isGasNotification(n) && isSocialNotification(n),
+  );
+  const feedbackList = list.filter(
+    (n) => !isReturneeNotification(n) && !isGasNotification(n) && !isSocialNotification(n) && isFeedbackNotification(n),
+  );
+  const municipalList = list.filter(
+    (n) => !isReturneeNotification(n) && !isGasNotification(n) && !isSocialNotification(n) && !isFeedbackNotification(n),
+  );
+  return { returneeList, gasList, socialList, feedbackList, municipalList };
 }
 
 function NotificationCard({
   n,
   requestsBasePath,
+  feedbackBasePath,
 }: {
   n: CitizenNotificationRow;
   requestsBasePath: string;
+  feedbackBasePath: string;
 }) {
   const gas = !isReturneeNotification(n) && isGasNotification(n);
   const ret = isReturneeNotification(n);
-  const href = gas
-    ? `${requestsBasePath}#citizen-gas-requests`
-    : ret
-      ? `${requestsBasePath}#citizen-returnee-requests`
-      : n.requestId
-        ? `${requestsBasePath}/${n.requestId}`
-        : undefined;
+  const feedback =
+    !isReturneeNotification(n) && !isGasNotification(n) && isFeedbackNotification(n) && n.citizenFeedbackId;
+  const href = feedback
+    ? `${feedbackBasePath}#citizen-feedback-${n.citizenFeedbackId}`
+    : gas
+      ? `${requestsBasePath}#citizen-gas-requests`
+      : ret
+        ? `${requestsBasePath}#citizen-returnee-requests`
+        : isSocialNotification(n)
+          ? `${requestsBasePath}#citizen-social-requests`
+        : n.requestId
+          ? `${requestsBasePath}/${n.requestId}`
+          : undefined;
 
-  const linkLabel = gas ? "عرض طلبات الغاز ←" : ret ? "عرض طلبات تسجيل العائدين ←" : "فتح الطلب ←";
+  const linkLabel = feedback
+    ? "عرض الشكوى والرد ←"
+    : gas
+      ? "عرض طلبات الغاز ←"
+      : ret
+        ? "عرض طلبات تسجيل العائدين ←"
+        : isSocialNotification(n)
+          ? "عرض طلبات الخدمات الاجتماعية ←"
+        : "فتح الطلب ←";
 
   return (
     <li className={`gov-card p-4 ${n.read ? "" : "border-s-[3px] border-s-[var(--gov-primary)]"}`}>
@@ -78,12 +112,14 @@ function NotificationsDialog({
   onClose,
   list,
   requestsBasePath,
+  feedbackBasePath,
 }: {
   title: string;
   open: boolean;
   onClose: () => void;
   list: CitizenNotificationRow[];
   requestsBasePath: string;
+  feedbackBasePath: string;
 }) {
   if (!open) return null;
   return (
@@ -114,7 +150,16 @@ function NotificationsDialog({
               لا توجد تنبيهات في هذا القسم حالياً.
             </p>
           ) : (
-            <ul className="space-y-3">{list.map((n) => <NotificationCard key={n.id} n={n} requestsBasePath={requestsBasePath} />)}</ul>
+            <ul className="space-y-3">
+              {list.map((n) => (
+                <NotificationCard
+                  key={n.id}
+                  n={n}
+                  requestsBasePath={requestsBasePath}
+                  feedbackBasePath={feedbackBasePath}
+                />
+              ))}
+            </ul>
           )}
         </div>
       </div>
@@ -125,31 +170,41 @@ function NotificationsDialog({
 export function CitizenNotificationsView({
   list,
   requestsBasePath,
+  feedbackBasePath,
 }: {
   list: CitizenNotificationRow[];
   requestsBasePath: string;
+  feedbackBasePath: string;
 }) {
-  const { municipalList, gasList, returneeList } = partitionNotifications(list);
-  const [openSection, setOpenSection] = useState<"gas" | "returnee" | "municipal" | null>(null);
+  const { municipalList, gasList, returneeList, socialList, feedbackList } = partitionNotifications(list);
+  const [openSection, setOpenSection] = useState<"gas" | "returnee" | "social" | "municipal" | "feedback" | null>(null);
 
   const unreadMunicipal = municipalList.filter((n) => !n.read).length;
   const unreadGas = gasList.filter((n) => !n.read).length;
   const unreadReturnee = returneeList.filter((n) => !n.read).length;
-  const totalUnread = unreadMunicipal + unreadGas + unreadReturnee;
+  const unreadSocial = socialList.filter((n) => !n.read).length;
+  const unreadFeedback = feedbackList.filter((n) => !n.read).length;
+  const totalUnread = unreadMunicipal + unreadGas + unreadReturnee + unreadSocial + unreadFeedback;
   const currentList = useMemo(() => {
     if (openSection === "gas") return gasList;
     if (openSection === "returnee") return returneeList;
+    if (openSection === "social") return socialList;
+    if (openSection === "feedback") return feedbackList;
     if (openSection === "municipal") return municipalList;
     return [];
-  }, [gasList, returneeList, municipalList, openSection]);
+  }, [gasList, returneeList, socialList, feedbackList, municipalList, openSection]);
   const currentTitle =
     openSection === "gas"
       ? "تنبيهات خدمات الغاز"
       : openSection === "returnee"
         ? "تنبيهات تسجيل العائدين"
-        : openSection === "municipal"
-          ? `تنبيهات خدمات ${APP_NAME_AR}`
-          : "";
+        : openSection === "social"
+          ? "تنبيهات الخدمات الاجتماعية"
+        : openSection === "feedback"
+          ? "تنبيهات الشكاوي والمقترحات"
+          : openSection === "municipal"
+            ? `تنبيهات خدمات ${APP_NAME_AR}`
+            : "";
 
   if (list.length === 0) {
     return <div className="gov-card p-10 text-center text-sm text-[var(--gov-muted)]">لا إشعارات حالياً</div>;
@@ -162,7 +217,7 @@ export function CitizenNotificationsView({
           اختر الخدمة لعرض التنبيهات داخل نافذة منبثقة.
           {totalUnread > 0 ? ` يوجد ${totalUnread} تنبيه غير مقروء.` : ""}
         </p>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           <button
             type="button"
             onClick={() => setOpenSection("gas")}
@@ -185,6 +240,26 @@ export function CitizenNotificationsView({
           </button>
           <button
             type="button"
+            onClick={() => setOpenSection("feedback")}
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 text-sm font-semibold text-[var(--gov-text)] hover:bg-[#f3f5f7]"
+          >
+            تنبيهات الشكاوي ({feedbackList.length})
+            {unreadFeedback > 0 ? (
+              <span className="me-1 rounded-full bg-[var(--gov-primary)] px-2 py-0.5 text-xs text-white">{unreadFeedback}</span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpenSection("social")}
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 text-sm font-semibold text-[var(--gov-text)] hover:bg-[#f3f5f7]"
+          >
+            تنبيهات الخدمات الاجتماعية ({socialList.length})
+            {unreadSocial > 0 ? (
+              <span className="me-1 rounded-full bg-[var(--gov-primary)] px-2 py-0.5 text-xs text-white">{unreadSocial}</span>
+            ) : null}
+          </button>
+          <button
+            type="button"
             onClick={() => setOpenSection("municipal")}
             className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--gov-border)] bg-white px-3 text-sm font-semibold text-[var(--gov-text)] hover:bg-[#f3f5f7]"
           >
@@ -201,6 +276,7 @@ export function CitizenNotificationsView({
         onClose={() => setOpenSection(null)}
         list={currentList}
         requestsBasePath={requestsBasePath}
+        feedbackBasePath={feedbackBasePath}
       />
     </div>
   );
