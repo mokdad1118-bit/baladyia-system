@@ -37,7 +37,7 @@ export default async function DashboardSocialServiceCategoryPage({ params, searc
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
         <h1 className="text-base font-bold text-[var(--gov-text)] md:text-xl">{socialServiceCategoryLabelAr[category]}</h1>
       </header>
-      {sp.ok === "1" ? <div className="mb-4 rounded-xl border border-emerald-300/70 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">تم إرسال الطلب بنجاح. رقم الطلب: <span className="font-mono font-semibold">{sp.no ?? "—"}</span></div> : null}
+      {sp.ok === "1" ? <div className="mb-4 rounded-xl border border-emerald-300/70 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">قد تم إرسال طلبك بنجاح. رقم الطلب: <span className="font-mono font-semibold">{sp.no ?? "—"}</span></div> : null}
       <div className="gov-card p-4 md:p-6">
         <SocialServiceCaseForm category={category} action={submitSocialServiceCase} successReturnPath="/services/returnees" prefill={{ name: prefill?.name, phone: prefill?.phone, nationalId: prefill?.nationalId, email: emailDefault || null }} />
         <Link href="/services/returnees" className="mt-4 inline-block rounded-md border border-slate-200/90 bg-white px-2 py-1.5 text-sm font-semibold text-[var(--gov-primary)] no-underline">العودة للخدمات الاجتماعية</Link>

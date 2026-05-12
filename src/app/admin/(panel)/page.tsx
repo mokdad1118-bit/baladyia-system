@@ -3,6 +3,7 @@ import { UserRole } from "@/generated/prisma/enums";
 import { requestCounts } from "@/lib/request-stats";
 import { staffNavPermissions } from "@/lib/staff-permissions";
 import { AdminHomeDashboardWithSearch } from "@/components/admin/AdminHomeDashboardWithSearch";
+import { db } from "@/lib/db";
 
 const adminTiles = [
   { href: "/admin/services", title: "الخدمات", sub: "النماذج والمستندات والأسعار", perm: "manageServices" as const },
@@ -16,7 +17,11 @@ export default async function AdminHomePage() {
   const s = await auth();
   const isAdmin = s?.user?.role === UserRole.ADMIN;
   const perms = staffNavPermissions(s);
-  const c = await requestCounts();
+  const [c, gasRequestsCount, socialRequestsCount] = await Promise.all([
+    requestCounts(),
+    db.gasRequest.count(),
+    db.socialServiceCase.count(),
+  ]);
 
   if (s?.user?.role === UserRole.EMPLOYEE) {
     const cards = [
@@ -42,6 +47,8 @@ export default async function AdminHomePage() {
     { label: "جديدة", value: c.pending },
     { label: "قيد المراجعة", value: c.underReview },
     { label: "مكتملة", value: c.completed },
+    { label: "طلبات خدمات الغاز", value: gasRequestsCount },
+    { label: "طلبات الخدمات الاجتماعية", value: socialRequestsCount },
   ] as const;
 
   return (

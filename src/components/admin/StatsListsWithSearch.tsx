@@ -10,11 +10,15 @@ import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
 export function StatsListsWithSearch({
   total,
   completed,
+  gasRequestsCount,
+  socialRequestsCount,
   byStatus,
   byService,
 }: {
   total: number;
   completed: number;
+  gasRequestsCount: number;
+  socialRequestsCount: number;
   byStatus: { status: RequestStatus; count: number }[];
   byService: { id: string; name: string; count: number }[];
 }) {
@@ -52,6 +56,18 @@ export function StatsListsWithSearch({
           <CardContent className="!pt-6">
             <p className="text-sm font-medium text-slate-500">مكتمل</p>
             <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-900">{completed}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="!pt-6">
+            <p className="text-sm font-medium text-slate-500">طلبات خدمات الغاز</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-slate-900">{gasRequestsCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="!pt-6">
+            <p className="text-sm font-medium text-slate-500">طلبات الخدمات الاجتماعية</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-slate-900">{socialRequestsCount}</p>
           </CardContent>
         </Card>
       </div>

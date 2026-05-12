@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { SocialServiceCaseStatus } from "@/generated/prisma/enums";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
 import { SocialServiceCaseStatusSelect } from "@/components/admin/SocialServiceCaseStatusSelect";
@@ -23,7 +23,15 @@ function haystack(r: AdminSocialServiceRow) {
   return [r.caseNumber, r.categoryLabel, r.ownerName, r.nationalId, r.phone, r.statusLabel].join(" ").toLowerCase();
 }
 
-export function AdminSocialServicesTableWithSearch({ title, rows }: { title: string; rows: AdminSocialServiceRow[] }) {
+export function AdminSocialServicesTableWithSearch({
+  title,
+  rows,
+  filterForm,
+}: {
+  title: string;
+  rows: AdminSocialServiceRow[];
+  filterForm?: ReactNode;
+}) {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<"" | "excel" | "pdf">("");
   const filtered = useMemo(() => {
@@ -51,6 +59,13 @@ export function AdminSocialServicesTableWithSearch({ title, rows }: { title: str
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
         <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">{title}</h1>
       </header>
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
+        <div className="gov-card p-4">
+          <p className="text-xs text-[var(--gov-muted)]">عدد الطلبات</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--gov-primary)]">{rows.length}</p>
+        </div>
+      </div>
+      {filterForm ? <div className="gov-card mb-6 p-4">{filterForm}</div> : null}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <div className="min-w-0 flex-1">
           <AdminListSearchField id="admin-social-search" label="بحث في الطلبات" placeholder="رقم الطلب، الاسم، الرقم الوطني، الهاتف..." value={q} onChange={setQ} className="mb-0" />

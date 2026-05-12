@@ -74,7 +74,28 @@ export default async function AdminSocialServicesIndexPage({ searchParams }: Pro
       />
     );
   } else {
-    const list = await db.socialServiceCase.findMany({ where: { category: activeCategory }, orderBy: { createdAt: "desc" }, take: 500 });
+    const list = await db.socialServiceCase.findMany({
+      where: {
+        category: activeCategory,
+        ...(d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    });
+    const filterForm = (
+      <form className="flex flex-wrap items-end gap-3" method="get" action="/admin/social-services">
+        <input type="hidden" name="tab" value={activeKey} />
+        <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
+          <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">من تاريخ</label>
+          <input className="gov-input w-full px-3 py-2.5 text-sm" type="date" name="dateFrom" defaultValue={sp.dateFrom ?? ""} />
+        </div>
+        <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
+          <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">إلى تاريخ</label>
+          <input className="gov-input w-full px-3 py-2.5 text-sm" type="date" name="dateTo" defaultValue={sp.dateTo ?? ""} />
+        </div>
+        <button type="submit" className="gov-btn-primary px-5 py-2.5 text-sm font-semibold">تطبيق</button>
+      </form>
+    );
     const rows = list.map((r) => {
       const attachments = JSON.parse(r.attachmentsJson || "[]") as { path: string }[];
       return {
@@ -90,7 +111,13 @@ export default async function AdminSocialServicesIndexPage({ searchParams }: Pro
         attachments: attachments.map((a, i) => ({ href: a.path, label: `مرفق ${i + 1}` })),
       };
     });
-    content = <AdminSocialServicesTableWithSearch title={socialServiceCategoryLabelAr[activeCategory]} rows={rows} />;
+    content = (
+      <AdminSocialServicesTableWithSearch
+        title={socialServiceCategoryLabelAr[activeCategory]}
+        rows={rows}
+        filterForm={filterForm}
+      />
+    );
   }
 
   return (

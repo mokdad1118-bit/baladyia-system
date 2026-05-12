@@ -104,7 +104,7 @@ export function SocialServiceCaseForm({
           <input name="attachments" type="file" accept="image/jpeg,image/png,image/webp,image/jpg" required multiple={isFamily} className="gov-input w-full px-3 py-2.5 text-sm file:me-3 file:rounded-md file:border-0 file:bg-[var(--gov-primary)]/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[var(--gov-primary)]" />
         </div>
         <button type="submit" disabled={pending} className="gov-btn-primary w-full px-4 py-3 text-sm font-semibold">
-          {pending ? "جاري الإرسال..." : `إرسال طلب ${socialServiceCategoryLabelAr[category]}`}
+          {pending ? "جاري الإرسال..." : "إرسال الطلب"}
         </button>
       </form>
     </>

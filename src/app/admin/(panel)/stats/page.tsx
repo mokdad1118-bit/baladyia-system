@@ -6,7 +6,7 @@ import { StatsListsWithSearch } from "@/components/admin/StatsListsWithSearch";
 
 export default async function AdminStatsPage() {
   await requireStaffPanelPermission(await auth(), "stats");
-  const [total, byService, byStatus, completed] = await Promise.all([
+  const [total, byService, byStatus, completed, gasRequestsCount, socialRequestsCount] = await Promise.all([
     db.request.count(),
     db.service.findMany({
       where: { isActive: true },
@@ -19,12 +19,16 @@ export default async function AdminStatsPage() {
       }),
     ),
     db.request.count({ where: { status: RequestStatus.COMPLETED } }),
+    db.gasRequest.count(),
+    db.socialServiceCase.count(),
   ]);
 
   return (
     <StatsListsWithSearch
       total={total}
       completed={completed}
+      gasRequestsCount={gasRequestsCount}
+      socialRequestsCount={socialRequestsCount}
       byStatus={byStatus}
       byService={byService.map((s) => ({
         id: s.id,
