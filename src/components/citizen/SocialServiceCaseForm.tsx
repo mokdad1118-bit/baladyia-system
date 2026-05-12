@@ -19,6 +19,18 @@ export function SocialServiceCaseForm({
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
   const isFamily = category === SocialServiceCategory.FAMILY_CENSUS;
+  const attachmentLabel =
+    category === SocialServiceCategory.DIVORCED
+      ? "بيان طلاق"
+      : category === SocialServiceCategory.WIDOWS
+        ? "بيان وفاة"
+        : category === SocialServiceCategory.ORPHANS
+          ? "بيان وفاة"
+          : category === SocialServiceCategory.DISABILITIES
+            ? "بطاقة إعاقة"
+            : category === SocialServiceCategory.CHRONIC_DISEASES
+              ? "تقرير طبي"
+              : "صور دفتر العائلة";
   const fileHint = isFamily ? "(حتى 10 صور)" : "(صورة واحدة)";
 
   return (
@@ -87,7 +99,7 @@ export function SocialServiceCaseForm({
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-medium">
-            المرفقات <span className="font-normal text-[var(--gov-muted)]">{fileHint}</span>
+            {attachmentLabel} <span className="font-normal text-[var(--gov-muted)]">{fileHint}</span>
           </label>
           <input name="attachments" type="file" accept="image/jpeg,image/png,image/webp,image/jpg" required multiple={isFamily} className="gov-input w-full px-3 py-2.5 text-sm file:me-3 file:rounded-md file:border-0 file:bg-[var(--gov-primary)]/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[var(--gov-primary)]" />
         </div>
