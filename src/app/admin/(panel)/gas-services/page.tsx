@@ -1,5 +1,8 @@
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
+import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminGasRequestsTableWithSearch } from "@/components/admin/AdminGasRequestsTableWithSearch";
 import { GasAgentCreateForm } from "@/components/admin/GasAgentCreateForm";
@@ -9,6 +12,19 @@ import { GasAgentToggleButton } from "@/components/admin/GasAgentToggleButton";
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminGasServicesPage({ searchParams }: S) {
+  const session = await auth();
+  if (session?.user?.role === UserRole.ADMIN) {
+    await db.notification.updateMany({
+      where: {
+        userId: session.user.id,
+        read: false,
+        type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.gas] },
+      },
+      data: { read: true },
+    });
+    revalidatePath("/admin");
+  }
+
   const sp = await searchParams;
   const d0 = parseDateStartParam(sp.dateFrom);
   const d1 = parseDateEndParam(sp.dateTo);

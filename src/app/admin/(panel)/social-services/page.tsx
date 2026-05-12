@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminReturneeRegistrationsTableWithSearch } from "@/components/admin/AdminReturneeRegistrationsTableWithSearch";
 import { AdminSocialServicesTableWithSearch } from "@/components/admin/AdminSocialServicesTableWithSearch";
-import { SocialServiceCategory } from "@/generated/prisma/enums";
+import { SocialServiceCategory, UserRole } from "@/generated/prisma/enums";
 import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/social-service-labels";
 
 const sections = [
@@ -29,6 +32,19 @@ const categoryByKey: Record<string, SocialServiceCategory | null> = {
 type Props = { searchParams: Promise<{ tab?: string; dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminSocialServicesIndexPage({ searchParams }: Props) {
+  const session = await auth();
+  if (session?.user?.role === UserRole.ADMIN) {
+    await db.notification.updateMany({
+      where: {
+        userId: session.user.id,
+        read: false,
+        type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.social] },
+      },
+      data: { read: true },
+    });
+    revalidatePath("/admin");
+  }
+
   const sp = await searchParams;
   const activeKey = sections.some((s) => s.key === sp.tab) ? String(sp.tab) : "returnees";
   const activeCategory = categoryByKey[activeKey];

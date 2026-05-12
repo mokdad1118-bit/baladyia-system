@@ -1,10 +1,27 @@
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { UserRole } from "@/generated/prisma/enums";
+import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminReturneeRegistrationsTableWithSearch } from "@/components/admin/AdminReturneeRegistrationsTableWithSearch";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminReturneeRegistrationsPage({ searchParams }: S) {
+  const session = await auth();
+  if (session?.user?.role === UserRole.ADMIN) {
+    await db.notification.updateMany({
+      where: {
+        userId: session.user.id,
+        read: false,
+        type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.social] },
+      },
+      data: { read: true },
+    });
+    revalidatePath("/admin");
+  }
+
   const sp = await searchParams;
   const d0 = parseDateStartParam(sp.dateFrom);
   const d1 = parseDateEndParam(sp.dateTo);

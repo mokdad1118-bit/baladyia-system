@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
-import { SocialServiceCategory } from "@/generated/prisma/enums";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { SocialServiceCategory, UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/social-service-labels";
 import { AdminSocialServicesTableWithSearch } from "@/components/admin/AdminSocialServicesTableWithSearch";
 
@@ -14,6 +17,19 @@ const slugMap: Record<string, SocialServiceCategory> = {
 };
 
 export default async function AdminSocialServicesCategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const session = await auth();
+  if (session?.user?.role === UserRole.ADMIN) {
+    await db.notification.updateMany({
+      where: {
+        userId: session.user.id,
+        read: false,
+        type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.social] },
+      },
+      data: { read: true },
+    });
+    revalidatePath("/admin");
+  }
+
   const p = await params;
   const category = slugMap[p.category];
   if (!category) redirect("/admin/social-services");

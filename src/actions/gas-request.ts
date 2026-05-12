@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { notifyUsers } from "@/lib/notify";
+import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextGasRequestNumber } from "@/lib/gas-request-serial";
 
@@ -62,6 +62,14 @@ export async function submitGasRequest(
   });
 
   try {
+    const staff = await getStaffToNotify();
+    await notifyUsers({
+      userIds: staff,
+      type: "GAS_SUBMITTED",
+      title: "طلب غاز جديد",
+      message: `طلب غاز رقم ${number} — ${fullName}.`,
+      gasRequestId: created.id,
+    });
     await notifyUsers({
       userIds: [session.user.id],
       type: "GAS_SUBMITTED",

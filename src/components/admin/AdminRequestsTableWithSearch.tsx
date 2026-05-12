@@ -49,15 +49,17 @@ export function AdminRequestsTableWithSearch({
   return (
     <div>
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
-        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">إدارة الطلبات</h1>
-        <p className="mt-1 text-sm text-[var(--gov-muted)]">عرض شامل مع تصفية حسب الحالة والتاريخ والبحث في القائمة.</p>
+        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">طلبات خدمات المدينة</h1>
+        <p className="mt-1 text-sm text-[var(--gov-muted)]">
+          مراجعة الطلبات المعروضة مع تصفية حسب الحالة والتاريخ والبحث في القائمة.
+        </p>
       </header>
       <div className="gov-card mb-6 p-4">{filterForm}</div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
           <AdminListSearchField
             id="admin-requests-search"
-            label="بحث في قائمة الطلبات"
+            label="بحث في طلبات خدمات المدينة"
             placeholder="رقم الطلب، اسم المواطن، الخدمة، الحالة…"
             value={q}
             onChange={setQ}

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 
 export type SubmitCitizenFeedbackState =
   | { error: string }
@@ -27,12 +28,25 @@ export async function submitCitizenFeedback(
     return { error: "النص طويل جداً. الحد الأقصى 2000 حرف." };
   }
 
-  await db.citizenFeedback.create({
+  const row = await db.citizenFeedback.create({
     data: {
       citizenId: session.user.id,
       message,
     },
   });
+
+  try {
+    const staff = await getStaffToNotify();
+    await notifyUsers({
+      userIds: staff,
+      type: "FEEDBACK_SUBMITTED",
+      title: "شكوى أو اقتراح جديد",
+      message: `وصلت ملاحظة من ${session.user.name ?? "مواطن"} (${message.slice(0, 120)}${message.length > 120 ? "…" : ""}).`,
+      citizenFeedbackId: row.id,
+    });
+  } catch (e) {
+    console.warn("[submitCitizenFeedback] notifyUsers:", e);
+  }
 
   revalidatePath("/admin/citizen-feedback");
   revalidatePath("/citizen/feedback");

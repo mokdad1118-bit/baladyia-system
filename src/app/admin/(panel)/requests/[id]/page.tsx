@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { UserRole } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 import { RequestStatus } from "@/generated/prisma/enums";
 import { updateRequestStatus, addRequestNote } from "@/actions/request-staff";
@@ -38,6 +41,20 @@ export default async function AdminRequestDetailPage({ params, searchParams }: P
     },
   });
   if (!r) notFound();
+
+  const session = await auth();
+  if (session?.user?.role === UserRole.ADMIN) {
+    await db.notification.updateMany({
+      where: {
+        userId: session.user.id,
+        read: false,
+        type: "REQUEST_SUBMIT",
+        requestId: id,
+      },
+      data: { read: true },
+    });
+    revalidatePath("/admin");
+  }
 
   return (
     <div>

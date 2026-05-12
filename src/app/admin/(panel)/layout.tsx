@@ -13,6 +13,7 @@ import {
   staffPortalSplitDisabledForOrigin,
   staffPortalSplitEnabled,
 } from "@/lib/staff-portal";
+import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 
 export default async function AdminPanelLayout({
   children,
@@ -33,19 +34,28 @@ export default async function AdminPanelLayout({
     redirect("/citizen/welcome");
   }
   const staffPerms = staffNavPermissions(s);
-  const newRequestsCount = await db.notification.count({
-    where: {
-      userId: s.user.id,
-      read: false,
-      type: "REQUEST_SUBMIT",
-    },
-  });
+  const uid = s.user.id;
+  const [cityServiceRequests, gas, social, feedback] = await Promise.all([
+    db.notification.count({
+      where: { userId: uid, read: false, type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.cityServiceRequests] } },
+    }),
+    db.notification.count({
+      where: { userId: uid, read: false, type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.gas] } },
+    }),
+    db.notification.count({
+      where: { userId: uid, read: false, type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.social] } },
+    }),
+    db.notification.count({
+      where: { userId: uid, read: false, type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.feedback] } },
+    }),
+  ]);
+  const badgeCounts = { cityServiceRequests, gas, social, feedback };
   const homeHref = staffRoot ? "/" : "/admin";
   const logoutCallbackUrl = "/admin/login";
   return (
     <GovWorkspaceShell
       portalTitle="لوحة التحكم"
-      nav={<AdminNav staffPerms={staffPerms} staffRoot={staffRoot} newRequestsCount={newRequestsCount} />}
+      nav={<AdminNav staffPerms={staffPerms} staffRoot={staffRoot} badgeCounts={badgeCounts} />}
       homeHref={homeHref}
       logoutCallbackUrl={logoutCallbackUrl}
     >

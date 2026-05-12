@@ -1,7 +1,24 @@
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { UserRole } from "@/generated/prisma/enums";
+import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { AdminCitizenFeedbackReplyForm } from "@/components/admin/AdminCitizenFeedbackReplyForm";
 
 export default async function AdminCitizenFeedbackPage() {
+  const session = await auth();
+  if (session?.user?.role === UserRole.ADMIN) {
+    await db.notification.updateMany({
+      where: {
+        userId: session.user.id,
+        read: false,
+        type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.feedback] },
+      },
+      data: { read: true },
+    });
+    revalidatePath("/admin");
+  }
+
   const rows = await db.citizenFeedback.findMany({
     orderBy: { createdAt: "desc" },
     take: 500,

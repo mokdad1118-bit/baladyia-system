@@ -4,22 +4,49 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import type { StaffNavPermissions } from "@/lib/staff-permissions";
+import type { AdminNavBadgeCounts } from "@/lib/admin-nav-badges";
+
+function NavNewBadge({ count, ariaLabel }: { count: number; ariaLabel: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--gov-primary)] px-1.5 py-0.5 text-[0.65rem] leading-none text-white"
+      aria-label={ariaLabel}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 const segments = [
   { internal: "/admin", label: "لوحة التحكم", desc: "نظرة عامة", perm: null },
-  { internal: "/admin/requests", label: "الطلبات", desc: "مراجعة وتحديث الحالة", perm: null },
-  { internal: "/admin/gas-services", label: "خدمات الغاز", desc: "طلبات خدمات الغاز", perm: null },
+  {
+    internal: "/admin/requests",
+    label: "طلبات خدمات المدينة",
+    desc: "مراجعة وتحديث الحالة",
+    perm: null,
+    badgeKey: "cityServiceRequests" as const,
+  },
+  {
+    internal: "/admin/gas-services",
+    label: "خدمات الغاز",
+    desc: "طلبات خدمات الغاز",
+    perm: null,
+    badgeKey: "gas" as const,
+  },
   {
     internal: "/admin/social-services",
     label: "الخدمات الاجتماعية",
     desc: "العائدين وباقي الأقسام الاجتماعية",
     perm: null,
+    badgeKey: "social" as const,
   },
   {
     internal: "/admin/citizen-feedback",
     label: "شكاوي واقتراحات المواطنين",
     desc: "ملاحظات المستخدمين على التطبيق",
     perm: null,
+    badgeKey: "feedback" as const,
   },
   {
     internal: "/admin/services",
@@ -35,7 +62,13 @@ const segments = [
     perm: "manageUsers" as const,
   },
   { internal: "/admin/stats", label: "الإحصائيات", desc: "تقارير", perm: "viewStats" as const },
-] as const;
+] as const satisfies readonly {
+  internal: string;
+  label: string;
+  desc: string;
+  perm: null | "manageServices" | "manageUsers" | "viewStats";
+  badgeKey?: keyof AdminNavBadgeCounts;
+}[];
 
 function hrefFor(staffRoot: boolean, internal: string) {
   if (!staffRoot) return internal;
@@ -50,14 +83,21 @@ function navActive(staffRoot: boolean, internal: string, path: string) {
   return path === href || path.startsWith(`${href}/`);
 }
 
+const BADGE_ARIA: Record<keyof AdminNavBadgeCounts, string> = {
+  cityServiceRequests: "طلبات خدمات المدينة الجديدة غير المفتوحة",
+  gas: "طلبات غاز جديدة لم تُعرض بعد",
+  social: "طلبات اجتماعية أو عائدين جديدة لم تُعرض بعد",
+  feedback: "شكاوى أو اقتراحات جديدة لم تُعرض بعد",
+};
+
 export function AdminNav({
   staffPerms,
   staffRoot,
-  newRequestsCount = 0,
+  badgeCounts,
 }: {
   staffPerms: StaffNavPermissions;
   staffRoot: boolean;
-  newRequestsCount?: number;
+  badgeCounts: AdminNavBadgeCounts;
 }) {
   const path = usePathname() ?? "";
   const items = segments.filter((i) => !i.perm || staffPerms[i.perm]);
@@ -85,13 +125,8 @@ export function AdminNav({
               )}
             >
               {i.label}
-              {i.internal === "/admin/requests" && newRequestsCount > 0 ? (
-                <span
-                  className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--gov-primary)] px-1.5 py-0.5 text-[0.65rem] leading-none text-white"
-                  aria-label={`يوجد ${newRequestsCount} طلب جديد`}
-                >
-                  {newRequestsCount > 99 ? "99+" : newRequestsCount}
-                </span>
+              {"badgeKey" in i && i.badgeKey ? (
+                <NavNewBadge count={badgeCounts[i.badgeKey]} ariaLabel={BADGE_ARIA[i.badgeKey]} />
               ) : null}
             </span>
             <span className="text-[0.7rem] text-[var(--gov-muted)]">{i.desc}</span>

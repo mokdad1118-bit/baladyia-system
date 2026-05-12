@@ -9,7 +9,7 @@ const adminTiles = [
   { href: "/admin/services", title: "الخدمات", sub: "النماذج والمستندات والأسعار", perm: "manageServices" as const },
   { href: "/admin/users", title: "حسابات الموظفين", sub: "موظفون ومديرون", perm: "manageUsers" as const },
   { href: "/admin/citizens", title: "حسابات المواطنين", sub: "عرض وتفعيل الحسابات", perm: null },
-  { href: "/admin/requests", title: "الطلبات", sub: "عرض شامل", perm: null },
+  { href: "/admin/requests", title: "طلبات خدمات المدينة", sub: "عرض شامل", perm: null },
   { href: "/admin/stats", title: "الإحصائيات", sub: "تقارير", perm: "viewStats" as const },
 ] as const;
 
