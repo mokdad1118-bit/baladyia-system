@@ -10,7 +10,19 @@ type Title = { t: string; backHref?: string };
 
 function getTitleForPath(p: string): Title {
   const c = p.startsWith("/citizen") ? p.slice("/citizen".length) || "/" : p;
+  if (c === "/account") return { t: "حسابي" };
+  if (c === "/feedback") return { t: "الشكاوي والمقترحات" };
   if (c === "/services") return { t: "الخدمات" };
+  if (c === "/services/gas") return { t: "خدمات الغاز" };
+  if (c === "/services/bosra") return { t: "خدمات البلدية" };
+  if (c === "/services/returnees") return { t: "الخدمات الاجتماعية" };
+  if (c === "/services/returnees/returnees") return { t: "تسجيل العائدين" };
+  if (c === "/services/returnees/divorced") return { t: "المطلقات" };
+  if (c === "/services/returnees/widows") return { t: "الأرامل" };
+  if (c === "/services/returnees/orphans") return { t: "الأيتام" };
+  if (c === "/services/returnees/disabilities") return { t: "الإعاقات" };
+  if (c === "/services/returnees/chronic-diseases") return { t: "الأمراض المزمنة" };
+  if (c === "/services/returnees/family-census") return { t: "الإحصاء العام للعوائل" };
   if (c === "/requests") return { t: "طلباتي" };
   if (c.startsWith("/requests/") && !c.includes("/new/")) {
     return {
@@ -26,7 +38,11 @@ function getTitleForPath(p: string): Title {
   }
   if (c.startsWith("/notifications")) return { t: "الإشعارات" };
   if (c === "/" || c === "") return { t: "الرئيسية" };
-  return { t: "تطبيق المواطن" };
+  if (c.startsWith("/services/")) return { t: "الخدمات" };
+  if (c.startsWith("/requests/")) return { t: "الطلبات" };
+  if (c.startsWith("/account/")) return { t: "حسابي" };
+  if (c.startsWith("/feedback/")) return { t: "الشكاوي والمقترحات" };
+  return { t: "الرئيسية" };
 }
 
 export function CitizenAppBar({ isCitizen }: { isCitizen: boolean }) {
