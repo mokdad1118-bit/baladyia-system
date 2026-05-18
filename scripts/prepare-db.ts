@@ -3,6 +3,7 @@ import { execSync } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@libsql/client";
+import { syncDaraaMunicipalities } from "./sync-municipalities";
 
 function databaseUrl(): string {
   return process.env.DATABASE_URL?.trim() || "";
@@ -101,11 +102,21 @@ async function main() {
   if (!url || !isRemoteLibsql(url)) {
     console.log("[prepare-db] local sqlite mode -> prisma migrate deploy");
     execSync("npx prisma migrate deploy", { stdio: "inherit" });
+    await syncDaraaMunicipalities();
+    if (process.env.RUN_DB_SEED_ON_START === "1") {
+      console.log("[prepare-db] RUN_DB_SEED_ON_START=1 -> prisma db seed");
+      execSync("npx prisma db seed", { stdio: "inherit" });
+    }
     return;
   }
 
   console.log("[prepare-db] remote libsql mode -> applying prisma/migrations via libsql client");
   await applyMigrationsToRemoteLibsql(url);
+  await syncDaraaMunicipalities();
+  if (process.env.RUN_DB_SEED_ON_START === "1") {
+    console.log("[prepare-db] RUN_DB_SEED_ON_START=1 -> prisma db seed");
+    execSync("npx prisma db seed", { stdio: "inherit" });
+  }
 }
 
 main().catch((e) => {
