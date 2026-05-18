@@ -15,6 +15,7 @@ import {
   staffPortalSplitEnabled,
 } from "@/lib/staff-portal";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
+import { isSuperAdminRole } from "@/lib/roles";
 
 export default async function AdminPanelLayout({
   children,
@@ -56,7 +57,14 @@ export default async function AdminPanelLayout({
   return (
     <GovWorkspaceShell
       portalTitle="لوحة التحكم"
-      nav={<AdminNav staffPerms={staffPerms} staffRoot={staffRoot} badgeCounts={badgeCounts} />}
+      nav={
+        <AdminNav
+          staffPerms={staffPerms}
+          staffRoot={staffRoot}
+          badgeCounts={badgeCounts}
+          isSuperAdmin={isSuperAdminRole(s.user.role)}
+        />
+      }
       homeHref={homeHref}
       logoutCallbackUrl={logoutCallbackUrl}
     >

@@ -15,6 +15,11 @@ const adminTiles = [
   { href: "/admin/stats", title: "الإحصائيات", sub: "تقارير", perm: "viewStats" as const },
 ] as const;
 
+const superAdminTiles = [
+  { href: "/admin/municipalities", title: "إدارة البلديات", sub: "إضافة وتعديل بلديات المحافظة" },
+  { href: "/admin/municipalities/compare", title: "مقارنة البلديات", sub: "تقرير إحصائي شامل" },
+] as const;
+
 export default async function AdminHomePage() {
   const s = await auth();
   const mun = staffMunicipalityIdFilter(s);
@@ -59,7 +64,14 @@ export default async function AdminHomePage() {
       variant="admin"
       isAdmin={Boolean(isAdmin)}
       adminStats={[...stats]}
-      adminTiles={isAdmin ? adminTiles.map((t) => ({ href: t.href, title: t.title, sub: t.sub })) : []}
+      adminTiles={
+        isAdmin
+          ? [
+              ...adminTiles.map((t) => ({ href: t.href, title: t.title, sub: t.sub })),
+              ...superAdminTiles.map((t) => ({ href: t.href, title: t.title, sub: t.sub })),
+            ]
+          : []
+      }
     />
   );
 }

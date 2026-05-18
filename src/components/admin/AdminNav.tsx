@@ -62,12 +62,27 @@ const segments = [
     perm: "manageUsers" as const,
   },
   { internal: "/admin/stats", label: "الإحصائيات", desc: "تقارير", perm: "viewStats" as const },
+  {
+    internal: "/admin/municipalities",
+    label: "إدارة البلديات",
+    desc: "إضافة وتعديل بلديات المحافظة",
+    perm: null,
+    superAdminOnly: true,
+  },
+  {
+    internal: "/admin/municipalities/compare",
+    label: "مقارنة البلديات",
+    desc: "تقرير إحصائي على مستوى المحافظة",
+    perm: null,
+    superAdminOnly: true,
+  },
 ] as const satisfies readonly {
   internal: string;
   label: string;
   desc: string;
   perm: null | "manageServices" | "manageUsers" | "viewStats";
   badgeKey?: keyof AdminNavBadgeCounts;
+  superAdminOnly?: boolean;
 }[];
 
 function hrefFor(staffRoot: boolean, internal: string) {
@@ -94,13 +109,19 @@ export function AdminNav({
   staffPerms,
   staffRoot,
   badgeCounts,
+  isSuperAdmin = false,
 }: {
   staffPerms: StaffNavPermissions;
   staffRoot: boolean;
   badgeCounts: AdminNavBadgeCounts;
+  isSuperAdmin?: boolean;
 }) {
   const path = usePathname() ?? "";
-  const items = segments.filter((i) => !i.perm || staffPerms[i.perm]);
+  const items = segments.filter((i) => {
+    if ("superAdminOnly" in i && i.superAdminOnly && !isSuperAdmin) return false;
+    if (!i.perm) return true;
+    return staffPerms[i.perm];
+  });
   return (
     <nav className="space-y-1">
       {items.map((i) => {

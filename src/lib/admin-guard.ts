@@ -7,7 +7,7 @@ import {
   staffCanManageUsers,
   staffCanViewStats,
 } from "@/lib/staff-permissions";
-import { isAdminPanelRole } from "@/lib/roles";
+import { isAdminPanelRole, isSuperAdminRole } from "@/lib/roles";
 
 type AuthSession = Session | null;
 
@@ -33,4 +33,10 @@ export async function requireStaffPanelPermission(
         ? staffCanManageUsers(session)
         : staffCanViewStats(session);
   if (!ok) redirect("/admin");
+}
+
+/** صفحات إدارة البلديات وتقارير المقارنة — مشرف المحافظة فقط */
+export async function requireSuperAdminPanel(session: AuthSession) {
+  await requireAdminPanel(session);
+  if (!isSuperAdminRole(session!.user!.role ?? UserRole.CITIZEN)) redirect("/admin");
 }

@@ -21,6 +21,8 @@ export async function setSuperAdminMunicipalityScope(
   revalidatePath("/admin/social-services");
   revalidatePath("/admin/returnee-registrations");
   revalidatePath("/admin/citizen-feedback");
+  revalidatePath("/admin/municipalities");
+  revalidatePath("/admin/municipalities/compare");
   return { ok: true };
 }
 
