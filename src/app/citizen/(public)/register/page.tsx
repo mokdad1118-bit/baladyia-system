@@ -4,6 +4,8 @@ import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { CitizenRegisterForm } from "@/components/citizen/CitizenRegisterForm";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function CitizenRegisterPagePublic() {
   const municipalities = await db.municipality.findMany({
     where: { isActive: true },

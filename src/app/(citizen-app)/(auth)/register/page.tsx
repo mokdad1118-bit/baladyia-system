@@ -2,6 +2,8 @@ import { CitizenAuthShell } from "@/components/citizen/CitizenAuthShell";
 import { CitizenRegisterForm } from "@/components/citizen/CitizenRegisterForm";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function CitizenRegisterPage() {
   const municipalities = await db.municipality.findMany({
     where: { isActive: true },
