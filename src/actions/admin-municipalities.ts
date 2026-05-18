@@ -115,7 +115,7 @@ export async function setMunicipalityActive(
   if (!row) return { error: "البلدية غير موجودة" };
 
   if (!isActive && row.code === "bosra-sham") {
-    return { error: "لا يمكن تعطيل البلدية الافتراضية (بصرى الشام)" };
+    return { error: "لا يمكن تعطيل البلدية الافتراضية المستخدمة لترحيل البيانات القديمة" };
   }
 
   await db.municipality.update({

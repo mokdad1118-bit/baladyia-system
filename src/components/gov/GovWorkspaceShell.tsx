@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
-import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
+import { ENTITY_NAME_AR, PORTAL_SUBTITLE, SUPERVISING_AUTHORITY_AR } from "@/lib/entity";
 import { LogoutForm } from "@/components/LogoutForm";
 import { NavigationWaitGate } from "@/components/NavigationWaitGate";
 
@@ -28,6 +28,7 @@ export function GovWorkspaceShell({
             <div className="text-start text-white">
               <p className="text-[0.65rem] text-white/75">{PORTAL_SUBTITLE}</p>
               <p className="text-sm font-bold leading-tight">{ENTITY_NAME_AR}</p>
+              <p className="text-[0.65rem] text-white/75">{SUPERVISING_AUTHORITY_AR}</p>
               <p className="text-xs text-white/85">{portalTitle}</p>
             </div>
           </Link>

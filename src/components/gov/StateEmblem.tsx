@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { BRAND_ASSETS } from "@/lib/entity";
 
-const SRC_PNG = "/brand/state-emblem.png";
-const SRC_SVG = "/brand/state-emblem.svg";
+const SRC_PNG = BRAND_ASSETS.stateEmblemPng;
+const SRC_SVG = BRAND_ASSETS.stateEmblemSvg;
 
 /**
- * عرض شعار الدولة من الملفات الرسمية في public/brand دون أي فلترة أو تشويه.
- * يُفضّل PNG/SVG أصلي باسم state-emblem.*
+ * عرض الشعار الرسمي من الملفات الموجودة في public/brand دون أي فلترة أو تشويه.
+ * حالياً نُبقي صورة الهوية البصرية كما هي، ويمكن لاحقاً إضافة شعار محافظة درعا
+ * عبر BRAND_ASSETS.governorateEmblemPng دون كسر الواجهات.
  */
 export function StateEmblem({
   className,
@@ -17,7 +19,7 @@ export function StateEmblem({
   /** ارتفاع بالبكسل — العرض يتبع نسبة الشعار */
   height?: number;
 }) {
-  const [src, setSrc] = useState(SRC_PNG);
+  const [src, setSrc] = useState<string>(SRC_PNG);
   const [failed, setFailed] = useState(false);
 
   if (failed) {

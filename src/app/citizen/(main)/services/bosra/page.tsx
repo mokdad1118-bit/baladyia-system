@@ -3,10 +3,9 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import { GovStepIndicator } from "@/components/gov/GovStepIndicator";
-import { APP_NAME_AR } from "@/lib/entity";
 import { citizenMunicipalityIdOrThrow } from "@/lib/municipality-scope";
 
-export default async function BosraMunicipalServicesPage() {
+export default async function MunicipalServicesPage() {
   const s = await auth();
   let municipalityId: string | undefined;
   if (s?.user?.role === UserRole.CITIZEN) {
@@ -28,7 +27,7 @@ export default async function BosraMunicipalServicesPage() {
   return (
     <div className="w-full px-3 md:px-0">
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
-        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">خدمات {APP_NAME_AR}</h1>
+        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">خدمات البلدية التابعة لك</h1>
         <p className="mt-1 text-sm text-[var(--gov-muted)]">اختر الخدمة، ثم أكمل النموذج والمرفقات من بوابة الطلب.</p>
       </header>
       <GovStepIndicator currentStep={1} />
@@ -57,7 +56,7 @@ export default async function BosraMunicipalServicesPage() {
                   ) : (
                     <p className="text-sm text-[var(--gov-muted)]">
                       <Link
-                        href="/citizen/welcome?next=/citizen/services/bosra"
+                        href="/citizen/welcome?next=/citizen/services/municipal"
                         className="font-semibold text-[var(--gov-primary)] hover:underline"
                       >
                         سجّل الدخول كمواطن

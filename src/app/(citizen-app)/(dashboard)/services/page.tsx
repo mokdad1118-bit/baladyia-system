@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
-import { APP_NAME_AR, ENTITY_NAME_AR } from "@/lib/entity";
+import { ENTITY_NAME_AR } from "@/lib/entity";
 
 export default async function CitizenServicesPage() {
   return (
@@ -19,15 +19,15 @@ export default async function CitizenServicesPage() {
       </header>
       <section className="gov-card mt-3 p-4 text-center md:mt-5 md:p-6">
         <p className="mb-4 text-xs leading-relaxed text-[var(--gov-muted)] md:text-sm">
-          يرجى اخيتار الخدمة المطلوبة ثم تقديم الطلب
+          يرجى اختيار الخدمة المطلوبة ثم تقديم الطلب.
         </p>
         <div className="space-y-3">
           <div className="flex justify-center">
             <Link
-              href="/services/bosra"
+              href="/services/municipal"
               className="gov-btn-primary inline-flex min-h-11 min-w-[16rem] items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold no-underline md:text-base"
             >
-              خدمات {APP_NAME_AR}
+              خدمات البلدية التابعة لك
             </Link>
           </div>
           <div className="flex justify-center">

@@ -4,5 +4,11 @@ state-emblem.png
 state-emblem.svg
 دون تعديل على الشعار نفسه — الحجم يُضبط من الواجهة فقط (object-contain).
 
+مكان شعار محافظة درعا المستقبلي:
+daraa-governorate-emblem.png
+
+مكان شعارات البلديات المستقبلية:
+municipalities/<municipality-code>.png
+
 أيقونات PWA (تُولَّد من الشعار عند الحاجة):
 icon-192.png، icon-512.png، apple-touch-icon.png — أو أعد تشغيل سكربت التصدير بعد استبدال state-emblem.png.

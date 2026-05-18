@@ -47,8 +47,8 @@ docker compose exec eportal npx prisma db seed
 
 | الدور | الدخول | كلمة المرور الافتراضية |
 |--------|--------|-------------------------|
-| Admin | `admin@bosra.local` | `Admin123` |
-| Employee | `employee@bosra.local` | `Employee123` |
+| Super Admin | `admin@daraa.local` | `Admin123` |
+| Employee | `employee@daraa.local` | `Employee123` |
 | Citizen | واتساب `963900000001` أو البريد `citizen@example.com` | `Citizen123` |
 
 ### 4) HTTPS أمام التطبيق

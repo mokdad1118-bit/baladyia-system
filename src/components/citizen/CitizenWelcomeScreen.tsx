@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getSession } from "next-auth/react";
 import { safePostLoginRedirectPath } from "@/lib/portal-paths";
-import { APP_NAME_AR } from "@/lib/entity";
+import { CITIZEN_PORTAL_NAME_AR, SUPERVISING_AUTHORITY_AR } from "@/lib/entity";
 import { grantCitizenWelcomePassClient } from "@/lib/citizen-welcome-pass";
 import { cn } from "@/lib/cn";
 
@@ -65,7 +65,8 @@ function CitizenWelcomeScreenInner() {
         />
         <div className="space-y-3 text-[#C5B382]">
           <p className="text-lg font-medium leading-relaxed sm:text-xl">مرحباً بكم في منصة الخدمات الإلكترونية</p>
-          <p className="text-base font-semibold sm:text-lg">{APP_NAME_AR}</p>
+          <p className="text-base font-semibold sm:text-lg">{CITIZEN_PORTAL_NAME_AR}</p>
+          <p className="text-xs font-medium leading-relaxed text-[#C5B382]/85 sm:text-sm">{SUPERVISING_AUTHORITY_AR}</p>
         </div>
         <button
           type="button"

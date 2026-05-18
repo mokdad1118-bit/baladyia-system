@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import type { LoginPageSurface } from "@/lib/auth-portal";
 import { safePostLoginRedirectPath } from "@/lib/portal-paths";
 import { StateEmblem } from "@/components/gov/StateEmblem";
-import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
+import { ENTITY_NAME_AR, PORTAL_SUBTITLE, SUPERVISING_AUTHORITY_AR } from "@/lib/entity";
 import { CitizenAuthShell } from "@/components/citizen/CitizenAuthShell";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
@@ -283,6 +283,7 @@ function GovLoginPageImpl({
               <div className="text-start text-white">
                 <p className="text-xs text-white/80">{PORTAL_SUBTITLE}</p>
                 <p className="text-lg font-bold leading-snug">{ENTITY_NAME_AR}</p>
+                <p className="text-[0.7rem] text-white/75">{SUPERVISING_AUTHORITY_AR}</p>
               </div>
             </div>
             <p className="w-full text-center text-sm text-white/90 sm:w-auto sm:text-start">{title}</p>

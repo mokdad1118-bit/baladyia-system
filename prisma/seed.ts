@@ -28,13 +28,13 @@ async function main() {
     });
   }
 
-  const bosra = await prisma.municipality.findUniqueOrThrow({
+  const defaultMunicipality = await prisma.municipality.findUniqueOrThrow({
     where: { code: "bosra-sham" },
   });
 
   const [admin, employee, citizen] = await Promise.all([
     prisma.user.upsert({
-      where: { email: "admin@bosra.local" },
+      where: { email: "admin@daraa.local" },
       update: {
         permManageServices: true,
         permManageUsers: true,
@@ -43,8 +43,8 @@ async function main() {
         municipalityId: null,
       },
       create: {
-        email: "admin@bosra.local",
-        name: "مشرف المحافظة (تجريبي)",
+        email: "admin@daraa.local",
+        name: "مشرف محافظة درعا (تجريبي)",
         passwordHash: await hash("Admin123", ROUNDS),
         role: UserRole.SUPER_ADMIN,
         municipalityId: null,
@@ -54,19 +54,19 @@ async function main() {
       },
     }),
     prisma.user.upsert({
-      where: { email: "employee@bosra.local" },
+      where: { email: "employee@daraa.local" },
       update: {
         permManageServices: true,
         permManageUsers: false,
         permViewStats: true,
-        municipalityId: bosra.id,
+        municipalityId: defaultMunicipality.id,
       },
       create: {
-        email: "employee@bosra.local",
-        name: "موظف الاستقبال (تجريبي)",
+        email: "employee@daraa.local",
+        name: "موظف بلدية ضمن محافظة درعا (تجريبي)",
         passwordHash: await hash("Employee123", ROUNDS),
         role: UserRole.EMPLOYEE,
-        municipalityId: bosra.id,
+        municipalityId: defaultMunicipality.id,
         permManageServices: true,
         permManageUsers: false,
         permViewStats: true,
@@ -78,7 +78,7 @@ async function main() {
         phone: "963900000001",
         nationalId: "12345678901",
         isVerified: true,
-        municipalityId: bosra.id,
+        municipalityId: defaultMunicipality.id,
       },
       create: {
         email: "citizen@example.com",
@@ -88,17 +88,17 @@ async function main() {
         passwordHash: await hash("Citizen123", ROUNDS),
         role: UserRole.CITIZEN,
         isVerified: true,
-        municipalityId: bosra.id,
+        municipalityId: defaultMunicipality.id,
       },
     }),
   ]);
 
   const svc = await prisma.service.upsert({
     where: { id: "seed-service-1" },
-    update: { municipalityId: bosra.id },
+    update: { municipalityId: defaultMunicipality.id },
     create: {
       id: "seed-service-1",
-      municipalityId: bosra.id,
+      municipalityId: defaultMunicipality.id,
       name: "رخصة بناء (تجريبية)",
       description: "طلب تقديري لرخصة بناء، للاختبار داخل النظام.",
       price: "500.00",
@@ -140,7 +140,7 @@ async function main() {
     const reqN = "REQ-2026-00001";
     const r = await prisma.request.create({
       data: {
-        municipalityId: bosra.id,
+        municipalityId: defaultMunicipality.id,
         requestNumber: reqN,
         serviceId: svc.id,
         citizenId: citizen.id,
@@ -151,8 +151,8 @@ async function main() {
     });
     await prisma.$transaction([
       prisma.requestSerial.upsert({
-        where: { municipalityId_year: { municipalityId: bosra.id, year: 2026 } },
-        create: { municipalityId: bosra.id, year: 2026, lastN: 1 },
+        where: { municipalityId_year: { municipalityId: defaultMunicipality.id, year: 2026 } },
+        create: { municipalityId: defaultMunicipality.id, year: 2026, lastN: 1 },
         update: { lastN: 1 },
       }),
       prisma.requestStatusLog.create({

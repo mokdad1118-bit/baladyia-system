@@ -14,7 +14,7 @@ function getTitleForPath(p: string): Title {
   if (c === "/feedback") return { t: "الشكاوي والمقترحات" };
   if (c === "/services") return { t: "الخدمات" };
   if (c === "/services/gas") return { t: "خدمات الغاز" };
-  if (c === "/services/bosra") return { t: "خدمات البلدية" };
+  if (c === "/services/bosra" || c === "/services/municipal") return { t: "خدمات البلدية" };
   if (c === "/services/returnees") return { t: "الخدمات الاجتماعية" };
   if (c === "/services/returnees/returnees") return { t: "تسجيل العائدين" };
   if (c === "/services/returnees/divorced") return { t: "المطلقات" };

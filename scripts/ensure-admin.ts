@@ -5,9 +5,9 @@ import { UserRole } from "../src/generated/prisma/enums";
 import { createLibSqlAdapter } from "../src/lib/libsql-adapter";
 
 const ROUNDS = 10;
-const DEFAULT_EMAIL = "admin@bosra.local";
+const DEFAULT_EMAIL = "admin@daraa.local";
 const DEFAULT_PASSWORD = "Admin123";
-const DEFAULT_NAME = "مدير النظام";
+const DEFAULT_NAME = "مشرف محافظة درعا";
 
 async function main() {
   const email = (process.env.BOOTSTRAP_ADMIN_EMAIL || DEFAULT_EMAIL).trim().toLowerCase();

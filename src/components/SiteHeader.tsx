@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { APP_NAME_AR } from "@/lib/entity";
+import { CITIZEN_PORTAL_NAME_AR, OFFICIAL_SCOPE_AR } from "@/lib/entity";
 import { MainNav } from "./MainNav";
 import { IconBuilding } from "./icons";
 
@@ -18,10 +18,10 @@ export function SiteHeader() {
           </span>
           <span className="min-w-0">
             <span className="block truncate text-sm font-bold tracking-tight sm:text-base">
-              بوابة {APP_NAME_AR}
+              {CITIZEN_PORTAL_NAME_AR}
             </span>
             <span className="block text-[0.7rem] font-medium text-slate-500 sm:text-xs">
-              طلبات · رخص · شكاوى
+              {OFFICIAL_SCOPE_AR}
             </span>
           </span>
         </Link>
