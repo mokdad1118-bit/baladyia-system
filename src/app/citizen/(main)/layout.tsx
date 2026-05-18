@@ -6,6 +6,7 @@ import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { CitizenDesktopNavLinks } from "@/components/citizen/CitizenDesktopNavLinks";
+import { municipalityCouncilName } from "@/lib/municipality-display";
 
 export default async function CitizenMainChromeLayout({
   children,
@@ -18,6 +19,14 @@ export default async function CitizenMainChromeLayout({
     isCitizen && s.user?.id
       ? await db.notification.count({ where: { userId: s.user.id, read: false } })
       : 0;
+  const municipality =
+    isCitizen && s.user.municipalityId
+      ? await db.municipality.findUnique({
+          where: { id: s.user.municipalityId },
+          select: { name: true },
+        })
+      : null;
+  const citizenEntityName = municipalityCouncilName(municipality?.name) ?? ENTITY_NAME_AR;
 
   return (
     <div className="notranslate min-h-dvh" translate="no">
@@ -27,7 +36,7 @@ export default async function CitizenMainChromeLayout({
             <StateEmblem height={46} />
             <div className="text-start">
               <p className="text-[0.65rem] text-[var(--gov-muted)]">{PORTAL_SUBTITLE}</p>
-              <p className="text-sm font-bold text-[var(--gov-text)]">{ENTITY_NAME_AR}</p>
+              <p className="text-sm font-bold text-[var(--gov-text)]">{citizenEntityName}</p>
             </div>
           </Link>
           <CitizenDesktopNavLinks isCitizen={isCitizen} unreadNotifications={unreadNotifications} />

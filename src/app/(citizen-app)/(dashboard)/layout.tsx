@@ -6,6 +6,7 @@ import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { CitizenDesktopNavLinks } from "@/components/citizen/CitizenDesktopNavLinks";
+import { municipalityCouncilName } from "@/lib/municipality-display";
 
 export default async function CitizenDashboardLayout({ children }: { children: React.ReactNode }) {
   const s = await auth();
@@ -14,6 +15,14 @@ export default async function CitizenDashboardLayout({ children }: { children: R
     isCitizen && s.user?.id
       ? await db.notification.count({ where: { userId: s.user.id, read: false } })
       : 0;
+  const municipality =
+    isCitizen && s.user.municipalityId
+      ? await db.municipality.findUnique({
+          where: { id: s.user.municipalityId },
+          select: { name: true },
+        })
+      : null;
+  const citizenEntityName = municipalityCouncilName(municipality?.name) ?? ENTITY_NAME_AR;
 
   return (
     <div className="notranslate min-h-dvh min-w-0 overflow-x-hidden" translate="no">
@@ -23,7 +32,7 @@ export default async function CitizenDashboardLayout({ children }: { children: R
             <StateEmblem height={46} />
             <div className="text-start">
               <p className="text-[0.65rem] text-[var(--gov-muted)]">{PORTAL_SUBTITLE}</p>
-              <p className="text-sm font-bold text-[var(--gov-text)]">{ENTITY_NAME_AR}</p>
+              <p className="text-sm font-bold text-[var(--gov-text)]">{citizenEntityName}</p>
               <p className="text-xs text-[var(--gov-muted)]">تطبيق المواطن</p>
             </div>
           </Link>

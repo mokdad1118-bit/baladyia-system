@@ -1,14 +1,28 @@
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR } from "@/lib/entity";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { UserRole } from "@/generated/prisma/enums";
+import { municipalityCouncilName } from "@/lib/municipality-display";
 
 export default async function CitizenServicesPage() {
+  const s = await auth();
+  const municipality =
+    s?.user?.role === UserRole.CITIZEN && s.user.municipalityId
+      ? await db.municipality.findUnique({
+          where: { id: s.user.municipalityId },
+          select: { name: true },
+        })
+      : null;
+  const entityName = municipalityCouncilName(municipality?.name) ?? ENTITY_NAME_AR;
+
   return (
     <div className="w-full min-w-0 max-w-full">
       <header className="gov-page-heading mb-3 border-b border-[var(--gov-border)] pb-3 md:mb-6 md:pb-4">
         <div className="mb-3 flex items-center justify-center gap-3">
           <StateEmblem height={52} />
-          <p className="text-sm font-bold text-[var(--gov-text)] md:text-base">{ENTITY_NAME_AR}</p>
+          <p className="text-sm font-bold text-[var(--gov-text)] md:text-base">{entityName}</p>
         </div>
         <h1 className="text-base font-bold text-[var(--gov-text)] md:text-lg md:font-bold xl:text-xl">
           الخدمات المتاحة
