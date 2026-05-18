@@ -4,6 +4,9 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@libsql/client";
 import { syncDaraaMunicipalities } from "./sync-municipalities";
+import { MIGRATION_DEFAULT_MUNICIPALITY_ID } from "../src/lib/municipality-constants";
+
+const MULTI_MUNICIPALITY_MIGRATION = "20260518133000_multi_municipality_daraa";
 
 function databaseUrl(): string {
   return process.env.DATABASE_URL?.trim() || "";
@@ -32,9 +35,213 @@ function migrationErrorMessage(err: unknown): string {
 /** ترحيل سبق تنفيذه جزئياً على LibSQL (إعادة نشر، انقطاع، إلخ) */
 function isBenignMigrationConflict(msg: string, stmt: string): boolean {
   if (msg.includes("duplicate column")) return true;
+  if (/^create\s+table\b/i.test(stmt.trimStart()) && msg.includes("already exists")) return true;
   const s = stmt.trimStart();
   if (/^create\s+index\b/i.test(s) && msg.includes("already exists")) return true;
   return false;
+}
+
+type LibsqlClient = ReturnType<typeof createClient>;
+
+async function tableExists(client: LibsqlClient, table: string) {
+  const res = await client.execute({
+    sql: "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+    args: [table],
+  });
+  return res.rows.length > 0;
+}
+
+async function columnExists(client: LibsqlClient, table: string, column: string) {
+  if (!(await tableExists(client, table))) return false;
+  const res = await client.execute(`PRAGMA table_info("${table}")`);
+  return res.rows.some((row) => String(row.name) === column);
+}
+
+async function executeIfTableExists(client: LibsqlClient, table: string, sql: string) {
+  if (await tableExists(client, table)) {
+    await client.execute(sql);
+  }
+}
+
+async function executeIgnore(client: LibsqlClient, sql: string) {
+  try {
+    await client.execute(sql);
+  } catch (err) {
+    const msg = migrationErrorMessage(err);
+    if (
+      msg.includes("already exists") ||
+      msg.includes("duplicate column") ||
+      msg.includes("no such index") ||
+      msg.includes("no such table")
+    ) {
+      console.warn(`[prepare-db] skip idempotent statement: ${sql.slice(0, 120)}...`);
+      return;
+    }
+    throw err;
+  }
+}
+
+async function addColumnIfMissing(
+  client: LibsqlClient,
+  table: string,
+  column: string,
+  definition: string,
+) {
+  if ((await tableExists(client, table)) && !(await columnExists(client, table, column))) {
+    await client.execute(`ALTER TABLE "${table}" ADD COLUMN "${column}" ${definition}`);
+  }
+}
+
+async function cleanInterruptedTableRebuilds(client: LibsqlClient) {
+  const rebuiltTables = [
+    "CitizenFeedback",
+    "Department",
+    "GasRequest",
+    "GasRequestSerial",
+    "Notification",
+    "PendingCitizenRegistration",
+    "Request",
+    "RequestSerial",
+    "ReturneeRegistration",
+    "ReturneeRegistrationSerial",
+    "Service",
+    "SocialServiceCase",
+    "SocialServiceCaseSerial",
+    "User",
+  ];
+
+  for (const table of rebuiltTables) {
+    const temp = `new_${table}`;
+    const hasBase = await tableExists(client, table);
+    const hasTemp = await tableExists(client, temp);
+    if (hasBase && hasTemp) {
+      await client.execute(`DROP TABLE "${temp}"`);
+    } else if (!hasBase && hasTemp) {
+      await client.execute(`ALTER TABLE "${temp}" RENAME TO "${table}"`);
+    }
+  }
+}
+
+async function ensureSerialTable(client: LibsqlClient, table: string) {
+  if (!(await tableExists(client, table))) {
+    await client.execute(`
+      CREATE TABLE "${table}" (
+        "municipalityId" TEXT NOT NULL,
+        "year" INTEGER NOT NULL,
+        "lastN" INTEGER NOT NULL,
+        PRIMARY KEY ("municipalityId", "year")
+      )
+    `);
+    return;
+  }
+
+  if (!(await columnExists(client, table, "municipalityId"))) {
+    await client.execute(`ALTER TABLE "${table}" RENAME TO "old_${table}"`);
+    await client.execute(`
+      CREATE TABLE "${table}" (
+        "municipalityId" TEXT NOT NULL,
+        "year" INTEGER NOT NULL,
+        "lastN" INTEGER NOT NULL,
+        PRIMARY KEY ("municipalityId", "year")
+      )
+    `);
+    await client.execute(`
+      INSERT INTO "${table}" ("municipalityId", "year", "lastN")
+      SELECT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}', "year", "lastN" FROM "old_${table}"
+    `);
+    await client.execute(`DROP TABLE "old_${table}"`);
+  }
+}
+
+async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
+  await cleanInterruptedTableRebuilds(client);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS "Municipality" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "name" TEXT NOT NULL,
+      "code" TEXT NOT NULL,
+      "governorate" TEXT NOT NULL DEFAULT 'درعا',
+      "sortOrder" INTEGER NOT NULL DEFAULT 0,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await client.execute(`
+    INSERT OR IGNORE INTO "Municipality"
+      ("id", "name", "code", "governorate", "sortOrder", "isActive", "createdAt", "updatedAt")
+    VALUES
+      ('${MIGRATION_DEFAULT_MUNICIPALITY_ID}', 'بصرى الشام', 'bosra-sham', 'درعا', 0, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  `);
+
+  await addColumnIfMissing(client, "User", "municipalityId", "TEXT");
+  await addColumnIfMissing(client, "Department", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "Service", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "Request", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "Notification", "municipalityId", "TEXT");
+  await addColumnIfMissing(client, "CitizenFeedback", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "PendingCitizenRegistration", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "GasRequest", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "ReturneeRegistration", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "SocialServiceCase", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+
+  await executeIfTableExists(
+    client,
+    "User",
+    `UPDATE "User" SET "role" = 'SUPER_ADMIN' WHERE "role" = 'ADMIN'`,
+  );
+  await executeIfTableExists(
+    client,
+    "User",
+    `UPDATE "User" SET "municipalityId" = '${MIGRATION_DEFAULT_MUNICIPALITY_ID}' WHERE "municipalityId" IS NULL AND "role" <> 'SUPER_ADMIN'`,
+  );
+  await executeIfTableExists(
+    client,
+    "Department",
+    `UPDATE "Department" SET "municipalityId" = '${MIGRATION_DEFAULT_MUNICIPALITY_ID}' WHERE "municipalityId" IS NULL OR "municipalityId" = ''`,
+  );
+  await executeIfTableExists(
+    client,
+    "Service",
+    `UPDATE "Service" SET "municipalityId" = '${MIGRATION_DEFAULT_MUNICIPALITY_ID}' WHERE "municipalityId" IS NULL OR "municipalityId" = ''`,
+  );
+
+  await ensureSerialTable(client, "RequestSerial");
+  await ensureSerialTable(client, "GasRequestSerial");
+  await ensureSerialTable(client, "ReturneeRegistrationSerial");
+  await ensureSerialTable(client, "SocialServiceCaseSerial");
+
+  await executeIgnore(client, `DROP INDEX IF EXISTS "Department_code_key"`);
+  await executeIgnore(client, `DROP INDEX IF EXISTS "User_gasArea_key"`);
+  await executeIgnore(client, `DROP INDEX IF EXISTS "SocialServiceCase_category_nationalId_key"`);
+  await executeIgnore(client, `DROP INDEX IF EXISTS "SocialServiceCase_category_husbandNationalId_key"`);
+  await executeIgnore(client, `DROP INDEX IF EXISTS "SocialServiceCase_category_wifeNationalId_key"`);
+  await executeIgnore(client, `DROP INDEX IF EXISTS "SocialServiceCase_category_familyBookNumber_key"`);
+
+  const indexes = [
+    `CREATE UNIQUE INDEX IF NOT EXISTS "Municipality_code_key" ON "Municipality"("code")`,
+    `CREATE INDEX IF NOT EXISTS "CitizenFeedback_municipalityId_idx" ON "CitizenFeedback"("municipalityId")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "Department_municipalityId_code_key" ON "Department"("municipalityId", "code")`,
+    `CREATE INDEX IF NOT EXISTS "GasRequest_municipalityId_idx" ON "GasRequest"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "Notification_municipalityId_idx" ON "Notification"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "Request_municipalityId_idx" ON "Request"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "ReturneeRegistration_municipalityId_idx" ON "ReturneeRegistration"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "Service_municipalityId_idx" ON "Service"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "SocialServiceCase_municipalityId_idx" ON "SocialServiceCase"("municipalityId")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "User_municipalityId_gasArea_key" ON "User"("municipalityId", "gasArea")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "SocialServiceCase_municipalityId_category_nationalId_key" ON "SocialServiceCase"("municipalityId", "category", "nationalId")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "SocialServiceCase_municipalityId_category_husbandNationalId_key" ON "SocialServiceCase"("municipalityId", "category", "husbandNationalId")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "SocialServiceCase_municipalityId_category_wifeNationalId_key" ON "SocialServiceCase"("municipalityId", "category", "wifeNationalId")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "SocialServiceCase_municipalityId_category_familyBookNumber_key" ON "SocialServiceCase"("municipalityId", "category", "familyBookNumber")`,
+  ];
+
+  for (const sql of indexes) {
+    const tableMatch = sql.match(/ON\s+"([^"]+)"/i);
+    if (!tableMatch || (await tableExists(client, tableMatch[1]))) {
+      await executeIgnore(client, sql);
+    }
+  }
 }
 
 async function applyMigrationsToRemoteLibsql(url: string) {
@@ -66,6 +273,16 @@ async function applyMigrationsToRemoteLibsql(url: string) {
       args: [dir],
     });
     if (exists.rows.length > 0) continue;
+
+    if (dir === MULTI_MUNICIPALITY_MIGRATION) {
+      await applyRemoteMultiMunicipalityMigration(client);
+      await client.execute({
+        sql: "INSERT OR IGNORE INTO _app_migrations (name, appliedAt) VALUES (?, ?)",
+        args: [dir, new Date().toISOString()],
+      });
+      console.log(`[prepare-db] applied remote migration: ${dir}`);
+      continue;
+    }
 
     const statements = splitSqlStatements(sql);
     if (statements.length === 0) continue;
