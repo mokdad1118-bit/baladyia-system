@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import { RequestForm } from "@/components/RequestForm";
+import { citizenMunicipalityIdOrThrow } from "@/lib/municipality-scope";
 import Link from "next/link";
 
 type Props = { params: Promise<{ serviceId: string }> };
@@ -15,15 +16,25 @@ export default async function CitizenNewRequestPage({ params }: Props) {
   }
   if (s.user.role !== UserRole.CITIZEN) {
     redirect(
-      s.user.role === UserRole.EMPLOYEE ? "/employee" : s.user.role === UserRole.ADMIN ? "/admin" : "/",
+      s.user.role === UserRole.EMPLOYEE
+        ? "/employee"
+        : s.user.role === UserRole.SUPER_ADMIN || s.user.role === UserRole.MUNICIPALITY_ADMIN
+          ? "/admin"
+          : "/",
     );
   }
   const prefill = await db.user.findUnique({
     where: { id: s.user.id },
     select: { name: true, phone: true, email: true, notificationEmail: true },
   });
+  let municipalityId: string;
+  try {
+    municipalityId = citizenMunicipalityIdOrThrow(s);
+  } catch {
+    redirect("/citizen/account");
+  }
   const service = await db.service.findFirst({
-    where: { id: serviceId, isActive: true },
+    where: { id: serviceId, isActive: true, municipalityId },
     include: { documents: true },
   });
   if (!service) notFound();

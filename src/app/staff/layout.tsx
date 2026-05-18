@@ -15,7 +15,7 @@ export default async function StaffLayout({
     redirect("/staff/login?next=/staff/requests");
   }
   if (s.user.role === UserRole.CITIZEN) redirect("/citizen");
-  if (s.user.role === UserRole.ADMIN) redirect("/admin");
+  if (s.user.role === UserRole.SUPER_ADMIN || s.user.role === UserRole.MUNICIPALITY_ADMIN) redirect("/admin");
   if (s.user.role !== UserRole.EMPLOYEE) {
     redirect("/citizen/welcome");
   }

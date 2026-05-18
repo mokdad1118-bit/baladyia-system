@@ -6,8 +6,10 @@ import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminReturneeRegistrationsTableWithSearch } from "@/components/admin/AdminReturneeRegistrationsTableWithSearch";
 import { AdminSocialServicesTableWithSearch } from "@/components/admin/AdminSocialServicesTableWithSearch";
-import { SocialServiceCategory, UserRole } from "@/generated/prisma/enums";
+import { SocialServiceCategory } from "@/generated/prisma/enums";
 import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/social-service-labels";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { isAdminPanelRole } from "@/lib/roles";
 
 const sections = [
   { key: "returnees", label: "تسجيل العائدين" },
@@ -33,7 +35,8 @@ type Props = { searchParams: Promise<{ tab?: string; dateFrom?: string; dateTo?:
 
 export default async function AdminSocialServicesIndexPage({ searchParams }: Props) {
   const session = await auth();
-  if (session?.user?.role === UserRole.ADMIN) {
+  const mun = staffMunicipalityIdFilter(session);
+  if (session?.user && isAdminPanelRole(session.user.role)) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,
@@ -54,7 +57,10 @@ export default async function AdminSocialServicesIndexPage({ searchParams }: Pro
   let content = null;
   if (activeCategory === null) {
     const list = await db.returneeRegistration.findMany({
-      where: d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {},
+      where: {
+        ...mun,
+        ...(d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {}),
+      },
       orderBy: { createdAt: "desc" },
       take: 500,
     });
@@ -92,6 +98,7 @@ export default async function AdminSocialServicesIndexPage({ searchParams }: Pro
   } else {
     const list = await db.socialServiceCase.findMany({
       where: {
+        ...mun,
         category: activeCategory,
         ...(d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {}),
       },

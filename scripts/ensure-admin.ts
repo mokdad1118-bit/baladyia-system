@@ -31,7 +31,7 @@ async function main() {
           email,
           name,
           passwordHash: await hash(password, ROUNDS),
-          role: UserRole.ADMIN,
+          role: UserRole.SUPER_ADMIN,
           isActive: true,
           permManageServices: true,
           permManageUsers: true,
@@ -45,7 +45,7 @@ async function main() {
     await prisma.user.update({
       where: { id: existing.id },
       data: {
-        role: UserRole.ADMIN,
+        role: UserRole.SUPER_ADMIN,
         isActive: true,
         permManageServices: true,
         permManageUsers: true,

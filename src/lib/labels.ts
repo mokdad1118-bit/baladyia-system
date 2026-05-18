@@ -15,9 +15,12 @@ export const fileKindAr = {
   ANY: "صورة أو PDF",
 } as const;
 
-export const userRoleAr = {
-  ADMIN: "مدير النظام",
+import { UserRole } from "@/generated/prisma/enums";
+
+export const userRoleAr: Record<UserRole, string> = {
+  SUPER_ADMIN: "مشرف المحافظة",
+  MUNICIPALITY_ADMIN: "مدير بلدية",
   EMPLOYEE: "موظف",
   CITIZEN: "مواطن",
   GAS_AGENT: "معتمد غاز",
-} as const;
+};

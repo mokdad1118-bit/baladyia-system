@@ -58,7 +58,10 @@ export function UserBar({
     {
       href: staffBoardHref,
       label: "لوحة التحكم",
-      show: role === UserRole.EMPLOYEE || role === UserRole.ADMIN,
+      show:
+        role === UserRole.EMPLOYEE ||
+        role === UserRole.SUPER_ADMIN ||
+        role === UserRole.MUNICIPALITY_ADMIN,
     },
     {
       href: "/gas-agent",

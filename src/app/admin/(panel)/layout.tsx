@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminCurrentMunicipalityLabel, AdminSuperMunicipalitySwitcher } from "@/components/admin/AdminMunicipalityHeader";
 import { db } from "@/lib/db";
 import { staffNavPermissions } from "@/lib/staff-permissions";
 import { GovWorkspaceShell } from "@/components/gov/GovWorkspaceShell";
@@ -30,7 +31,7 @@ export default async function AdminPanelLayout({
   if (!s?.user) redirect("/admin/login?next=/admin");
   if (s.user.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/citizen");
   if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");
-  if (s.user.role !== UserRole.ADMIN) {
+  if (s.user.role !== UserRole.SUPER_ADMIN && s.user.role !== UserRole.MUNICIPALITY_ADMIN) {
     redirect("/citizen/welcome");
   }
   const staffPerms = staffNavPermissions(s);
@@ -59,6 +60,8 @@ export default async function AdminPanelLayout({
       homeHref={homeHref}
       logoutCallbackUrl={logoutCallbackUrl}
     >
+      <AdminSuperMunicipalitySwitcher />
+      <AdminCurrentMunicipalityLabel />
       {children}
     </GovWorkspaceShell>
   );

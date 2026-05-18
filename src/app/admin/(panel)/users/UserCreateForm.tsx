@@ -9,15 +9,21 @@ import { Button } from "@/components/ui/button";
 type Assignable = { services: boolean; users: boolean; stats: boolean };
 
 export function UserCreateForm({
+  isSuperAdmin,
   isFullAdmin,
   assignablePerms,
+  municipalities,
 }: {
+  isSuperAdmin: boolean;
   isFullAdmin: boolean;
   assignablePerms: Assignable;
+  municipalities: { id: string; name: string }[];
 }) {
   const [st, act] = useActionState(createStaffUser, undefined);
   const [role, setRole] = useState<string>(UserRole.EMPLOYEE);
   const showEmployeePerms = role === UserRole.EMPLOYEE;
+  const showMunicipalityPicker = isSuperAdmin && role !== UserRole.SUPER_ADMIN && municipalities.length > 0;
+
   return (
     <form action={act} className="space-y-4 max-w-md">
       {st?.error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">{st.error}</p>}
@@ -45,9 +51,34 @@ export function UserCreateForm({
           onChange={(e) => setRole(e.target.value)}
         >
           <option value={UserRole.EMPLOYEE}>موظف</option>
-          {isFullAdmin ? <option value={UserRole.ADMIN}>مدير نظام</option> : null}
+          {isSuperAdmin ? (
+            <>
+              <option value={UserRole.MUNICIPALITY_ADMIN}>مدير بلدية</option>
+              <option value={UserRole.SUPER_ADMIN}>مشرف المحافظة</option>
+            </>
+          ) : null}
         </select>
       </FieldGroup>
+      {showMunicipalityPicker ? (
+        <FieldGroup>
+          <FieldLabel>البلدية</FieldLabel>
+          <select
+            name="municipalityId"
+            required
+            className="w-full rounded-xl border border-slate-200/90 bg-white px-3 py-2.5 text-sm"
+            defaultValue=""
+          >
+            <option value="" disabled>
+              — اختر البلدية —
+            </option>
+            {municipalities.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </FieldGroup>
+      ) : null}
       {showEmployeePerms ? (
         <fieldset className="space-y-2 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3">
           <legend className="px-1 text-sm font-semibold text-slate-800">صلاحيات الموظف في اللوحة</legend>
@@ -86,9 +117,9 @@ export function UserCreateForm({
             <span>عرض الإحصائيات والتقارير</span>
           </label>
         </fieldset>
-      ) : (
-        <p className="text-xs text-slate-500">مدير النظام يمتلك كافة الصلاحيات تلقائياً.</p>
-      )}
+      ) : isFullAdmin ? (
+        <p className="text-xs text-slate-500">المدير يمتلك كافة الصلاحيات تلقائياً.</p>
+      ) : null}
       <Button type="submit" className="w-full" size="lg">
         إضافة مستخدم
       </Button>

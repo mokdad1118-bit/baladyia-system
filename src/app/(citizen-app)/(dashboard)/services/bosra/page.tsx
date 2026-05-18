@@ -4,11 +4,23 @@ import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import { GovStepIndicator } from "@/components/gov/GovStepIndicator";
 import { APP_NAME_AR } from "@/lib/entity";
+import { citizenMunicipalityIdOrThrow } from "@/lib/municipality-scope";
 
 export default async function BosraMunicipalServicesPage() {
   const s = await auth();
+  let municipalityId: string | undefined;
+  if (s?.user?.role === UserRole.CITIZEN) {
+    try {
+      municipalityId = citizenMunicipalityIdOrThrow(s);
+    } catch {
+      municipalityId = undefined;
+    }
+  }
   const services = await db.service.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(municipalityId ? { municipalityId } : {}),
+    },
     orderBy: { name: "asc" },
   });
   const isCitizen = s?.user?.role === UserRole.CITIZEN;

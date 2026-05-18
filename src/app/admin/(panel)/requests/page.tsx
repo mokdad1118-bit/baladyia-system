@@ -1,15 +1,20 @@
 import { headers } from "next/headers";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { UserRole } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 import { RequestStatus } from "@/generated/prisma/enums";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { buildRequestAttachmentExportLinks } from "@/lib/admin-requests-export";
 import { requestExportBaseUrl } from "@/lib/request-export-base-url";
 import { AdminRequestsTableWithSearch } from "@/components/admin/AdminRequestsTableWithSearch";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
 
 type S = { searchParams: Promise<{ status?: string; dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminRequestsPage({ searchParams }: S) {
+  const s = await auth();
+  const mun = staffMunicipalityIdFilter(s);
   const sp = await searchParams;
   const st = sp.status;
   const statusFilter =
@@ -19,6 +24,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
 
   const list = await db.request.findMany({
     where: {
+      ...mun,
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(d0 || d1
         ? {

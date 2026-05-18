@@ -11,15 +11,16 @@ import {
 import { verifyPassword } from "@/lib/password";
 import type { LoginPageSurface } from "@/lib/auth-portal";
 import { getAuthSecret } from "@/lib/auth-secret";
+import { isAdminPanelRole } from "@/lib/roles";
 
 function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
   if (surface === "citizen") return role === UserRole.CITIZEN || role === UserRole.GAS_AGENT;
   if (surface === "staff") return role === UserRole.EMPLOYEE;
-  if (surface === "admin") return role === UserRole.ADMIN;
+  if (surface === "admin") return isAdminPanelRole(role);
   return false;
 }
 
-/** بحث موحّد بالبريد أو الهاتف أو بريد الإشعارات — للموظفين والمدير فقط */
+/** بحث موحّد بالبريد أو الهاتف أو بريد الإشعارات — للموظفين والإدارة فقط */
 async function findStaffUserByIdentifier(identifier: string) {
   const id = identifier.trim();
   if (!id) return null;
@@ -67,7 +68,7 @@ async function findCitizenUserByPhone(identifier: string) {
   return null;
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   secret: getAuthSecret(),
   trustHost: true,
   useSecureCookies: process.env.NODE_ENV === "production",
@@ -98,28 +99,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
         const ok = await verifyPassword(String(credentials.password), user.passwordHash);
         if (!ok) return null;
-        const isAdminRole = user.role === UserRole.ADMIN;
+        const isElevatedAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.MUNICIPALITY_ADMIN;
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           phone: user.phone,
           role: user.role,
-          permManageServices: isAdminRole || user.permManageServices,
-          permManageUsers: isAdminRole || user.permManageUsers,
-          permViewStats: isAdminRole || user.permViewStats,
+          municipalityId: user.municipalityId,
+          activeMunicipalityId: user.role === UserRole.SUPER_ADMIN ? null : null,
+          permManageServices: isElevatedAdmin || user.permManageServices,
+          permManageUsers: isElevatedAdmin || user.permManageUsers,
+          permViewStats: isElevatedAdmin || user.permViewStats,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         const u = user as {
           id: string;
           role: UserRole;
           email?: string | null;
           phone?: string | null;
+          municipalityId?: string | null;
+          activeMunicipalityId?: string | null;
           permManageServices?: boolean;
           permManageUsers?: boolean;
           permViewStats?: boolean;
@@ -128,9 +133,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = u.role;
         token.email = u.email;
         token.phone = u.phone;
+        token.municipalityId = u.municipalityId ?? null;
+        token.activeMunicipalityId =
+          u.role === UserRole.SUPER_ADMIN ? (u.activeMunicipalityId ?? null) : null;
         token.permManageServices = Boolean(u.permManageServices);
         token.permManageUsers = Boolean(u.permManageUsers);
         token.permViewStats = Boolean(u.permViewStats);
+      }
+      if (trigger === "update" && session?.user && "activeMunicipalityId" in session.user) {
+        token.activeMunicipalityId = session.user.activeMunicipalityId ?? null;
       }
       return token;
     },
@@ -140,6 +151,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as UserRole;
         session.user.email = (token.email as string | null | undefined) ?? "";
         session.user.phone = (token.phone as string | null | undefined) ?? "";
+        session.user.municipalityId = (token.municipalityId as string | null | undefined) ?? null;
+        session.user.activeMunicipalityId =
+          (token.activeMunicipalityId as string | null | undefined) ?? null;
         session.user.permManageServices = Boolean(token.permManageServices);
         session.user.permManageUsers = Boolean(token.permManageUsers);
         session.user.permViewStats = Boolean(token.permViewStats);

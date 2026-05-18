@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 
 export function ServiceForm({
   service,
+  municipalities = [],
 }: {
   service?: Service & { documents: ServiceDocument[] };
+  municipalities?: { id: string; name: string }[];
 }) {
   const [state, formAction] = useActionState(upsertService, undefined);
   return (
@@ -20,6 +22,26 @@ export function ServiceForm({
         <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">{state.error}</p>
       )}
       {service && <input type="hidden" name="id" value={service.id} />}
+      {!service && municipalities.length > 0 ? (
+        <FieldGroup>
+          <FieldLabel>البلدية *</FieldLabel>
+          <select
+            name="municipalityId"
+            required
+            className="w-full rounded-xl border border-slate-200/90 bg-white px-3 py-2.5 text-sm"
+            defaultValue=""
+          >
+            <option value="" disabled>
+              — اختر البلدية —
+            </option>
+            {municipalities.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </FieldGroup>
+      ) : null}
       <FieldGroup>
         <FieldLabel>اسم الخدمة *</FieldLabel>
         <Input name="name" required defaultValue={service?.name} />

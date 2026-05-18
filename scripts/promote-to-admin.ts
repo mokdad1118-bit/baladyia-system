@@ -20,7 +20,7 @@ async function main() {
   const r = await prisma.user.updateMany({
     where: { email: emailArg },
     data: {
-      role: UserRole.ADMIN,
+      role: UserRole.SUPER_ADMIN,
       permManageServices: true,
       permManageUsers: true,
       permViewStats: true,

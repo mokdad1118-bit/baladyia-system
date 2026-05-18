@@ -9,6 +9,10 @@ declare module "next-auth" {
       /** بريد الدخول أو "" للمواطن بلا بريد */
       email: string;
       phone: string;
+      /** البلدية التابعة للحساب (null لمشرف المحافظة فقط) */
+      municipalityId: string | null;
+      /** لمشرف المحافظة: تصفية البيانات لبلدية واحدة، أو null لكل المحافظة */
+      activeMunicipalityId: string | null;
       /** للموظف في لوحة الإدارة؛ المدير يُملأ دائماً بـ true من الخادم */
       permManageServices?: boolean;
       permManageUsers?: boolean;
@@ -23,6 +27,8 @@ declare module "next-auth/jwt" {
     role: UserRole;
     email?: string | null;
     phone?: string | null;
+    municipalityId?: string | null;
+    activeMunicipalityId?: string | null;
     permManageServices?: boolean;
     permManageUsers?: boolean;
     permViewStats?: boolean;

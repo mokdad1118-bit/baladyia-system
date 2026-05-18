@@ -18,6 +18,8 @@ import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextSocialServiceCaseNumber } from "@/lib/social-service-case-serial";
 import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/social-service-labels";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
+import { isAdminPanelRole } from "@/lib/roles";
+import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 
 export type SubmitSocialServiceCaseState = { error: string } | undefined;
 
@@ -70,6 +72,8 @@ export async function submitSocialServiceCase(
 ): Promise<SubmitSocialServiceCaseState> {
   const session = await auth();
   if (!session?.user || session.user.role !== UserRole.CITIZEN) return { error: "يجب تسجيل الدخول كمواطن." };
+  const municipalityId = session.user.municipalityId?.trim();
+  if (!municipalityId) return { error: "حسابك غير مرتبط ببلدية." };
 
   const category = parseCategory(formData.get("category"));
   if (!category) return { error: "نوع الخدمة غير صالح." };
@@ -93,12 +97,13 @@ export async function submitSocialServiceCase(
   for (const f of files) attachments.push(await saveImage(f));
 
   const data: Record<string, unknown> = {
+    municipalityId,
     category,
     citizenId: session.user.id,
     phone,
     email,
     attachmentsJson: JSON.stringify(attachments),
-    caseNumber: await nextSocialServiceCaseNumber(),
+    caseNumber: await nextSocialServiceCaseNumber(municipalityId),
   };
 
   if (category === SocialServiceCategory.FAMILY_CENSUS) {
@@ -118,6 +123,7 @@ export async function submitSocialServiceCase(
     if (familyBookNumber.length < 3) return { error: "يرجى إدخال رقم دفتر العائلة بشكل صحيح." };
     const dup = await db.socialServiceCase.findFirst({
       where: {
+        municipalityId,
         category,
         OR: [{ husbandNationalId }, { wifeNationalId }, { familyBookNumber }],
       },
@@ -140,7 +146,10 @@ export async function submitSocialServiceCase(
     if (fullName.length < 3) return { error: "يرجى إدخال الاسم الثلاثي." };
     if (!birthDate.ok) return { error: birthDate.error };
     if (nationalId.length < 10 || nationalId.length > 11) return { error: "الرقم الوطني يجب أن يكون 10 أو 11 رقماً." };
-    const existing = await db.socialServiceCase.findFirst({ where: { category, nationalId }, select: { id: true } });
+    const existing = await db.socialServiceCase.findFirst({
+      where: { municipalityId, category, nationalId },
+      select: { id: true },
+    });
     if (existing) return { error: "هذا الرقم الوطني مسجل مسبقاً في نفس القسم." };
     Object.assign(data, { fullName, birthDate: birthDate.date, nationalId });
   }
@@ -148,12 +157,13 @@ export async function submitSocialServiceCase(
   const created = await db.socialServiceCase.create({ data: data as never });
 
   try {
-    const staff = await getStaffToNotify();
+    const staff = await getStaffToNotify(municipalityId);
     await notifyUsers({
       userIds: staff,
       type: "SOCIAL_SERVICE_SUBMITTED",
       title: `طلب ${socialServiceCategoryLabelAr[category]} جديد`,
       message: `وصل طلب ${created.caseNumber}.`,
+      municipalityId,
       socialServiceCaseId: created.id,
     });
     await notifyUsers({
@@ -161,6 +171,7 @@ export async function submitSocialServiceCase(
       type: "SOCIAL_SERVICE_SUBMITTED",
       title: "تم استلام طلب الخدمة الاجتماعية",
       message: `تم استلام طلبك ${created.caseNumber}. الحالة: قيد المعالجة.`,
+      municipalityId,
       socialServiceCaseId: created.id,
     });
   } catch (e) {
@@ -182,14 +193,26 @@ export async function updateSocialServiceCaseStatusAction(
   statusRaw: string,
 ): Promise<{ ok: true } | { error: string }> {
   const session = await auth();
-  if (!session?.user || session.user.role !== UserRole.ADMIN) return { error: "غير مصرح." };
+  if (!session?.user || !isAdminPanelRole(session.user.role)) return { error: "غير مصرح." };
   if (!(Object.values(SocialServiceCaseStatus) as string[]).includes(statusRaw)) return { error: "حالة غير صالحة." };
   const status = statusRaw as SocialServiceCaseStatus;
   const row = await db.socialServiceCase.findFirst({
     where: { id: caseId },
-    select: { id: true, status: true, citizenId: true, caseNumber: true, category: true },
+    select: {
+      id: true,
+      status: true,
+      citizenId: true,
+      caseNumber: true,
+      category: true,
+      municipalityId: true,
+    },
   });
   if (!row) return { error: "الطلب غير موجود." };
+  try {
+    assertStaffCanAccessMunicipality(session, row.municipalityId);
+  } catch {
+    return { error: "غير مصرح." };
+  }
   if (row.status === status) return { ok: true };
   await db.socialServiceCase.update({ where: { id: caseId }, data: { status } });
   try {
@@ -198,6 +221,7 @@ export async function updateSocialServiceCaseStatusAction(
       type: "SOCIAL_SERVICE_STATUS_CHANGE",
       title: `تحديث حالة طلب ${socialServiceCategoryLabelAr[row.category]}`,
       message: `تم تحديث حالة الطلب ${row.caseNumber} إلى: ${socialServiceStatusLabelAr[status]}.`,
+      municipalityId: row.municipalityId,
       socialServiceCaseId: row.id,
     });
   } catch (e) {

@@ -9,7 +9,7 @@ export default async function GasAgentHomePage() {
   const s = await auth();
   if (!s?.user) redirect("/citizen/welcome?next=/gas-agent");
   if (s.user.role !== UserRole.GAS_AGENT) {
-    if (s.user.role === UserRole.ADMIN) redirect("/admin");
+    if (s.user.role === UserRole.SUPER_ADMIN || s.user.role === UserRole.MUNICIPALITY_ADMIN) redirect("/admin");
     if (s.user.role === UserRole.EMPLOYEE) redirect("/staff");
     redirect("/citizen");
   }

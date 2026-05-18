@@ -1,16 +1,18 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { UserRole } from "@/generated/prisma/enums";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminReturneeRegistrationsTableWithSearch } from "@/components/admin/AdminReturneeRegistrationsTableWithSearch";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { isAdminPanelRole } from "@/lib/roles";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminReturneeRegistrationsPage({ searchParams }: S) {
   const session = await auth();
-  if (session?.user?.role === UserRole.ADMIN) {
+  const mun = staffMunicipalityIdFilter(session);
+  if (session?.user && isAdminPanelRole(session.user.role)) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,
@@ -27,7 +29,10 @@ export default async function AdminReturneeRegistrationsPage({ searchParams }: S
   const d1 = parseDateEndParam(sp.dateTo);
 
   const list = await db.returneeRegistration.findMany({
-    where: d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {},
+    where: {
+      ...mun,
+      ...(d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: 500,
   });

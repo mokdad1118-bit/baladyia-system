@@ -1,13 +1,15 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { UserRole } from "@/generated/prisma/enums";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { AdminCitizenFeedbackReplyForm } from "@/components/admin/AdminCitizenFeedbackReplyForm";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { isAdminPanelRole } from "@/lib/roles";
 
 export default async function AdminCitizenFeedbackPage() {
   const session = await auth();
-  if (session?.user?.role === UserRole.ADMIN) {
+  const mun = staffMunicipalityIdFilter(session);
+  if (session?.user && isAdminPanelRole(session.user.role)) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,
@@ -20,6 +22,7 @@ export default async function AdminCitizenFeedbackPage() {
   }
 
   const rows = await db.citizenFeedback.findMany({
+    where: mun,
     orderBy: { createdAt: "desc" },
     take: 500,
     include: {

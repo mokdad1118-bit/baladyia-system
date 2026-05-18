@@ -42,10 +42,14 @@ function haystack(u: StaffUserRow): string {
 
 export function StaffUsersListWithSearch({
   users,
+  municipalities = [],
+  isSuperAdmin = false,
   isFullAdmin,
   assignablePerms,
 }: {
   users: StaffUserRow[];
+  municipalities?: { id: string; name: string }[];
+  isSuperAdmin?: boolean;
   isFullAdmin: boolean;
   assignablePerms: { services: boolean; users: boolean; stats: boolean };
 }) {
@@ -70,7 +74,12 @@ export function StaffUsersListWithSearch({
             <CardDescription>لن تُرسل بيانات الدخول بريدياً — شاركها بأمان خارج النظام.</CardDescription>
           </CardHeader>
           <CardContent>
-            <UserCreateForm isFullAdmin={isFullAdmin} assignablePerms={assignablePerms} />
+            <UserCreateForm
+              isSuperAdmin={isSuperAdmin}
+              isFullAdmin={isFullAdmin}
+              assignablePerms={assignablePerms}
+              municipalities={municipalities}
+            />
           </CardContent>
         </Card>
       </div>

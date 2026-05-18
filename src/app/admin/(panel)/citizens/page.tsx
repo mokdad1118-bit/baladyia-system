@@ -1,17 +1,18 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { requireAdminPanel } from "@/lib/admin-guard";
-import { UserRole } from "@/generated/prisma/enums";
 import { CitizensListWithSearch } from "@/components/admin/CitizensListWithSearch";
+import { staffCitizenUserWhere } from "@/lib/municipality-scope";
+import { hasFullAdminPrivileges } from "@/lib/roles";
 
 /** حسابات المواطنين فقط — منفصلة عن صفحة حسابات الموظفين */
 export default async function AdminCitizensPage() {
   const s = await auth();
   await requireAdminPanel(s);
-  const isAdmin = s!.user!.role === UserRole.ADMIN;
+  const isAdmin = hasFullAdminPrivileges(s!.user!.role);
 
   const citizens = await db.user.findMany({
-    where: { role: UserRole.CITIZEN },
+    where: staffCitizenUserWhere(s),
     orderBy: { createdAt: "desc" },
   });
 

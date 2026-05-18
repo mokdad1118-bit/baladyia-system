@@ -124,7 +124,7 @@ function GovLoginPageImpl({
               if (role === UserRole.CITIZEN) dest = "/citizen";
               else if (role === UserRole.GAS_AGENT) dest = "/gas-agent";
               else if (role === UserRole.EMPLOYEE) dest = "/staff";
-              else if (role === UserRole.ADMIN) dest = "/admin";
+              else if (role === UserRole.SUPER_ADMIN || role === UserRole.MUNICIPALITY_ADMIN) dest = "/admin";
               else dest = loginPage === "citizen" ? "/citizen" : loginPage === "staff" ? "/staff" : "/admin";
             }
             const absolute = new URL(dest, window.location.origin).href;

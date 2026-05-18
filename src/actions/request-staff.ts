@@ -11,6 +11,8 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { requestOriginFromHeaders, staffActionRedirectPath } from "@/lib/staff-portal";
 import { Prisma } from "@/generated/prisma/client";
 import { digitsOnly } from "@/lib/phone";
+import { isAdminPanelRole } from "@/lib/roles";
+import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 
 const STAFF_REVALIDATE = [
   "/admin/requests",
@@ -58,9 +60,9 @@ async function resolveStaffActorDbId(opts: {
   role: UserRole;
 }): Promise<string | null> {
   const roles: UserRole[] =
-    opts.role === UserRole.ADMIN
-      ? [UserRole.ADMIN, UserRole.EMPLOYEE]
-      : [UserRole.EMPLOYEE, UserRole.ADMIN];
+    opts.role === UserRole.SUPER_ADMIN || opts.role === UserRole.MUNICIPALITY_ADMIN
+      ? [UserRole.SUPER_ADMIN, UserRole.MUNICIPALITY_ADMIN, UserRole.EMPLOYEE]
+      : [UserRole.EMPLOYEE, UserRole.SUPER_ADMIN, UserRole.MUNICIPALITY_ADMIN];
 
   const base = { isActive: true as const, role: { in: roles } };
 
@@ -92,7 +94,7 @@ export async function updateRequestStatus(formData: FormData) {
   const s = await auth();
   const actorPortal = String(formData.get("actorPortal") ?? "");
   if (actorPortal !== "staff" && actorPortal !== "employee") return;
-  if (!s?.user || (s.user.role !== UserRole.EMPLOYEE && s.user.role !== UserRole.ADMIN)) return;
+  if (!s?.user || (s.user.role !== UserRole.EMPLOYEE && !isAdminPanelRole(s.user.role))) return;
 
   const id = String(formData.get("requestId") ?? "");
   const to = String(formData.get("toStatus") ?? "") as RequestStatus;
@@ -117,6 +119,11 @@ export async function updateRequestStatus(formData: FormData) {
 
   const r = await db.request.findUnique({ where: { id } });
   if (!r) return;
+  try {
+    assertStaffCanAccessMunicipality(s, r.municipalityId);
+  } catch {
+    return;
+  }
   /** بدون تغيير حالة وبدون تنبيه = لا شيء. تنبيه فقط مع نفس الحالة كان يُتجاهل سابقاً ولا يصل للمواطن. */
   if (r.status === to && !note) return;
 
@@ -182,6 +189,7 @@ export async function updateRequestStatus(formData: FormData) {
       type: statusChanged ? "STATUS_CHANGE" : "STAFF_MESSAGE",
       title: notifyTitle,
       message: notifyMessage,
+      municipalityId: r.municipalityId,
       requestId: id,
     });
   } catch (notifyErr) {
@@ -201,7 +209,7 @@ export async function addRequestNote(formData: FormData) {
   const s = await auth();
   const actorPortal = String(formData.get("actorPortal") ?? "");
   if (actorPortal !== "staff" && actorPortal !== "employee") return;
-  if (!s?.user || (s.user.role !== UserRole.EMPLOYEE && s.user.role !== UserRole.ADMIN)) return;
+  if (!s?.user || (s.user.role !== UserRole.EMPLOYEE && !isAdminPanelRole(s.user.role))) return;
 
   const requestId = String(formData.get("requestId") ?? "");
   const body = String(formData.get("body") ?? "").trim();
@@ -214,6 +222,11 @@ export async function addRequestNote(formData: FormData) {
 
   const r = await db.request.findUnique({ where: { id: requestId } });
   if (!r) return;
+  try {
+    assertStaffCanAccessMunicipality(s, r.municipalityId);
+  } catch {
+    return;
+  }
 
   const hdrs0 = await headers();
   const host0 = hdrs0.get("host");

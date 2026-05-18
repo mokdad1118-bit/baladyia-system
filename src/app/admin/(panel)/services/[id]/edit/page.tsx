@@ -5,14 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PageHeader } from "@/components/ui/page-header";
 import { auth } from "@/auth";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
 
 type P = { params: Promise<{ id: string }> };
 
 export default async function EditServicePage({ params }: P) {
-  await requireStaffPanelPermission(await auth(), "services");
+  const s = await auth();
+  await requireStaffPanelPermission(s, "services");
   const { id } = await params;
   const service = await db.service.findFirst({
-    where: { id },
+    where: { id, ...staffMunicipalityIdFilter(s) },
     include: { documents: true },
   });
   if (!service) notFound();

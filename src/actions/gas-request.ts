@@ -34,11 +34,17 @@ export async function submitGasRequest(
     return { error: "يرجى اختيار معتمد الغاز." };
   }
 
+  const citizenMun = session.user.municipalityId?.trim();
+  if (!citizenMun) {
+    return { error: "حسابك غير مرتبط ببلدية." };
+  }
+
   const agent = await db.user.findFirst({
     where: {
       id: gasAgentId,
       role: UserRole.GAS_AGENT,
       isActive: true,
+      municipalityId: citizenMun,
       gasArea: { not: null },
     },
     select: { id: true, gasArea: true },
@@ -48,9 +54,10 @@ export async function submitGasRequest(
     return { error: "معتمد الغاز المختار غير متاح حالياً." };
   }
 
-  const number = await nextGasRequestNumber();
+  const number = await nextGasRequestNumber(citizenMun);
   const created = await db.gasRequest.create({
     data: {
+      municipalityId: citizenMun,
       gasRequestNumber: number,
       citizenId: session.user.id,
       area,
@@ -62,12 +69,13 @@ export async function submitGasRequest(
   });
 
   try {
-    const staff = await getStaffToNotify();
+    const staff = await getStaffToNotify(citizenMun);
     await notifyUsers({
       userIds: staff,
       type: "GAS_SUBMITTED",
       title: "طلب غاز جديد",
       message: `طلب غاز رقم ${number} — ${fullName}.`,
+      municipalityId: citizenMun,
       gasRequestId: created.id,
     });
     await notifyUsers({
@@ -75,6 +83,7 @@ export async function submitGasRequest(
       type: "GAS_SUBMITTED",
       title: "تم استلام طلب الغاز",
       message: `تم استلام طلب الغاز رقم ${number}. الحالة: قيد المتابعة.`,
+      municipalityId: citizenMun,
       gasRequestId: created.id,
     });
   } catch (e) {
@@ -104,7 +113,13 @@ export async function completeGasRequestAction(requestId: string): Promise<{ ok:
       id: requestId,
       assignedAgentId: session.user.id,
     },
-    select: { id: true, isCompleted: true, citizenId: true, gasRequestNumber: true },
+    select: {
+      id: true,
+      isCompleted: true,
+      citizenId: true,
+      gasRequestNumber: true,
+      municipalityId: true,
+    },
   });
   if (!row) return { error: "الطلب غير موجود أو غير مخصص لك." };
   if (!row.isCompleted) {
@@ -121,6 +136,7 @@ export async function completeGasRequestAction(requestId: string): Promise<{ ok:
         type: "GAS_COMPLETED",
         title: "تحديث طلب الغاز",
         message: `تم تغيير حالة طلب الغاز ${row.gasRequestNumber} إلى: تم التسليم.`,
+        municipalityId: row.municipalityId,
         gasRequestId: row.id,
       });
     } catch (e) {

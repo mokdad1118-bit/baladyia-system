@@ -6,6 +6,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { UserRole } from "@/generated/prisma/enums";
+import { isAdminPanelRole } from "@/lib/roles";
 import { isCitizenAppPath, isCitizenPublicPath } from "@/lib/portal-paths";
 import { getAuthSecret } from "@/lib/auth-secret";
 import { CITIZEN_WELCOME_PASS_COOKIE, CITIZEN_WELCOME_PASS_VALUE } from "@/lib/citizen-welcome-pass";
@@ -64,7 +65,7 @@ export async function middleware(req: NextRequest) {
       u.searchParams.set("next", pathname + search);
       return NextResponse.redirect(u);
     }
-    if (role !== UserRole.ADMIN) {
+    if (!isAdminPanelRole(role as UserRole)) {
       if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
       return NextResponse.redirect(new URL("/citizen/welcome", req.url));
@@ -80,7 +81,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(u);
     }
     if (role !== UserRole.EMPLOYEE) {
-      if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+      if (isAdminPanelRole(role as UserRole)) return NextResponse.redirect(new URL("/admin", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
       return NextResponse.redirect(new URL("/citizen/welcome", req.url));
     }
@@ -94,7 +95,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(u);
     }
     if (role !== UserRole.GAS_AGENT) {
-      if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+      if (isAdminPanelRole(role as UserRole)) return NextResponse.redirect(new URL("/admin", req.url));
       if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
       return NextResponse.redirect(new URL("/citizen/welcome", req.url));
@@ -123,7 +124,7 @@ export async function middleware(req: NextRequest) {
   if (role !== UserRole.CITIZEN) {
     if (role === UserRole.GAS_AGENT) return NextResponse.redirect(new URL("/gas-agent", req.url));
     if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
-    if (role === UserRole.ADMIN) return NextResponse.redirect(new URL("/admin", req.url));
+    if (isAdminPanelRole(role as UserRole)) return NextResponse.redirect(new URL("/admin", req.url));
     return NextResponse.redirect(new URL("/citizen/welcome", req.url));
   }
   /** بدون كوكي عبور الترحيب لا تُرسَل لوحة المواطن — يُمنع وميض الواجهة قبل شاشة الترحيب */

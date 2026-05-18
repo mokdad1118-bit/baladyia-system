@@ -14,6 +14,8 @@ import { FileKind, ReturneeRegistrationStatus, UserRole } from "@/generated/pris
 import { db } from "@/lib/db";
 import { acceptsForFileKind } from "@/lib/file-validation";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
+import { isAdminPanelRole } from "@/lib/roles";
+import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextReturneeRegistrationNumber } from "@/lib/returnee-registration-serial";
 import { returneeRegistrationStatusLabelAr } from "@/lib/returnee-registration-labels";
@@ -59,6 +61,10 @@ export async function submitReturneeRegistration(
   const session = await auth();
   if (!session?.user || session.user.role !== UserRole.CITIZEN) {
     return { error: "يجب تسجيل الدخول كمواطن لتقديم الطلب." };
+  }
+  const municipalityId = session.user.municipalityId?.trim();
+  if (!municipalityId) {
+    return { error: "حسابك غير مرتبط ببلدية." };
   }
 
   const returnPath = safeSuccessReturnPath(formData.get("_successReturnPath"));
@@ -112,9 +118,10 @@ export async function submitReturneeRegistration(
   );
   const rel = `/uploads/${new Date().getUTCFullYear()}/${stored}`;
 
-  const number = await nextReturneeRegistrationNumber();
+  const number = await nextReturneeRegistrationNumber(municipalityId);
   const created = await db.returneeRegistration.create({
     data: {
+      municipalityId,
       registrationNumber: number,
       citizenId: session.user.id,
       fullName,
@@ -130,12 +137,13 @@ export async function submitReturneeRegistration(
   });
 
   try {
-    const staff = await getStaffToNotify();
+    const staff = await getStaffToNotify(municipalityId);
     await notifyUsers({
       userIds: staff,
       type: "RETURNEE_SUBMITTED",
       title: "طلب تسجيل عائدين جديد",
       message: `وصل طلب تسجيل عائدين رقم ${number} — ${fullName}.`,
+      municipalityId,
       returneeRegistrationId: created.id,
     });
     await notifyUsers({
@@ -143,6 +151,7 @@ export async function submitReturneeRegistration(
       type: "RETURNEE_SUBMITTED",
       title: "تم استلام طلب تسجيل العائدين",
       message: `تم استلام طلبك رقم ${number}. الحالة: قيد المتابعة.`,
+      municipalityId,
       returneeRegistrationId: created.id,
     });
   } catch (e) {
@@ -169,7 +178,7 @@ export async function updateReturneeRegistrationStatusAction(
   statusRaw: string,
 ): Promise<{ ok: true } | { error: string }> {
   const session = await auth();
-  if (!session?.user || session.user.role !== UserRole.ADMIN) {
+  if (!session?.user || !isAdminPanelRole(session.user.role)) {
     return { error: "غير مصرح." };
   }
   if (!RETURNEE_STATUS_SET.has(statusRaw)) {
@@ -183,9 +192,15 @@ export async function updateReturneeRegistrationStatusAction(
       status: true,
       citizenId: true,
       registrationNumber: true,
+      municipalityId: true,
     },
   });
   if (!row) return { error: "الطلب غير موجود." };
+  try {
+    assertStaffCanAccessMunicipality(session, row.municipalityId);
+  } catch {
+    return { error: "غير مصرح." };
+  }
   if (row.status === status) return { ok: true };
 
   await db.returneeRegistration.update({
@@ -198,6 +213,7 @@ export async function updateReturneeRegistrationStatusAction(
       type: "RETURNEE_STATUS_CHANGE",
       title: "تحديث حالة طلب تسجيل العائدين",
       message: `تم تحديث حالة طلب تسجيل العائدين ${row.registrationNumber} إلى: ${returneeRegistrationStatusLabelAr[status]}.`,
+      municipalityId: row.municipalityId,
       returneeRegistrationId: row.id,
     });
   } catch (e) {

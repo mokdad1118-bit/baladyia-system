@@ -6,6 +6,8 @@ import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { UserRole } from "@/generated/prisma/enums";
 import { digitsOnly, normalizeCitizenPhoneForStorage } from "@/lib/phone";
+import { isAdminPanelRole, isSuperAdminRole } from "@/lib/roles";
+import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 
 export type CreateGasAgentResult =
   | { ok: true; message: string }
@@ -17,7 +19,19 @@ export type UpdateGasAgentResult =
 
 export async function createGasAgentAction(formData: FormData): Promise<CreateGasAgentResult> {
   const s = await auth();
-  if (!s?.user || s.user.role !== UserRole.ADMIN) {
+  if (!s?.user || !isAdminPanelRole(s.user.role)) {
+    return { ok: false, error: "غير مصرّح" };
+  }
+
+  const municipalityId = isSuperAdminRole(s.user.role)
+    ? String(formData.get("municipalityId") ?? "").trim()
+    : (s.user.municipalityId ?? "").trim();
+  if (!municipalityId) {
+    return { ok: false, error: "يرجى تحديد البلدية." };
+  }
+  try {
+    assertStaffCanAccessMunicipality(s, municipalityId);
+  } catch {
     return { ok: false, error: "غير مصرّح" };
   }
 
@@ -40,13 +54,15 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
   const areaTaken = await db.user.findFirst({
     where: {
       role: UserRole.GAS_AGENT,
+      municipalityId,
       gasArea: area,
     },
   });
-  if (areaTaken) return { ok: false, error: "هذه المنطقة مخصصة لمعتمد آخر بالفعل." };
+  if (areaTaken) return { ok: false, error: "هذه المنطقة مخصصة لمعتمد آخر في نفس البلدية." };
 
   await db.user.create({
     data: {
+      municipalityId,
       name,
       phone,
       gasArea: area,
@@ -63,7 +79,7 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
 
 export async function updateGasAgentAction(formData: FormData): Promise<UpdateGasAgentResult> {
   const s = await auth();
-  if (!s?.user || s.user.role !== UserRole.ADMIN) {
+  if (!s?.user || !isAdminPanelRole(s.user.role)) {
     return { ok: false, error: "غير مصرّح" };
   }
 
@@ -72,9 +88,14 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
 
   const existing = await db.user.findFirst({
     where: { id: userId, role: UserRole.GAS_AGENT },
-    select: { id: true, phone: true, gasArea: true },
+    select: { id: true, phone: true, gasArea: true, municipalityId: true },
   });
-  if (!existing) return { ok: false, error: "المعتمد غير موجود." };
+  if (!existing?.municipalityId) return { ok: false, error: "المعتمد غير موجود." };
+  try {
+    assertStaffCanAccessMunicipality(s, existing.municipalityId);
+  } catch {
+    return { ok: false, error: "غير مصرّح" };
+  }
 
   const name = String(formData.get("name") ?? "").trim();
   const phoneRaw = String(formData.get("phone") ?? "").trim();
@@ -97,11 +118,12 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
     const areaTaken = await db.user.findFirst({
       where: {
         role: UserRole.GAS_AGENT,
+        municipalityId: existing.municipalityId,
         gasArea: area,
         id: { not: userId },
       },
     });
-    if (areaTaken) return { ok: false, error: "هذه المنطقة مخصصة لمعتمد آخر بالفعل." };
+    if (areaTaken) return { ok: false, error: "هذه المنطقة مخصصة لمعتمد آخر في نفس البلدية." };
   }
 
   if (password.length > 0 && password.length < 6) {

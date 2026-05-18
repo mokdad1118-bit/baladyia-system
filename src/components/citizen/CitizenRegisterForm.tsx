@@ -11,11 +11,13 @@ import { cn } from "@/lib/cn";
 type Variant = "emerald" | "gov";
 
 export function CitizenRegisterForm({
+  municipalities,
   verifyHref,
   loginHref,
   variant,
   extraFooter,
 }: {
+  municipalities: { id: string; name: string }[];
   verifyHref: string;
   loginHref: string;
   variant: Variant;
@@ -65,6 +67,28 @@ export function CitizenRegisterForm({
           }}
         >
           {st && "error" in st && <p className={errBox}>{st.error}</p>}
+          {municipalities.length === 0 ? (
+            <p className={errBox}>لا توجد بلديات مفعّلة للتسجيل حالياً. حاول لاحقاً.</p>
+          ) : null}
+          <div>
+            <label className={cn("mb-1.5 block text-sm font-medium", label)}>البلدية التابعة لك</label>
+            <select
+              name="municipalityId"
+              required
+              disabled={municipalities.length === 0}
+              className={cn("gov-input w-full px-3 py-2.5 text-sm outline-none", inputRing)}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                — اختر البلدية —
+              </option>
+              {municipalities.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className={cn("mb-1.5 block text-sm font-medium", label)}>الاسم الثلاثي</label>
             <input
@@ -145,7 +169,11 @@ export function CitizenRegisterForm({
           {password && confirm && password !== confirm && (
             <p className={errBox}>تأكيد كلمة المرور غير متطابق</p>
           )}
-          <button type="submit" disabled={isPending || password !== confirm} className={btn}>
+          <button
+            type="submit"
+            disabled={isPending || password !== confirm || municipalities.length === 0}
+            className={btn}
+          >
             {isPending ? "يرجى الانتظار…" : "متابعة وإرسال رمز التحقق"}
           </button>
         </form>

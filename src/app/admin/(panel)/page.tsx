@@ -4,6 +4,8 @@ import { requestCounts } from "@/lib/request-stats";
 import { staffNavPermissions } from "@/lib/staff-permissions";
 import { AdminHomeDashboardWithSearch } from "@/components/admin/AdminHomeDashboardWithSearch";
 import { db } from "@/lib/db";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { isSuperAdminRole } from "@/lib/roles";
 
 const adminTiles = [
   { href: "/admin/services", title: "الخدمات", sub: "النماذج والمستندات والأسعار", perm: "manageServices" as const },
@@ -15,12 +17,13 @@ const adminTiles = [
 
 export default async function AdminHomePage() {
   const s = await auth();
-  const isAdmin = s?.user?.role === UserRole.ADMIN;
+  const mun = staffMunicipalityIdFilter(s);
+  const isAdmin = isSuperAdminRole(s?.user?.role ?? UserRole.CITIZEN);
   const perms = staffNavPermissions(s);
   const [c, gasRequestsCount, socialRequestsCount] = await Promise.all([
-    requestCounts(),
-    db.gasRequest.count(),
-    db.socialServiceCase.count(),
+    requestCounts(mun),
+    db.gasRequest.count({ where: mun }),
+    db.socialServiceCase.count({ where: mun }),
   ]);
 
   if (s?.user?.role === UserRole.EMPLOYEE) {

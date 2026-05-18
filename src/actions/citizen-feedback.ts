@@ -28,20 +28,27 @@ export async function submitCitizenFeedback(
     return { error: "النص طويل جداً. الحد الأقصى 2000 حرف." };
   }
 
+  const municipalityId = session.user.municipalityId?.trim();
+  if (!municipalityId) {
+    return { error: "حسابك غير مرتبط ببلدية. لا يمكن إرسال الملاحظة." };
+  }
+
   const row = await db.citizenFeedback.create({
     data: {
+      municipalityId,
       citizenId: session.user.id,
       message,
     },
   });
 
   try {
-    const staff = await getStaffToNotify();
+    const staff = await getStaffToNotify(municipalityId);
     await notifyUsers({
       userIds: staff,
       type: "FEEDBACK_SUBMITTED",
       title: "شكوى أو اقتراح جديد",
       message: `وصلت ملاحظة من ${session.user.name ?? "مواطن"} (${message.slice(0, 120)}${message.length > 120 ? "…" : ""}).`,
+      municipalityId,
       citizenFeedbackId: row.id,
     });
   } catch (e) {

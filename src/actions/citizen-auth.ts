@@ -105,7 +105,7 @@ export async function registerCitizen(
     const msg = parsed.error.issues[0]?.message ?? "بيانات غير صالحة";
     return { error: msg };
   }
-  const { fullName, email, password, phoneRaw, nationalIdRaw } = parsed.data;
+  const { fullName, email, password, phoneRaw, nationalIdRaw, municipalityId } = parsed.data;
   const nationalId = digitsOnly(nationalIdRaw);
   const phoneDigits = digitsOnly(phoneRaw);
   const phone = normalizeCitizenPhoneForStorage(phoneRaw);
@@ -117,6 +117,12 @@ export async function registerCitizen(
   ]);
 
   await purgeExpiredPendingRegistrations();
+
+  const mun = await db.municipality.findFirst({
+    where: { id: municipalityId, isActive: true },
+    select: { id: true },
+  });
+  if (!mun) return { error: "البلدية المختارة غير صالحة" };
 
   const pendingClash = await pendingRegistrationConflictMessage(email, nationalId, phoneVariants);
   if (pendingClash) return { error: pendingClash };
@@ -138,6 +144,7 @@ export async function registerCitizen(
   try {
     await db.pendingCitizenRegistration.create({
       data: {
+        municipalityId,
         email,
         name: fullName,
         phone,
@@ -220,6 +227,7 @@ export async function verifyCitizenEmailAction(
             role: UserRole.CITIZEN,
             isVerified: true,
             notificationEmail: null,
+            municipalityId: pending.municipalityId,
           },
         });
       } catch (e: unknown) {

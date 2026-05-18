@@ -2,10 +2,15 @@ import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
 import { ServicesListWithSearch } from "@/components/admin/ServicesListWithSearch";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
 
 export default async function AdminServicesPage() {
-  await requireStaffPanelPermission(await auth(), "services");
-  const list = await db.service.findMany({ orderBy: { createdAt: "desc" } });
+  const s = await auth();
+  await requireStaffPanelPermission(s, "services");
+  const list = await db.service.findMany({
+    where: staffMunicipalityIdFilter(s),
+    orderBy: { createdAt: "desc" },
+  });
   return (
     <ServicesListWithSearch
       services={list.map((s) => ({

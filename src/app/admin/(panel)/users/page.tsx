@@ -1,16 +1,22 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
-import { UserRole } from "@/generated/prisma/enums";
 import { StaffUsersListWithSearch } from "@/components/admin/StaffUsersListWithSearch";
+import { staffStaffUserWhere } from "@/lib/municipality-scope";
+import { hasFullAdminPrivileges, isSuperAdminRole } from "@/lib/roles";
+import { listActiveMunicipalities } from "@/lib/municipalities";
 
 export default async function AdminStaffUsersPage() {
   const s = await auth();
   await requireStaffPanelPermission(s, "users");
-  const users = await db.user.findMany({
-    where: { role: { in: [UserRole.EMPLOYEE, UserRole.ADMIN] } },
-    orderBy: { createdAt: "desc" },
-  });
+  const [users, municipalities] = await Promise.all([
+    db.user.findMany({
+      where: staffStaffUserWhere(s),
+      orderBy: { createdAt: "desc" },
+    }),
+    isSuperAdminRole(s!.user!.role) ? listActiveMunicipalities() : Promise.resolve([]),
+  ]);
+  const elevated = hasFullAdminPrivileges(s!.user!.role);
   return (
     <StaffUsersListWithSearch
       users={users.map((u) => ({
@@ -25,11 +31,13 @@ export default async function AdminStaffUsersPage() {
         permManageUsers: u.permManageUsers,
         permViewStats: u.permViewStats,
       }))}
-      isFullAdmin={s!.user!.role === UserRole.ADMIN}
+      municipalities={municipalities}
+      isSuperAdmin={isSuperAdminRole(s!.user!.role)}
+      isFullAdmin={elevated}
       assignablePerms={{
-        services: s!.user!.role === UserRole.ADMIN || Boolean(s!.user!.permManageServices),
-        users: s!.user!.role === UserRole.ADMIN || Boolean(s!.user!.permManageUsers),
-        stats: s!.user!.role === UserRole.ADMIN || Boolean(s!.user!.permViewStats),
+        services: elevated || Boolean(s!.user!.permManageServices),
+        users: elevated || Boolean(s!.user!.permManageUsers),
+        stats: elevated || Boolean(s!.user!.permViewStats),
       }}
     />
   );

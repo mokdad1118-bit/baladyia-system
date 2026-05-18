@@ -6,6 +6,8 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import { requestAttachmentPublicHref, resolveRequestUploadPath } from "@/lib/request-file-disk-path";
+import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
+import { isAdminPanelRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,7 +47,7 @@ export async function GET(_req: Request, ctx: Ctx) {
       storedName: true,
       mimeType: true,
       originalName: true,
-      request: { select: { citizenId: true } },
+      request: { select: { citizenId: true, municipalityId: true } },
     },
   });
 
@@ -57,10 +59,17 @@ export async function GET(_req: Request, ctx: Ctx) {
   }
 
   const role = session.user.role as UserRole;
-  const allowed =
-    role === UserRole.ADMIN ||
-    role === UserRole.EMPLOYEE ||
-    (role === UserRole.CITIZEN && file.request.citizenId === session.user.id);
+  let allowed = false;
+  if (role === UserRole.CITIZEN) {
+    allowed = file.request.citizenId === session.user.id;
+  } else if (isAdminPanelRole(role) || role === UserRole.EMPLOYEE) {
+    try {
+      assertStaffCanAccessMunicipality(session, file.request.municipalityId);
+      allowed = true;
+    } catch {
+      allowed = false;
+    }
+  }
 
   if (!allowed) {
     return new NextResponse(null, { status: 403 });

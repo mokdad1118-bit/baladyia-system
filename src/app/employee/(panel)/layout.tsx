@@ -12,7 +12,7 @@ export default async function EmployeePanelLayout({
   const s = await auth();
   if (!s?.user) redirect("/employee/login?next=/employee");
   if (s.user.role === UserRole.CITIZEN) redirect("/citizen");
-  if (s.user.role === UserRole.ADMIN) redirect("/admin");
+  if (s.user.role === UserRole.SUPER_ADMIN || s.user.role === UserRole.MUNICIPALITY_ADMIN) redirect("/admin");
   if (s.user.role !== UserRole.EMPLOYEE) redirect("/");
   return (
     <GovWorkspaceShell portalTitle="بوابة الموظف" nav={<EmployeeNav />}>

@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { UserRole } from "@/generated/prisma/enums";
 import { CitizenAccountView } from "@/components/citizen/CitizenAccountView";
+import { getMunicipalityNameById } from "@/lib/municipalities";
 
 export default async function CitizenMainAccountPage() {
   const s = await auth();
@@ -19,9 +20,11 @@ export default async function CitizenMainAccountPage() {
       nationalId: true,
       notificationEmail: true,
       createdAt: true,
+      municipalityId: true,
     },
   });
   if (!me) redirect("/citizen");
+  const municipalityName = await getMunicipalityNameById(me.municipalityId);
 
   return (
     <div className="w-full px-3 md:px-0">
@@ -33,6 +36,7 @@ export default async function CitizenMainAccountPage() {
           nationalId: me.nationalId,
           notificationEmail: me.notificationEmail,
           createdAt: me.createdAt.toISOString(),
+          municipalityName,
         }}
       />
     </div>

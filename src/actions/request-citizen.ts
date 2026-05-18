@@ -11,6 +11,7 @@ import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { acceptsForFileKind } from "@/lib/file-validation";
+import { citizenMunicipalityIdOrThrow } from "@/lib/municipality-scope";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { notifEmailOrNull, digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextRequestNumber } from "@/lib/request-serial";
@@ -18,9 +19,9 @@ import { UserRole, RequestStatus } from "@/generated/prisma/enums";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
 
-async function defaultAssigneeId() {
+async function defaultAssigneeId(municipalityId: string) {
   const e = await db.user.findFirst({
-    where: { isActive: true, role: UserRole.EMPLOYEE },
+    where: { isActive: true, role: UserRole.EMPLOYEE, municipalityId },
     orderBy: { createdAt: "asc" },
   });
   return e?.id ?? null;
@@ -83,8 +84,15 @@ export async function submitRequest(
       }
     }
 
+    let municipalityId: string;
+    try {
+      municipalityId = citizenMunicipalityIdOrThrow(session);
+    } catch {
+      return { error: "يجب أن يكون حسابك مرتبطاً ببلدية. تواصل مع الدعم أو أعد إنشاء الحساب." };
+    }
+
     const service = await db.service.findFirst({
-      where: { id: serviceId, isActive: true },
+      where: { id: serviceId, isActive: true, municipalityId },
       include: { documents: { orderBy: { sortOrder: "asc" } } },
     });
     if (!service) return { error: "الخدمة غير متوفرة" };
@@ -145,9 +153,9 @@ export async function submitRequest(
       });
     }
 
-    const number = await nextRequestNumber();
-    const assigneeId = await defaultAssigneeId();
-    const staff = await getStaffToNotify();
+    const number = await nextRequestNumber(municipalityId);
+    const assigneeId = await defaultAssigneeId(municipalityId);
+    const staff = await getStaffToNotify(municipalityId);
 
     const me = await db.user.findFirst({
       where: { id: session.user.id, role: UserRole.CITIZEN, isActive: true },
@@ -165,6 +173,7 @@ export async function submitRequest(
 
     const req = await db.request.create({
       data: {
+        municipalityId,
         requestNumber: number,
         serviceId: service.id,
         citizenId,
@@ -184,6 +193,7 @@ export async function submitRequest(
         type: "REQUEST_SUBMIT",
         title: "طلب جديد",
         message: `وصل طلب رقم ${number} للخدمة: ${service.name}.`,
+        municipalityId,
         requestId: req.id,
       });
       await notifyUsers({
@@ -191,6 +201,7 @@ export async function submitRequest(
         type: "REQUEST_SUBMIT",
         title: "تم استلام الطلب",
         message: `طلبك ${number} قيد المعالجة. يمكنك المتابعة من «طلباتي».`,
+        municipalityId,
         requestId: req.id,
       });
     } catch (notifyErr) {

@@ -1,19 +1,23 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { UserRole } from "@/generated/prisma/enums";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminGasRequestsTableWithSearch } from "@/components/admin/AdminGasRequestsTableWithSearch";
 import { GasAgentCreateForm } from "@/components/admin/GasAgentCreateForm";
 import { GasAgentEditDialog } from "@/components/admin/GasAgentEditDialog";
 import { GasAgentToggleButton } from "@/components/admin/GasAgentToggleButton";
+import { UserRole } from "@/generated/prisma/enums";
+import { staffGasAgentUserWhere, staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { isAdminPanelRole, isSuperAdminRole } from "@/lib/roles";
+import { listActiveMunicipalities } from "@/lib/municipalities";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminGasServicesPage({ searchParams }: S) {
   const session = await auth();
-  if (session?.user?.role === UserRole.ADMIN) {
+  const mun = staffMunicipalityIdFilter(session);
+  if (session?.user && isAdminPanelRole(session.user.role)) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,
@@ -29,16 +33,21 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
   const d0 = parseDateStartParam(sp.dateFrom);
   const d1 = parseDateEndParam(sp.dateTo);
 
+  const dateFilter =
+    d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {};
   const list = await db.gasRequest.findMany({
-    where: d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {},
+    where: { ...mun, ...dateFilter },
     orderBy: { createdAt: "desc" },
     take: 500,
     include: {
       assignedAgent: { select: { name: true } },
     },
   });
+  const municipalities = isSuperAdminRole(session?.user?.role ?? UserRole.CITIZEN)
+    ? await listActiveMunicipalities()
+    : [];
   const agents = await db.user.findMany({
-    where: { role: UserRole.GAS_AGENT },
+    where: staffGasAgentUserWhere(session),
     orderBy: [{ gasArea: "asc" }, { createdAt: "asc" }],
     select: {
       id: true,
@@ -79,7 +88,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
 
   return (
     <div>
-      <GasAgentCreateForm />
+      <GasAgentCreateForm municipalities={municipalities} showMunicipalityPicker={municipalities.length > 0} />
 
       <div className="gov-card mb-6 p-4">
         <h2 className="mb-3 text-base font-bold text-[var(--gov-text)]">قائمة معتمدي الغاز</h2>

@@ -3,9 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PageHeader } from "@/components/ui/page-header";
 import { auth } from "@/auth";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
+import { listActiveMunicipalities } from "@/lib/municipalities";
+import { UserRole } from "@/generated/prisma/enums";
+import { isSuperAdminRole } from "@/lib/roles";
 
 export default async function NewServicePage() {
-  await requireStaffPanelPermission(await auth(), "services");
+  const s = await auth();
+  await requireStaffPanelPermission(s, "services");
+  const municipalities = isSuperAdminRole(s?.user?.role ?? UserRole.CITIZEN)
+    ? await listActiveMunicipalities()
+    : [];
   return (
     <div>
       <PageHeader
@@ -18,7 +25,7 @@ export default async function NewServicePage() {
           <CardDescription>حدد الأوراق — سيُبنى نموذج الرفع تلقائياً.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ServiceForm />
+          <ServiceForm municipalities={municipalities} />
         </CardContent>
       </Card>
     </div>

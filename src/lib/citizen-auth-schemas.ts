@@ -3,6 +3,7 @@ import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 
 export const citizenRegisterSchema = z
   .object({
+    municipalityId: z.string().trim().min(1, "يرجى اختيار البلدية"),
     fullName: z
       .string()
       .trim()
@@ -38,6 +39,7 @@ export type CitizenRegisterInput = z.infer<typeof citizenRegisterSchema>;
 
 export function parseCitizenRegisterForm(fd: FormData) {
   return citizenRegisterSchema.safeParse({
+    municipalityId: String(fd.get("municipalityId") ?? ""),
     fullName: String(fd.get("fullName") ?? ""),
     email: String(fd.get("email") ?? ""),
     phoneRaw: String(fd.get("phone") ?? ""),

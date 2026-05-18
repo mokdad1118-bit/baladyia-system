@@ -3,6 +3,8 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { FileKind, RequestStatus, UserRole } from "../src/generated/prisma/enums";
 import { hash } from "bcrypt";
 import { createLibSqlAdapter } from "../src/lib/libsql-adapter";
+import { DARAA_MUNICIPALITIES } from "./daraa-municipalities";
+import { MIGRATION_DEFAULT_MUNICIPALITY_ID } from "../src/lib/municipality-constants";
 
 const ROUNDS = 10;
 
@@ -11,6 +13,25 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  for (const m of DARAA_MUNICIPALITIES) {
+    const isLegacyBosra = m.code === "bosra-sham";
+    await prisma.municipality.upsert({
+      where: { code: m.code },
+      create: {
+        ...(isLegacyBosra ? { id: MIGRATION_DEFAULT_MUNICIPALITY_ID } : {}),
+        code: m.code,
+        name: m.name,
+        sortOrder: m.sortOrder,
+        governorate: "درعا",
+      },
+      update: { name: m.name, sortOrder: m.sortOrder, isActive: true },
+    });
+  }
+
+  const bosra = await prisma.municipality.findUniqueOrThrow({
+    where: { code: "bosra-sham" },
+  });
+
   const [admin, employee, citizen] = await Promise.all([
     prisma.user.upsert({
       where: { email: "admin@bosra.local" },
@@ -18,12 +39,15 @@ async function main() {
         permManageServices: true,
         permManageUsers: true,
         permViewStats: true,
+        role: UserRole.SUPER_ADMIN,
+        municipalityId: null,
       },
       create: {
         email: "admin@bosra.local",
-        name: "رئيس البلدية (تجريبي)",
+        name: "مشرف المحافظة (تجريبي)",
         passwordHash: await hash("Admin123", ROUNDS),
-        role: UserRole.ADMIN,
+        role: UserRole.SUPER_ADMIN,
+        municipalityId: null,
         permManageServices: true,
         permManageUsers: true,
         permViewStats: true,
@@ -35,12 +59,14 @@ async function main() {
         permManageServices: true,
         permManageUsers: false,
         permViewStats: true,
+        municipalityId: bosra.id,
       },
       create: {
         email: "employee@bosra.local",
         name: "موظف الاستقبال (تجريبي)",
         passwordHash: await hash("Employee123", ROUNDS),
         role: UserRole.EMPLOYEE,
+        municipalityId: bosra.id,
         permManageServices: true,
         permManageUsers: false,
         permViewStats: true,
@@ -52,6 +78,7 @@ async function main() {
         phone: "963900000001",
         nationalId: "12345678901",
         isVerified: true,
+        municipalityId: bosra.id,
       },
       create: {
         email: "citizen@example.com",
@@ -61,15 +88,17 @@ async function main() {
         passwordHash: await hash("Citizen123", ROUNDS),
         role: UserRole.CITIZEN,
         isVerified: true,
+        municipalityId: bosra.id,
       },
     }),
   ]);
 
   const svc = await prisma.service.upsert({
     where: { id: "seed-service-1" },
-    update: {},
+    update: { municipalityId: bosra.id },
     create: {
       id: "seed-service-1",
+      municipalityId: bosra.id,
       name: "رخصة بناء (تجريبية)",
       description: "طلب تقديري لرخصة بناء، للاختبار داخل النظام.",
       price: "500.00",
@@ -106,12 +135,12 @@ async function main() {
     ],
   });
 
-  // Demo request
   const existing = await prisma.request.findFirst();
   if (!existing) {
     const reqN = "REQ-2026-00001";
     const r = await prisma.request.create({
       data: {
+        municipalityId: bosra.id,
         requestNumber: reqN,
         serviceId: svc.id,
         citizenId: citizen.id,
@@ -122,8 +151,8 @@ async function main() {
     });
     await prisma.$transaction([
       prisma.requestSerial.upsert({
-        where: { year: 2026 },
-        create: { year: 2026, lastN: 1 },
+        where: { municipalityId_year: { municipalityId: bosra.id, year: 2026 } },
+        create: { municipalityId: bosra.id, year: 2026, lastN: 1 },
         update: { lastN: 1 },
       }),
       prisma.requestStatusLog.create({
@@ -137,6 +166,7 @@ async function main() {
     ]);
   }
 
+  console.log("Seeded municipalities:", DARAA_MUNICIPALITIES.length);
   console.log("Seeded users:", { admin, employee, citizen });
   console.log("Seeded service:", svc.id);
 }

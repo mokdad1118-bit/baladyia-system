@@ -1,4 +1,4 @@
-// Municipal e-services — extensible for departments & multi-employee assignment
+// Municipal e-services — multi-municipality (محافظة درعا) + departments
 
 generator client {
   provider = "prisma-client"
@@ -7,6 +7,34 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+}
+
+/// بلدية أو مركز خدمات ضمن المحافظة — قابلة للتوسعة عبر البذور أو لوحة المشرف
+model Municipality {
+  id           String   @id @default(cuid())
+  name         String
+  /// معرّف ثابت للبذرة والربط البرمجي (مثل bosra-sham)
+  code         String   @unique
+  governorate  String   @default("درعا")
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users                     User[]
+  departments               Department[]
+  services                  Service[]
+  requests                  Request[]
+  citizenFeedbacks          CitizenFeedback[]
+  gasRequests               GasRequest[]
+  returneeRegistrations     ReturneeRegistration[]
+  socialServiceCases        SocialServiceCase[]
+  notifications             Notification[]
+  requestSerials            RequestSerial[]
+  gasRequestSerials         GasRequestSerial[]
+  socialServiceCaseSerials  SocialServiceCaseSerial[]
+  returneeRegistrationSerials ReturneeRegistrationSerial[]
+  pendingCitizenRegistrations PendingCitizenRegistration[]
 }
 
 /// Admin / employee / citizen
@@ -30,6 +58,9 @@ model User {
   permManageServices Boolean @default(false)
   permManageUsers    Boolean @default(false)
   permViewStats      Boolean @default(false)
+  /// null فقط لمشرف المحافظة (يرى كل البلديات)
+  municipalityId String?
+  municipality   Municipality? @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
   /// Future: assign services & routing by department
   departmentId   String?
   department     Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id])
@@ -48,13 +79,16 @@ model User {
   returneeRegistrations ReturneeRegistration[]
   socialServiceCases SocialServiceCase[]
 
-  /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها (فريدة لكل معتمد)
-  gasArea            String?  @unique
+  /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها — فريدة ضمن البلدية
+  gasArea            String?
+  @@unique([municipalityId, gasArea])
 }
 
 /// شكاوى ومقترحات المواطنين بخصوص التطبيق والخدمات
 model CitizenFeedback {
   id        String   @id @default(cuid())
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
   citizenId String
   citizen   User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
   message   String
@@ -68,6 +102,7 @@ model CitizenFeedback {
   notifications    Notification[]
 
   @@index([citizenId])
+  @@index([municipalityId])
   @@index([createdAt])
   @@index([adminRepliedById])
 }
@@ -75,6 +110,8 @@ model CitizenFeedback {
 /// بيانات تسجيل مواطن قبل إتمام التحقق من البريد — لا يُنشأ User حتى يُدخل الرمز صحيحاً
 model PendingCitizenRegistration {
   id           String   @id @default(cuid())
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
   email        String   @unique
   passwordHash String
   name         String
@@ -109,7 +146,8 @@ enum OtpPurpose {
 }
 
 enum UserRole {
-  ADMIN
+  SUPER_ADMIN
+  MUNICIPALITY_ADMIN
   EMPLOYEE
   CITIZEN
   GAS_AGENT
@@ -117,21 +155,27 @@ enum UserRole {
 
 /// Future: departments, employee pools, per-service routing
 model Department {
-  id          String   @id @default(cuid())
-  name        String
-  code        String?  @unique
-  description String?  @default("")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  name           String
+  code           String?
+  description    String?  @default("")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   services  Service[] @relation("ServiceDepartment")
   employees User[]    @relation("DepartmentEmployees")
   requests  Request[] @relation("RequestDepartment")
+
+  @@unique([municipalityId, code])
 }
 
 model Service {
   id             String   @id @default(cuid())
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
   name           String
   description    String   @default("")
   /// Stored as decimal string in SQLite; use Prisma Decimal in app
@@ -145,6 +189,8 @@ model Service {
 
   documents  ServiceDocument[]
   requests   Request[]
+
+  @@index([municipalityId])
 }
 
 /// Required papers for a service — dynamic form = list of file inputs (+ metadata)
@@ -169,6 +215,8 @@ enum FileKind {
 
 model Request {
   id            String   @id @default(cuid())
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
   requestNumber String   @unique
   serviceId     String
   service       Service  @relation(fields: [serviceId], references: [id])
@@ -193,6 +241,8 @@ model Request {
   statusLogs    RequestStatusLog[]
   notes         RequestNote[]
   notifications Notification[] @relation("RequestNotifications")
+
+  @@index([municipalityId])
 }
 
 enum RequestStatus {
@@ -243,6 +293,8 @@ model RequestNote {
 
 model Notification {
   id         String   @id @default(cuid())
+  municipalityId String?
+  municipality   Municipality? @relation(fields: [municipalityId], references: [id], onDelete: SetNull)
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type       String
@@ -261,21 +313,27 @@ model Notification {
   citizenFeedback   CitizenFeedback? @relation(fields: [citizenFeedbackId], references: [id], onDelete: SetNull)
   createdAt  DateTime @default(now())
 
+  @@index([municipalityId])
   @@index([gasRequestId])
   @@index([returneeRegistrationId])
   @@index([socialServiceCaseId])
   @@index([citizenFeedbackId])
 }
 
-/// Atomic yearly counter for request numbers: REQ-YYYY-NNNNN
+/// عدّاد سنوي لطلبات الخدمات — لكل بلدية
 model RequestSerial {
-  year  Int      @id
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  year  Int
   lastN Int
+  @@id([municipalityId, year])
 }
 
 /// طلبات خدمات الغاز (نموذج بسيط مستقل عن طلبات الخدمات العامة)
 model GasRequest {
   id               String   @id @default(cuid())
+  municipalityId   String
+  municipality     Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
   gasRequestNumber String   @unique
   citizenId        String
   citizen          User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
@@ -291,6 +349,7 @@ model GasRequest {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  @@index([municipalityId])
   @@index([createdAt])
   @@index([phone])
   @@index([nationalId])
@@ -299,10 +358,13 @@ model GasRequest {
   @@index([isCompleted])
 }
 
-/// عدّاد سنوي لطلبات الغاز: GAS-YYYY-NNNNN
+/// عدّاد سنوي لطلبات الغاز — لكل بلدية
 model GasRequestSerial {
-  year  Int @id
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  year  Int
   lastN Int
+  @@id([municipalityId, year])
 }
 
 enum ReturneeRegistrationStatus {
@@ -315,6 +377,8 @@ enum ReturneeRegistrationStatus {
 /// تسجيل العائدين — نموذج مستقل مع مرفق بيان العودة
 model ReturneeRegistration {
   id                       String   @id @default(cuid())
+  municipalityId           String
+  municipality             Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
   registrationNumber       String   @unique
   citizenId                String
   citizen                  User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
@@ -332,6 +396,7 @@ model ReturneeRegistration {
   updatedAt                DateTime @updatedAt
   notifications            Notification[]
 
+  @@index([municipalityId])
   @@index([createdAt])
   @@index([nationalId])
   @@index([status])
@@ -355,6 +420,8 @@ enum SocialServiceCaseStatus {
 
 model SocialServiceCase {
   id                    String   @id @default(cuid())
+  municipalityId      String
+  municipality        Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
   caseNumber            String   @unique
   category              SocialServiceCategory
   citizenId             String
@@ -377,6 +444,7 @@ model SocialServiceCase {
   updatedAt             DateTime @updatedAt
   notifications         Notification[]
 
+  @@index([municipalityId])
   @@index([createdAt])
   @@index([category])
   @@index([status])
@@ -384,18 +452,24 @@ model SocialServiceCase {
   @@index([husbandNationalId])
   @@index([wifeNationalId])
   @@index([familyBookNumber])
-  @@unique([category, nationalId])
-  @@unique([category, husbandNationalId])
-  @@unique([category, wifeNationalId])
-  @@unique([category, familyBookNumber])
+  @@unique([municipalityId, category, nationalId])
+  @@unique([municipalityId, category, husbandNationalId])
+  @@unique([municipalityId, category, wifeNationalId])
+  @@unique([municipalityId, category, familyBookNumber])
 }
 
 model SocialServiceCaseSerial {
-  year  Int @id
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  year  Int
   lastN Int
+  @@id([municipalityId, year])
 }
 
 model ReturneeRegistrationSerial {
-  year  Int @id
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  year  Int
   lastN Int
+  @@id([municipalityId, year])
 }

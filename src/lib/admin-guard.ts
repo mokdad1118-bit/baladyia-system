@@ -7,6 +7,7 @@ import {
   staffCanManageUsers,
   staffCanViewStats,
 } from "@/lib/staff-permissions";
+import { isAdminPanelRole } from "@/lib/roles";
 
 type AuthSession = Session | null;
 
@@ -14,7 +15,7 @@ export async function requireAdminPanel(session: AuthSession) {
   if (!session?.user?.role) redirect("/admin/login?next=/admin");
   if (session.user.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/");
   if (session.user.role === UserRole.EMPLOYEE) redirect("/staff");
-  if (session.user.role !== UserRole.ADMIN) redirect(citizenPortalOrigin() ?? "/");
+  if (!isAdminPanelRole(session.user.role)) redirect(citizenPortalOrigin() ?? "/");
 }
 
 export type StaffPanelPermissionKey = "services" | "users" | "stats";

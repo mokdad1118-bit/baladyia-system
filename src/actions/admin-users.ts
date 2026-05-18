@@ -8,7 +8,10 @@ import { UserRole } from "@/generated/prisma/enums";
 import {
   staffCanManageUsers,
   validateAssignableEmployeePerms,
+  canCreateElevatedStaffRoles,
 } from "@/lib/staff-permissions";
+import { isMunicipalityAdminRole, isSuperAdminRole } from "@/lib/roles";
+import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 
 function parseEmployeePerms(formData: FormData) {
   return {
@@ -16,6 +19,13 @@ function parseEmployeePerms(formData: FormData) {
     permManageUsers: formData.get("permManageUsers") === "on",
     permViewStats: formData.get("permViewStats") === "on",
   };
+}
+
+function parseStaffRole(raw: string): UserRole | null {
+  if (raw === UserRole.SUPER_ADMIN) return UserRole.SUPER_ADMIN;
+  if (raw === UserRole.MUNICIPALITY_ADMIN) return UserRole.MUNICIPALITY_ADMIN;
+  if (raw === UserRole.EMPLOYEE) return UserRole.EMPLOYEE;
+  return null;
 }
 
 export async function createStaffUser(
@@ -29,11 +39,40 @@ export async function createStaffUser(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const roleRaw = String(formData.get("role") ?? "EMPLOYEE");
-  const role = roleRaw === "ADMIN" ? UserRole.ADMIN : UserRole.EMPLOYEE;
-  if (role === UserRole.ADMIN && s!.user!.role !== UserRole.ADMIN) {
-    return { error: "إنشاء حساب مدير نظام متاح للمدير فقط" };
+  const roleRaw = String(formData.get("role") ?? UserRole.EMPLOYEE);
+  const role = parseStaffRole(roleRaw);
+  if (!role) return { error: "دور غير صالح" };
+
+  if (role === UserRole.SUPER_ADMIN && !canCreateElevatedStaffRoles(s)) {
+    return { error: "إنشاء مشرف محافظة متاح للمشرف الأعلى فقط" };
   }
+  if (role === UserRole.MUNICIPALITY_ADMIN && !canCreateElevatedStaffRoles(s)) {
+    return { error: "إنشاء مدير بلدية متاح للمشرف الأعلى فقط" };
+  }
+
+  let municipalityId: string | null = null;
+  if (isSuperAdminRole(s!.user!.role)) {
+    municipalityId =
+      role === UserRole.SUPER_ADMIN
+        ? null
+        : String(formData.get("municipalityId") ?? "")
+            .trim()
+            .length > 0
+          ? String(formData.get("municipalityId")).trim()
+          : null;
+    if (role !== UserRole.SUPER_ADMIN && !municipalityId) {
+      return { error: "يرجى اختيار البلدية لهذا الحساب" };
+    }
+  } else if (isMunicipalityAdminRole(s!.user!.role)) {
+    if (role !== UserRole.EMPLOYEE) {
+      return { error: "مدير البلدية يمكنه إنشاء موظفين فقط" };
+    }
+    municipalityId = s!.user!.municipalityId?.trim() ?? null;
+    if (!municipalityId) return { error: "حسابك غير مرتبط ببلدية" };
+  } else {
+    return { error: "غير مصرّح" };
+  }
+
   if (!name || !email || !password) return { error: "تعبئة كافة الحقول" };
   if (password.length < 6) return { error: "كلمة المرور 6 أحرف على الأقل" };
   const ext = await db.user.findUnique({ where: { email } });
@@ -42,7 +81,7 @@ export async function createStaffUser(
   let permManageServices = false;
   let permManageUsers = false;
   let permViewStats = false;
-  if (role === UserRole.ADMIN) {
+  if (role === UserRole.SUPER_ADMIN || role === UserRole.MUNICIPALITY_ADMIN) {
     permManageServices = true;
     permManageUsers = true;
     permViewStats = true;
@@ -64,6 +103,7 @@ export async function createStaffUser(
       email,
       passwordHash: await hashPassword(password),
       role,
+      municipalityId,
       permManageServices,
       permManageUsers,
       permViewStats,
@@ -80,6 +120,28 @@ export async function setUserActive(userId: string, isActive: boolean) {
     return { error: "غير مصرّح" };
   }
   if (userId === s!.user!.id) return { error: "لا يمكنك تعطيل حسابك" };
+  const target = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true, municipalityId: true },
+  });
+  if (!target) return { error: "المستخدم غير موجود" };
+  if (target.role === UserRole.CITIZEN && target.municipalityId) {
+    try {
+      assertStaffCanAccessMunicipality(s, target.municipalityId);
+    } catch {
+      return { error: "غير مصرّح" };
+    }
+  } else if (target.role !== UserRole.CITIZEN) {
+    if (target.municipalityId) {
+      try {
+        assertStaffCanAccessMunicipality(s, target.municipalityId);
+      } catch {
+        return { error: "غير مصرّح" };
+      }
+    } else if (!isSuperAdminRole(s!.user!.role)) {
+      return { error: "غير مصرّح" };
+    }
+  }
   await db.user.update({ where: { id: userId }, data: { isActive } });
   revalidatePath("/admin/users");
   revalidatePath("/admin/citizens");
@@ -103,11 +165,19 @@ export async function deleteCitizenAccount(userId: string) {
       role: true,
       email: true,
       notificationEmail: true,
+      municipalityId: true,
     },
   });
   if (!user) return { error: "المستخدم غير موجود" } as const;
   if (user.role !== UserRole.CITIZEN) {
     return { error: "يمكن حذف حسابات المواطنين فقط" } as const;
+  }
+  if (user.municipalityId) {
+    try {
+      assertStaffCanAccessMunicipality(s, user.municipalityId);
+    } catch {
+      return { error: "غير مصرّح" } as const;
+    }
   }
 
   const otpEmails = [user.email, user.notificationEmail].filter(

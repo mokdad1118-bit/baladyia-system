@@ -6,6 +6,8 @@ import { UserRole } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 import { RequestStatus } from "@/generated/prisma/enums";
 import { updateRequestStatus, addRequestNote } from "@/actions/request-staff";
+import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { isAdminPanelRole } from "@/lib/roles";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FieldGroup, Textarea, FieldLabel } from "@/components/ui/field";
@@ -26,11 +28,12 @@ const statuses: RequestStatus[] = [
 ];
 
 export default async function AdminRequestDetailPage({ params, searchParams }: P) {
+  const session = await auth();
   const { id } = await params;
   const sp = await searchParams;
   const statusError = sp.statusError === "1";
   const r = await db.request.findFirst({
-    where: { id },
+    where: { id, ...staffMunicipalityIdFilter(session) },
     include: {
       service: true,
       citizen: true,
@@ -42,8 +45,7 @@ export default async function AdminRequestDetailPage({ params, searchParams }: P
   });
   if (!r) notFound();
 
-  const session = await auth();
-  if (session?.user?.role === UserRole.ADMIN) {
+  if (session?.user && isAdminPanelRole(session.user.role)) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,

@@ -1,11 +1,15 @@
-"use client";
-
 import Link from "next/link";
 import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { CitizenRegisterForm } from "@/components/citizen/CitizenRegisterForm";
+import { db } from "@/lib/db";
 
-export default function CitizenRegisterPagePublic() {
+export default async function CitizenRegisterPagePublic() {
+  const municipalities = await db.municipality.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true },
+  });
   return (
     <div className="gov-page flex min-h-dvh flex-col">
       <header className="gov-header">
@@ -22,6 +26,7 @@ export default function CitizenRegisterPagePublic() {
       </header>
       <main className="flex flex-1 justify-center px-4 py-10">
         <CitizenRegisterForm
+          municipalities={municipalities}
           verifyHref="/citizen/register/verify"
           loginHref="/citizen/login"
           variant="gov"

@@ -14,6 +14,7 @@ export function CitizenAccountView({
     nationalId: string | null;
     notificationEmail: string | null;
     createdAt: string;
+    municipalityName?: string | null;
   };
   /** صفحة استعادة/تغيير كلمة المرور (لا يُعرض النص الفعلي لأسباب أمنية) */
   passwordRecoveryHref?: string;
@@ -21,6 +22,7 @@ export function CitizenAccountView({
   const [showPasswordInfo, setShowPasswordInfo] = useState(false);
 
   const rows: { label: string; value: string }[] = [
+    { label: "البلدية", value: user.municipalityName ?? "—" },
     { label: "الاسم الثلاثي", value: user.name ?? "—" },
     { label: "البريد الإلكتروني", value: user.email ?? "—" },
     { label: "رقم الهاتف", value: user.phone ?? "—" },
