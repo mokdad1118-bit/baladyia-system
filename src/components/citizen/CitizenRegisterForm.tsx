@@ -169,6 +169,25 @@ export function CitizenRegisterForm({
           {password && confirm && password !== confirm && (
             <p className={errBox}>تأكيد كلمة المرور غير متطابق</p>
           )}
+          <label
+            className={cn(
+              "flex items-start gap-2 rounded-xl border px-3 py-3 text-sm leading-relaxed",
+              isEmerald
+                ? "border-emerald-100 bg-emerald-50/50 text-slate-800"
+                : "border-[var(--gov-border)] bg-white text-[var(--gov-text)]",
+            )}
+          >
+            <input
+              name="accuracyAgreement"
+              type="checkbox"
+              required
+              className="mt-1 h-4 w-4 shrink-0 accent-[var(--gov-primary)]"
+            />
+            <span>
+              أتعهد بأن جميع المعلومات المدخلة صحيحة ومطابقة للوثائق الرسمية، وأتحمل المسؤولية عن أي بيانات
+              غير صحيحة.
+            </span>
+          </label>
           <button
             type="submit"
             disabled={isPending || password !== confirm || municipalities.length === 0}

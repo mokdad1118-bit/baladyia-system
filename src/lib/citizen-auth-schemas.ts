@@ -23,6 +23,9 @@ export const citizenRegisterSchema = z
       .max(128, "كلمة المرور طويلة جداً")
       .regex(/[A-Za-z]/, "كلمة المرور يجب أن تحتوي حرفاً إنجليزياً واحداً على الأقل")
       .regex(/[0-9]/, "كلمة المرور يجب أن تحتوي رقماً واحداً على الأقل"),
+    accuracyAgreement: z.literal("on", {
+      error: "يجب التعهد بأن جميع المعلومات المدخلة صحيحة",
+    }),
   })
   .superRefine((data, ctx) => {
     const nid = digitsOnly(data.nationalIdRaw);
@@ -45,6 +48,7 @@ export function parseCitizenRegisterForm(fd: FormData) {
     phoneRaw: String(fd.get("phone") ?? ""),
     nationalIdRaw: String(fd.get("nationalId") ?? ""),
     password: String(fd.get("password") ?? ""),
+    accuracyAgreement: String(fd.get("accuracyAgreement") ?? ""),
   });
 }
 
