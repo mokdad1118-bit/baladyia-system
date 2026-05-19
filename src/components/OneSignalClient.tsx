@@ -23,6 +23,7 @@ declare global {
   interface Window {
     OneSignalDeferred?: Array<(OneSignal: OneSignalSdk) => void | Promise<void>>;
     __daraaOneSignalInitialized?: boolean;
+    __daraaOneSignalInitFailed?: boolean;
   }
 }
 
@@ -43,12 +44,24 @@ export function OneSignalClient() {
 
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal) => {
+      if (window.__daraaOneSignalInitFailed) return;
       if (!window.__daraaOneSignalInitialized) {
-        await OneSignal.init({
-          appId,
-          serviceWorkerPath: "OneSignalSDKWorker.js",
-        });
-        window.__daraaOneSignalInitialized = true;
+        try {
+          await OneSignal.init({
+            appId,
+            serviceWorkerPath: "OneSignalSDKWorker.js",
+          });
+          window.__daraaOneSignalInitialized = true;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (/already initialized/i.test(message)) {
+            window.__daraaOneSignalInitialized = true;
+          } else {
+            window.__daraaOneSignalInitFailed = true;
+            console.warn("[OneSignal] init skipped:", message || error);
+            return;
+          }
+        }
       }
 
       if (status === "unauthenticated") {
