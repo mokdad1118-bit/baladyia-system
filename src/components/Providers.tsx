@@ -4,6 +4,7 @@ import { Suspense, useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
+import { OneSignalClient } from "@/components/OneSignalClient";
 
 /** بعد كل تنقل (مسار أو استعلام): إرجاع التمرير للأعلى حتى يظهر المحتوى الجديد فوراً */
 function ScrollToTopOnNavigation() {
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <OfflineBanner />
+      <OneSignalClient />
       <Suspense fallback={null}>
         <ScrollToTopOnNavigation />
       </Suspense>

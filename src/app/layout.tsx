@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Tajawal } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
@@ -49,6 +50,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="h-full">
       <body className={`min-h-full antialiased [font-feature-settings:'tnum'] ${tajawal.className} gov-page`}>
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
         <Providers>{children}</Providers>
       </body>
     </html>

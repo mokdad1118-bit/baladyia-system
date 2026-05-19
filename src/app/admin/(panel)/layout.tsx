@@ -67,6 +67,7 @@ export default async function AdminPanelLayout({
           staffRoot={staffRoot}
           badgeCounts={badgeCounts}
           isSuperAdmin={isSuperAdminRole(s.user.role)}
+          isAdminManager={s.user.role === UserRole.SUPER_ADMIN || s.user.role === UserRole.MUNICIPALITY_ADMIN}
         />
       }
       homeHref={homeHref}

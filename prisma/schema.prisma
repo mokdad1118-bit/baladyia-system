@@ -31,6 +31,7 @@ model Municipality {
   returneeRegistrations     ReturneeRegistration[]
   socialServiceCases        SocialServiceCase[]
   notifications             Notification[]
+  broadcastNotifications    BroadcastNotification[]
   requestSerials            RequestSerial[]
   gasRequestSerials         GasRequestSerial[]
   socialServiceCaseSerials  SocialServiceCaseSerial[]
@@ -80,6 +81,7 @@ model User {
   requestNotes       RequestNote[]      @relation("NoteAuthor")
   operationLogs      OperationLog[]     @relation("OperationLogActor")
   notifications      Notification[]
+  sentBroadcastNotifications BroadcastNotification[] @relation("BroadcastNotificationActor")
   citizenFeedbacks        CitizenFeedback[]
   citizenFeedbackReplies CitizenFeedback[] @relation("CitizenFeedbackRepliedBy")
   gasRequests        GasRequest[]
@@ -358,6 +360,30 @@ model OperationLog {
 }
 
 /// عدّاد سنوي لطلبات الخدمات — لكل بلدية
+model BroadcastNotification {
+  id                 String   @id @default(cuid())
+  actorId            String?
+  actor              User?    @relation("BroadcastNotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  municipalityId     String?
+  municipality       Municipality? @relation(fields: [municipalityId], references: [id], onDelete: SetNull)
+  targetScope        String
+  targetRole         String
+  title              String
+  message            String
+  imageUrl           String?
+  openUrl            String?
+  onesignalMessageId String?
+  onesignalResponse  String?
+  status             String   @default("SENT")
+  errorMessage       String?
+  createdAt          DateTime @default(now())
+
+  @@index([actorId])
+  @@index([municipalityId])
+  @@index([targetRole])
+  @@index([createdAt])
+}
+
 model RequestSerial {
   municipalityId String
   municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)

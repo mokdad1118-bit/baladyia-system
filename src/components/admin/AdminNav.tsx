@@ -56,6 +56,13 @@ const segments = [
   },
   { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" as const },
   {
+    internal: "/admin/broadcast-notifications",
+    label: "إرسال الإشعارات",
+    desc: "OneSignal للمواطنين والمستخدمين",
+    perm: null,
+    adminOnly: true,
+  },
+  {
     internal: "/admin/operation-log",
     label: "سجل العمليات",
     desc: "كل ما يحدث داخل النظام",
@@ -89,6 +96,7 @@ const segments = [
   perm: null | keyof StaffNavPermissions;
   badgeKey?: keyof AdminNavBadgeCounts;
   superAdminOnly?: boolean;
+  adminOnly?: boolean;
 }[];
 
 function hrefFor(staffRoot: boolean, internal: string) {
@@ -116,15 +124,18 @@ export function AdminNav({
   staffRoot,
   badgeCounts,
   isSuperAdmin = false,
+  isAdminManager = false,
 }: {
   staffPerms: StaffNavPermissions;
   staffRoot: boolean;
   badgeCounts: AdminNavBadgeCounts;
   isSuperAdmin?: boolean;
+  isAdminManager?: boolean;
 }) {
   const path = usePathname() ?? "";
   const items = segments.filter((i) => {
     if ("superAdminOnly" in i && i.superAdminOnly && !isSuperAdmin) return false;
+    if ("adminOnly" in i && i.adminOnly && !isAdminManager) return false;
     if (!i.perm) return true;
     return staffPerms[i.perm];
   });
