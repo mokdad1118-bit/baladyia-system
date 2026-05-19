@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
@@ -31,6 +30,18 @@ const categoryByKey: Record<string, SocialServiceCategory | null> = {
   "family-census": SocialServiceCategory.FAMILY_CENSUS,
 };
 
+function parseAttachmentRows(raw: string | null): { path: string }[] {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is { path: string } => {
+      return typeof item === "object" && item !== null && typeof item.path === "string";
+    });
+  } catch {
+    return [];
+  }
+}
+
 type Props = { searchParams: Promise<{ tab?: string; dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminSocialServicesIndexPage({ searchParams }: Props) {
@@ -46,7 +57,6 @@ export default async function AdminSocialServicesIndexPage({ searchParams }: Pro
       },
       data: { read: true },
     });
-    revalidatePath("/admin");
   }
 
   const sp = await searchParams;
@@ -121,7 +131,7 @@ export default async function AdminSocialServicesIndexPage({ searchParams }: Pro
       </form>
     );
     const rows = list.map((r) => {
-      const attachments = JSON.parse(r.attachmentsJson || "[]") as { path: string }[];
+      const attachments = parseAttachmentRows(r.attachmentsJson);
       return {
         id: r.id,
         caseNumber: r.caseNumber,

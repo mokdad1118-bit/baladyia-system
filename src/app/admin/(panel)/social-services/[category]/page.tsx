@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { SocialServiceCategory } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
@@ -18,6 +17,18 @@ const slugMap: Record<string, SocialServiceCategory> = {
   "family-census": SocialServiceCategory.FAMILY_CENSUS,
 };
 
+function parseAttachmentRows(raw: string | null): { path: string }[] {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is { path: string } => {
+      return typeof item === "object" && item !== null && typeof item.path === "string";
+    });
+  } catch {
+    return [];
+  }
+}
+
 export default async function AdminSocialServicesCategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const session = await auth();
   await requireStaffPanelPermission(session, "social");
@@ -31,7 +42,6 @@ export default async function AdminSocialServicesCategoryPage({ params }: { para
       },
       data: { read: true },
     });
-    revalidatePath("/admin");
   }
 
   const p = await params;
@@ -43,7 +53,7 @@ export default async function AdminSocialServicesCategoryPage({ params }: { para
     take: 500,
   });
   const rows = list.map((r) => {
-    const attachments = JSON.parse(r.attachmentsJson || "[]") as { path: string }[];
+    const attachments = parseAttachmentRows(r.attachmentsJson);
     return {
       id: r.id,
       caseNumber: r.caseNumber,
