@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import {
   createMunicipality,
+  deleteMunicipality,
   setMunicipalityActive,
   updateMunicipality,
 } from "@/actions/admin-municipalities";
@@ -139,7 +140,14 @@ export function MunicipalitiesManagePanel({ rows }: { rows: MunicipalityAdminRow
               ) : (
                 filtered.map((m) => (
                   <tr key={m.id} className={!m.isActive ? "opacity-60" : undefined}>
-                    <td className="font-medium">{m.name}</td>
+                    <td className="font-medium">
+                      <Link
+                        href={`/admin/municipalities/${m.id}`}
+                        className="text-[var(--gov-primary)] underline-offset-2 hover:underline"
+                      >
+                        {m.name}
+                      </Link>
+                    </td>
                     <td dir="ltr" className="text-sm">
                       {m.code}
                     </td>
@@ -157,6 +165,7 @@ export function MunicipalitiesManagePanel({ rows }: { rows: MunicipalityAdminRow
                           تعديل
                         </button>
                         <MunicipalityActiveToggle id={m.id} isActive={m.isActive} name={m.name} />
+                        <MunicipalityDeleteButton row={m} />
                       </div>
                     </td>
                   </tr>
@@ -170,6 +179,31 @@ export function MunicipalitiesManagePanel({ rows }: { rows: MunicipalityAdminRow
         </p>
       </div>
     </div>
+  );
+}
+
+function MunicipalityDeleteButton({ row }: { row: MunicipalityAdminRow }) {
+  const [pending, setPending] = useState(false);
+  const hasData = row.citizens + row.requests > 0;
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      className="rounded-sm border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 disabled:opacity-60"
+      title={hasData ? "لا يُحذف إلا إذا لم تكن هناك بيانات مرتبطة" : undefined}
+      onClick={async () => {
+        const warning = hasData
+          ? "هذه البلدية لديها بيانات ظاهرة. سيُرفض الحذف إذا وُجدت أي بيانات مرتبطة. هل تريد المحاولة؟"
+          : `حذف بلدية «${row.name}»؟ لا يمكن التراجع عن هذا الإجراء.`;
+        if (!confirm(warning)) return;
+        setPending(true);
+        const res = await deleteMunicipality(row.id);
+        setPending(false);
+        if (res.error) alert(res.error);
+      }}
+    >
+      {pending ? "…" : "حذف"}
+    </button>
   );
 }
 

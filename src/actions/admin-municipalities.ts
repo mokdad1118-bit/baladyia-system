@@ -126,3 +126,60 @@ export async function setMunicipalityActive(
   revalidateMunicipalityViews();
   return { ok: true };
 }
+
+export async function deleteMunicipality(
+  municipalityId: string,
+): Promise<{ error?: string; ok?: true }> {
+  const gate = await requireSuperAdminAction();
+  if ("error" in gate) return { error: gate.error };
+
+  const id = municipalityId.trim();
+  if (!id) return { error: "معرّف البلدية مفقود" };
+
+  const row = await db.municipality.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          users: true,
+          departments: true,
+          services: true,
+          requests: true,
+          citizenFeedbacks: true,
+          gasRequests: true,
+          returneeRegistrations: true,
+          socialServiceCases: true,
+          notifications: true,
+          pendingCitizenRegistrations: true,
+        },
+      },
+    },
+  });
+  if (!row) return { error: "البلدية غير موجودة" };
+  if (row.code === "bosra-sham") {
+    return { error: "لا يمكن حذف البلدية الافتراضية المستخدمة لترحيل البيانات القديمة" };
+  }
+
+  const total =
+    row._count.users +
+    row._count.departments +
+    row._count.services +
+    row._count.requests +
+    row._count.citizenFeedbacks +
+    row._count.gasRequests +
+    row._count.returneeRegistrations +
+    row._count.socialServiceCases +
+    row._count.notifications +
+    row._count.pendingCitizenRegistrations;
+
+  if (total > 0) {
+    return {
+      error:
+        "لا يمكن حذف بلدية لديها بيانات مرتبطة. عطّل البلدية أولاً أو انقل/احذف البيانات التابعة لها من التفاصيل.",
+    };
+  }
+
+  await db.municipality.delete({ where: { id } });
+  revalidateMunicipalityViews();
+  return { ok: true };
+}

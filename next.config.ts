@@ -20,6 +20,16 @@ const withPWA = withPWAInit({
   workboxOptions: {
     runtimeCaching: [
       {
+        urlPattern: ({ url }: { url: URL }) =>
+          url.pathname.startsWith("/admin") ||
+          url.pathname.startsWith("/staff") ||
+          url.pathname.startsWith("/employee") ||
+          url.pathname.startsWith("/gas-agent") ||
+          url.pathname.startsWith("/api/"),
+        handler: "NetworkOnly",
+        method: "GET",
+      },
+      {
         urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/uploads/"),
         handler: "NetworkOnly",
         method: "GET",

@@ -8,25 +8,33 @@ import { GasAgentCreateForm } from "@/components/admin/GasAgentCreateForm";
 import { GasAgentEditDialog } from "@/components/admin/GasAgentEditDialog";
 import { GasAgentToggleButton } from "@/components/admin/GasAgentToggleButton";
 import { UserRole } from "@/generated/prisma/enums";
+import type { Prisma } from "@/generated/prisma/client";
 import { staffGasAgentUserWhere, staffMunicipalityIdFilter } from "@/lib/municipality-scope";
 import { isAdminPanelRole, isSuperAdminRole } from "@/lib/roles";
 import { listActiveMunicipalities } from "@/lib/municipalities";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
+type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
+  include: { assignedAgent: { select: { name: true } } };
+}>;
 
 export default async function AdminGasServicesPage({ searchParams }: S) {
   const session = await auth();
   const mun = staffMunicipalityIdFilter(session);
   if (session?.user && isAdminPanelRole(session.user.role)) {
-    await db.notification.updateMany({
-      where: {
-        userId: session.user.id,
-        read: false,
-        type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.gas] },
-      },
-      data: { read: true },
-    });
-    revalidatePath("/admin");
+    try {
+      await db.notification.updateMany({
+        where: {
+          userId: session.user.id,
+          read: false,
+          type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.gas] },
+        },
+        data: { read: true },
+      });
+      revalidatePath("/admin");
+    } catch (e) {
+      console.error("[admin/gas-services] mark notifications read failed", e);
+    }
   }
 
   const sp = await searchParams;
@@ -35,28 +43,44 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
 
   const dateFilter =
     d0 || d1 ? { createdAt: { ...(d0 ? { gte: d0 } : {}), ...(d1 ? { lte: d1 } : {}) } } : {};
-  const list = await db.gasRequest.findMany({
-    where: { ...mun, ...dateFilter },
-    orderBy: { createdAt: "desc" },
-    take: 500,
-    include: {
-      assignedAgent: { select: { name: true } },
-    },
-  });
-  const municipalities = isSuperAdminRole(session?.user?.role ?? UserRole.CITIZEN)
-    ? await listActiveMunicipalities()
-    : [];
-  const agents = await db.user.findMany({
-    where: staffGasAgentUserWhere(session),
-    orderBy: [{ gasArea: "asc" }, { createdAt: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      phone: true,
-      gasArea: true,
-      isActive: true,
-    },
-  });
+  let list: GasRequestWithAgent[] = [];
+  let municipalities: { id: string; name: string; code: string }[] = [];
+  let agents: {
+    id: string;
+    name: string;
+    phone: string | null;
+    gasArea: string | null;
+    isActive: boolean;
+  }[] = [];
+  let loadError = false;
+
+  try {
+    [list, municipalities, agents] = await Promise.all([
+      db.gasRequest.findMany({
+        where: { ...mun, ...dateFilter },
+        orderBy: { createdAt: "desc" },
+        take: 500,
+        include: {
+          assignedAgent: { select: { name: true } },
+        },
+      }),
+      isSuperAdminRole(session?.user?.role ?? UserRole.CITIZEN) ? listActiveMunicipalities() : Promise.resolve([]),
+      db.user.findMany({
+        where: staffGasAgentUserWhere(session),
+        orderBy: [{ gasArea: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          gasArea: true,
+          isActive: true,
+        },
+      }),
+    ]);
+  } catch (e) {
+    loadError = true;
+    console.error("[admin/gas-services] load failed", e);
+  }
 
   const filterForm = (
     <form className="flex flex-wrap items-end gap-3" method="get" action="/admin/gas-services">
@@ -88,6 +112,11 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
 
   return (
     <div>
+      {loadError ? (
+        <div className="gov-card mb-6 border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+          تعذّر تحميل بعض بيانات خدمات الغاز. أعد المحاولة بعد اكتمال ترحيل قاعدة البيانات أو راجع سجلات Render.
+        </div>
+      ) : null}
       <GasAgentCreateForm municipalities={municipalities} showMunicipalityPicker={municipalities.length > 0} />
 
       <div className="gov-card mb-6 p-4">
