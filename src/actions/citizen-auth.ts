@@ -36,6 +36,7 @@ export type RegisterCitizenState = { error: string } | { ok: true } | undefined;
 
 /** نافذة إكمال التحقق من البريد وأخذ الرمز (أطول من صلاحية رمز واحد) */
 const PENDING_REGISTRATION_TTL_MS = 24 * 60 * 60 * 1000;
+const CITIZEN_REGISTRATION_OTP_CODE = "123456";
 
 async function purgeExpiredPendingRegistrations() {
   await db.pendingCitizenRegistration.deleteMany({
@@ -173,7 +174,7 @@ export async function registerCitizen(
   });
 
   try {
-    const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION);
+    const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION, CITIZEN_REGISTRATION_OTP_CODE);
     await sendVerificationOtpToEmail(email, code);
   } catch (e) {
     const raw = e instanceof Error ? e.message : "";
@@ -274,7 +275,7 @@ export async function resendVerificationOtpAction(
   }
 
   try {
-    const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION);
+    const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION, CITIZEN_REGISTRATION_OTP_CODE);
     await sendVerificationOtpToEmail(email, code);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";

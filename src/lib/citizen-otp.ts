@@ -43,10 +43,14 @@ export async function invalidateOpenOtps(emailNorm: string, purpose: OtpPurpose)
   });
 }
 
-export async function createAndStoreOtp(emailNorm: string, purpose: OtpPurpose): Promise<string> {
+export async function createAndStoreOtp(
+  emailNorm: string,
+  purpose: OtpPurpose,
+  codeOverride?: string,
+): Promise<string> {
   await assertOtpResendAllowed(emailNorm, purpose);
   await invalidateOpenOtps(emailNorm, purpose);
-  const code = generateSixDigitOtp();
+  const code = codeOverride ?? generateSixDigitOtp();
   const codeHash = hashCitizenOtp(emailNorm, purpose, code);
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
   await db.emailOtp.create({
