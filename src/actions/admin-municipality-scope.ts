@@ -28,5 +28,5 @@ export async function setSuperAdminMunicipalityScope(
 
 export async function setSuperAdminMunicipalityScopeFromForm(formData: FormData) {
   const raw = String(formData.get("municipalityId") ?? "").trim();
-  await setSuperAdminMunicipalityScope(raw === "" || raw === "__ALL__" ? null : raw);
+  return setSuperAdminMunicipalityScope(raw === "" || raw === "__ALL__" ? null : raw);
 }
