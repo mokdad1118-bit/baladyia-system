@@ -23,6 +23,9 @@ export function staffMunicipalityIdFilter(
 }
 
 export function staffCitizenUserWhere(session: Session | null): Prisma.UserWhereInput {
+  if (isSuperAdminRole(session?.user?.role ?? UserRole.CITIZEN)) {
+    return { role: UserRole.CITIZEN };
+  }
   return {
     role: UserRole.CITIZEN,
     ...staffMunicipalityIdFilter(session),
