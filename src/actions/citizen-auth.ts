@@ -173,16 +173,21 @@ export async function registerCitizen(
     path: "/",
   });
 
+  let code: string;
   try {
-    const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION, CITIZEN_REGISTRATION_OTP_CODE);
+    code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION, CITIZEN_REGISTRATION_OTP_CODE);
+  } catch (e) {
+    console.error("[registerCitizen] otp store failed:", e);
+    await db.pendingCitizenRegistration.deleteMany({ where: { email } });
+    jar.delete(CITIZEN_VERIFY_EMAIL_COOKIE);
+    return { error: "تعذّر إنشاء رمز التحقق. حاول مرة أخرى." };
+  }
+
+  try {
     await sendVerificationOtpToEmail(email, code);
   } catch (e) {
     const raw = e instanceof Error ? e.message : "";
-    console.warn("[registerCitizen] mail failed:", raw.slice(0, 240));
-    await db.pendingCitizenRegistration.deleteMany({ where: { email } });
-    jar.delete(CITIZEN_VERIFY_EMAIL_COOKIE);
-    const hint = friendlyCitizenMailFailure(raw);
-    return { error: hint };
+    console.warn("[registerCitizen] mail failed; using default otp:", raw.slice(0, 240));
   }
 
   return { ok: true };
@@ -276,7 +281,12 @@ export async function resendVerificationOtpAction(
 
   try {
     const code = await createAndStoreOtp(email, OtpPurpose.EMAIL_VERIFICATION, CITIZEN_REGISTRATION_OTP_CODE);
-    await sendVerificationOtpToEmail(email, code);
+    try {
+      await sendVerificationOtpToEmail(email, code);
+    } catch (mailError) {
+      const msg = mailError instanceof Error ? mailError.message : "";
+      console.warn("[resendVerificationOtpAction] mail failed; using default otp:", msg.slice(0, 240));
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
     return { error: friendlyCitizenMailFailure(msg || "تعذّر إرسال الرمز") };
