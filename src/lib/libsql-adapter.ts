@@ -23,6 +23,23 @@ function resolveDatabaseMode(raw: string | undefined): DatabaseMode {
   return "local-file";
 }
 
+function normalizeLocalFileUrl(raw: string | undefined): string {
+  if (!raw?.startsWith("file:")) return defaultFileUrl;
+
+  const filePath = raw.slice("file:".length);
+  if (!filePath || filePath === ":memory:") return raw;
+
+  if (filePath.startsWith("//")) return raw;
+
+  const normalized = filePath.replace(/\\/g, "/");
+  const isWindowsAbsolute = /^[a-zA-Z]:\//.test(normalized);
+  if (path.isAbsolute(filePath) || isWindowsAbsolute) {
+    return pathToFileURL(filePath).href;
+  }
+
+  return pathToFileURL(path.resolve(process.cwd(), filePath)).href;
+}
+
 /** هل الاتصال الحالي Persistent (قاعدة بعيدة) أم ملف محلي داخل الحاوية؟ */
 export function isPersistentDatabaseConfigured(): boolean {
   return isPersistentDatabaseConfiguredFromEnv();
@@ -50,7 +67,7 @@ export function createLibSqlAdapter() {
   }
 
   if (raw?.startsWith("file:")) {
-    return new PrismaLibSql({ url: raw });
+    return new PrismaLibSql({ url: normalizeLocalFileUrl(raw) });
   }
 
   return new PrismaLibSql({ url: defaultFileUrl });
