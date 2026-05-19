@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { setSuperAdminMunicipalityScopeFromForm } from "@/actions/admin-municipality-scope";
 
@@ -12,6 +12,7 @@ export function AdminMunicipalityScopeForm({
   current: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -26,13 +27,20 @@ export function AdminMunicipalityScopeForm({
         if (!form) return;
         setError(null);
         const fd = new FormData(form);
+        const selectedMunicipalityId = String(fd.get("municipalityId") ?? "").trim();
+        const nextMunicipalityId =
+          selectedMunicipalityId === "" || selectedMunicipalityId === "__ALL__" ? null : selectedMunicipalityId;
         startTransition(async () => {
           const res = await setSuperAdminMunicipalityScopeFromForm(fd);
           if ("error" in res) {
             setError(res.error);
             return;
           }
-          router.refresh();
+          if (pathname.startsWith("/admin/municipalities/")) {
+            router.push(nextMunicipalityId ? `/admin/municipalities/${nextMunicipalityId}` : "/admin/municipalities");
+          } else {
+            router.refresh();
+          }
         });
       }}
     >
@@ -60,4 +68,3 @@ export function AdminMunicipalityScopeForm({
     </form>
   );
 }
-

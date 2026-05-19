@@ -21,7 +21,7 @@ export function GovWorkspaceShell({
 }) {
   return (
     <NavigationWaitGate className="min-h-dvh">
-      <header className="gov-header">
+      <header className="gov-header sticky top-0 z-50">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link href={homeHref} prefetch={false} className="flex items-center gap-3 no-underline">
             <StateEmblem height={62} />
