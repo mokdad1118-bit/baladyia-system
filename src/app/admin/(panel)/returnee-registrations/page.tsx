@@ -5,14 +5,15 @@ import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminReturneeRegistrationsTableWithSearch } from "@/components/admin/AdminReturneeRegistrationsTableWithSearch";
 import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
-import { isAdminPanelRole } from "@/lib/roles";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 
 export default async function AdminReturneeRegistrationsPage({ searchParams }: S) {
   const session = await auth();
+  await requireStaffPanelPermission(session, "social");
   const mun = staffMunicipalityIdFilter(session);
-  if (session?.user && isAdminPanelRole(session.user.role)) {
+  if (session?.user) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,

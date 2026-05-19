@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { StaffNav } from "@/components/staff/StaffNav";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
-import { staffNavPermissions } from "@/lib/staff-permissions";
+import { hasAnyStaffPanelPermission, staffNavPermissions } from "@/lib/staff-permissions";
 
 export default async function StaffLayout({
   children,
@@ -20,10 +20,13 @@ export default async function StaffLayout({
     redirect("/citizen/welcome");
   }
   const p = staffNavPermissions(s);
+  if (!p.viewRequests) {
+    redirect(hasAnyStaffPanelPermission(s) ? "/admin" : "/citizen/welcome");
+  }
   return (
     <WorkspaceShell
       title="فضاء الموظف"
-      nav={<StaffNav showAdmin={p.manageServices || p.manageUsers || p.viewStats} />}
+      nav={<StaffNav showAdmin={hasAnyStaffPanelPermission(s)} />}
     >
       {children}
     </WorkspaceShell>

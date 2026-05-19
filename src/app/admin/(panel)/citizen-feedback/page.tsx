@@ -4,12 +4,13 @@ import { db } from "@/lib/db";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { AdminCitizenFeedbackReplyForm } from "@/components/admin/AdminCitizenFeedbackReplyForm";
 import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
-import { isAdminPanelRole } from "@/lib/roles";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 
 export default async function AdminCitizenFeedbackPage() {
   const session = await auth();
+  await requireStaffPanelPermission(session, "feedback");
   const mun = staffMunicipalityIdFilter(session);
-  if (session?.user && isAdminPanelRole(session.user.role)) {
+  if (session?.user) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,

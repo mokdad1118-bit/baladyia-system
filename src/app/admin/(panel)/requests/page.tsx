@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { UserRole } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 import { RequestStatus } from "@/generated/prisma/enums";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { buildRequestAttachmentExportLinks } from "@/lib/admin-requests-export";
 import { requestExportBaseUrl } from "@/lib/request-export-base-url";
@@ -14,6 +14,7 @@ type S = { searchParams: Promise<{ status?: string; dateFrom?: string; dateTo?: 
 
 export default async function AdminRequestsPage({ searchParams }: S) {
   const s = await auth();
+  await requireStaffPanelPermission(s, "requests");
   const mun = staffMunicipalityIdFilter(s);
   const sp = await searchParams;
   const st = sp.status;

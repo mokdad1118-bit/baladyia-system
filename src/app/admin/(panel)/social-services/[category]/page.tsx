@@ -7,7 +7,7 @@ import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/social-service-labels";
 import { AdminSocialServicesTableWithSearch } from "@/components/admin/AdminSocialServicesTableWithSearch";
 import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
-import { isAdminPanelRole } from "@/lib/roles";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 
 const slugMap: Record<string, SocialServiceCategory> = {
   divorced: SocialServiceCategory.DIVORCED,
@@ -20,8 +20,9 @@ const slugMap: Record<string, SocialServiceCategory> = {
 
 export default async function AdminSocialServicesCategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const session = await auth();
+  await requireStaffPanelPermission(session, "social");
   const mun = staffMunicipalityIdFilter(session);
-  if (session?.user && isAdminPanelRole(session.user.role)) {
+  if (session?.user) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,

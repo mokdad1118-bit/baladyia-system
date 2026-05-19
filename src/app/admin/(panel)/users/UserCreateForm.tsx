@@ -6,7 +6,27 @@ import { UserRole } from "@/generated/prisma/enums";
 import { Input, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 
-type Assignable = { services: boolean; users: boolean; stats: boolean };
+type Assignable = {
+  requests: boolean;
+  gas: boolean;
+  social: boolean;
+  feedback: boolean;
+  citizens: boolean;
+  services: boolean;
+  users: boolean;
+  stats: boolean;
+};
+
+const permissionOptions = [
+  { name: "permViewRequests", key: "requests", label: "طلبات خدمات المدينة" },
+  { name: "permManageGas", key: "gas", label: "خدمات الغاز" },
+  { name: "permManageSocialServices", key: "social", label: "الخدمات الاجتماعية والعائدين" },
+  { name: "permManageCitizenFeedback", key: "feedback", label: "شكاوى واقتراحات المواطنين" },
+  { name: "permViewCitizens", key: "citizens", label: "حسابات المواطنين" },
+  { name: "permManageServices", key: "services", label: "إدارة الخدمات والنماذج والأسعار" },
+  { name: "permManageUsers", key: "users", label: "إدارة حسابات الموظفين والصلاحيات" },
+  { name: "permViewStats", key: "stats", label: "عرض الإحصائيات والتقارير" },
+] as const;
 
 export function UserCreateForm({
   isSuperAdmin,
@@ -83,39 +103,20 @@ export function UserCreateForm({
         <fieldset className="space-y-2 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3">
           <legend className="px-1 text-sm font-semibold text-slate-800">صلاحيات الموظف في اللوحة</legend>
           <p className="text-xs text-slate-500">يجب تفعيل صلاحية واحدة على الأقل.</p>
-          <label
-            className={`flex items-start gap-2 text-sm ${assignablePerms.services ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-          >
-            <input
-              type="checkbox"
-              name="permManageServices"
-              className="mt-0.5"
-              disabled={!assignablePerms.services}
-            />
-            <span>إدارة الخدمات والنماذج والأسعار</span>
-          </label>
-          <label
-            className={`flex items-start gap-2 text-sm ${assignablePerms.users ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-          >
-            <input
-              type="checkbox"
-              name="permManageUsers"
-              className="mt-0.5"
-              disabled={!assignablePerms.users}
-            />
-            <span>إدارة حسابات الموظفين والمديرين</span>
-          </label>
-          <label
-            className={`flex items-start gap-2 text-sm ${assignablePerms.stats ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-          >
-            <input
-              type="checkbox"
-              name="permViewStats"
-              className="mt-0.5"
-              disabled={!assignablePerms.stats}
-            />
-            <span>عرض الإحصائيات والتقارير</span>
-          </label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {permissionOptions.map((p) => {
+              const enabled = assignablePerms[p.key];
+              return (
+                <label
+                  key={p.name}
+                  className={`flex items-start gap-2 text-sm ${enabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                >
+                  <input type="checkbox" name={p.name} className="mt-0.5" disabled={!enabled} />
+                  <span>{p.label}</span>
+                </label>
+              );
+            })}
+          </div>
         </fieldset>
       ) : isFullAdmin ? (
         <p className="text-xs text-slate-500">المدير يمتلك كافة الصلاحيات تلقائياً.</p>

@@ -18,7 +18,7 @@ export function StaffNav({ showAdmin = false }: { showAdmin?: boolean }) {
 
   const requestsHref = staffRoot ? "/requests" : "/admin/requests";
 
-  const adminHomeHref = staffRoot ? "/" : "/admin";
+  const adminHomeHref = "/admin";
 
   const requestsActive = staffRoot
 

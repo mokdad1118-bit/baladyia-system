@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { UserRole } from "@/generated/prisma/enums";
 import { userRoleAr } from "@/lib/labels";
+import { updateEmployeePermissions } from "@/actions/admin-users";
 import { UserCreateForm } from "@/app/admin/(panel)/users/UserCreateForm";
 import { ToggleForm } from "@/app/admin/(panel)/users/ToggleForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,6 +19,11 @@ export type StaffUserRow = {
   phone: string | null;
   role: UserRole;
   isActive: boolean;
+  permViewRequests: boolean;
+  permManageGas: boolean;
+  permManageSocialServices: boolean;
+  permManageCitizenFeedback: boolean;
+  permViewCitizens: boolean;
   permManageServices: boolean;
   permManageUsers: boolean;
   permViewStats: boolean;
@@ -30,6 +36,11 @@ function haystack(u: StaffUserRow): string {
     u.notificationEmail,
     u.phone,
     userRoleAr[u.role],
+    u.permViewRequests ? "طلبات" : "",
+    u.permManageGas ? "غاز" : "",
+    u.permManageSocialServices ? "اجتماعية" : "",
+    u.permManageCitizenFeedback ? "شكاوى" : "",
+    u.permViewCitizens ? "مواطنون" : "",
     u.permManageServices ? "خدمات" : "",
     u.permManageUsers ? "موظفون" : "",
     u.permViewStats ? "إحصائيات" : "",
@@ -38,6 +49,71 @@ function haystack(u: StaffUserRow): string {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
+}
+
+const permissionOptions = [
+  { name: "permViewRequests", key: "requests", label: "طلبات المدينة", valueKey: "permViewRequests" },
+  { name: "permManageGas", key: "gas", label: "الغاز", valueKey: "permManageGas" },
+  { name: "permManageSocialServices", key: "social", label: "الخدمات الاجتماعية", valueKey: "permManageSocialServices" },
+  { name: "permManageCitizenFeedback", key: "feedback", label: "الشكاوى", valueKey: "permManageCitizenFeedback" },
+  { name: "permViewCitizens", key: "citizens", label: "المواطنون", valueKey: "permViewCitizens" },
+  { name: "permManageServices", key: "services", label: "الخدمات", valueKey: "permManageServices" },
+  { name: "permManageUsers", key: "users", label: "الموظفون", valueKey: "permManageUsers" },
+  { name: "permViewStats", key: "stats", label: "الإحصائيات", valueKey: "permViewStats" },
+] as const;
+
+function PermissionBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <Badge className="border-emerald-200/80 bg-emerald-50/80 font-normal text-emerald-900">
+      {children}
+    </Badge>
+  );
+}
+
+function EmployeePermissionsForm({
+  user,
+  assignablePerms,
+}: {
+  user: StaffUserRow;
+  assignablePerms: { requests: boolean; gas: boolean; social: boolean; feedback: boolean; citizens: boolean; services: boolean; users: boolean; stats: boolean };
+}) {
+  const [state, action] = useActionState(updateEmployeePermissions, undefined);
+  return (
+    <form action={action} className="mt-3 border-t border-slate-100 pt-3">
+      <input type="hidden" name="userId" value={user.id} />
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {permissionOptions.map((p) => {
+          const enabled = assignablePerms[p.key];
+          const checked = Boolean(user[p.valueKey]);
+          return (
+            <label
+              key={p.name}
+              className={`flex items-center gap-2 text-xs ${enabled ? "cursor-pointer text-slate-700" : "cursor-not-allowed text-slate-400"}`}
+            >
+              <input
+                type="checkbox"
+                name={p.name}
+                defaultChecked={checked}
+                disabled={!enabled}
+                className="size-3.5"
+              />
+              <span>{p.label}</span>
+            </label>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="submit"
+          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
+        >
+          حفظ الصلاحيات
+        </button>
+        {state?.error ? <span className="text-xs text-rose-700">{state.error}</span> : null}
+        {state && "ok" in state && state.ok ? <span className="text-xs text-emerald-700">تم الحفظ</span> : null}
+      </div>
+    </form>
+  );
 }
 
 export function StaffUsersListWithSearch({
@@ -51,7 +127,7 @@ export function StaffUsersListWithSearch({
   municipalities?: { id: string; name: string }[];
   isSuperAdmin?: boolean;
   isFullAdmin: boolean;
-  assignablePerms: { services: boolean; users: boolean; stats: boolean };
+  assignablePerms: { requests: boolean; gas: boolean; social: boolean; feedback: boolean; citizens: boolean; services: boolean; users: boolean; stats: boolean };
 }) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
@@ -113,21 +189,9 @@ export function StaffUsersListWithSearch({
                           <Badge>{userRoleAr[u.role]}</Badge>
                           {u.role === UserRole.EMPLOYEE ? (
                             <>
-                              {u.permManageServices ? (
-                                <Badge className="border-emerald-200/80 bg-emerald-50/80 font-normal text-emerald-900">
-                                  خدمات
-                                </Badge>
-                              ) : null}
-                              {u.permManageUsers ? (
-                                <Badge className="border-sky-200/80 bg-sky-50/80 font-normal text-sky-900">
-                                  موظفون
-                                </Badge>
-                              ) : null}
-                              {u.permViewStats ? (
-                                <Badge className="border-violet-200/80 bg-violet-50/80 font-normal text-violet-900">
-                                  إحصائيات
-                                </Badge>
-                              ) : null}
+                              {permissionOptions.map((p) =>
+                                u[p.valueKey] ? <PermissionBadge key={p.name}>{p.label}</PermissionBadge> : null,
+                              )}
                             </>
                           ) : null}
                           {!u.isActive && (
@@ -137,6 +201,9 @@ export function StaffUsersListWithSearch({
                       </div>
                       <ToggleForm userId={u.id} isActive={u.isActive} />
                     </div>
+                    {u.role === UserRole.EMPLOYEE ? (
+                      <EmployeePermissionsForm user={u} assignablePerms={assignablePerms} />
+                    ) : null}
                   </CardContent>
                 </Card>
               </li>

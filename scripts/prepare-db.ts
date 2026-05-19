@@ -176,6 +176,11 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   `);
 
   await addColumnIfMissing(client, "User", "municipalityId", "TEXT");
+  await addColumnIfMissing(client, "User", "permViewRequests", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "permManageGas", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "permManageSocialServices", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "permManageCitizenFeedback", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "permViewCitizens", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "Department", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Service", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Request", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
@@ -195,6 +200,11 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
     client,
     "User",
     `UPDATE "User" SET "municipalityId" = '${MIGRATION_DEFAULT_MUNICIPALITY_ID}' WHERE "municipalityId" IS NULL AND "role" <> 'SUPER_ADMIN'`,
+  );
+  await executeIfTableExists(
+    client,
+    "User",
+    `UPDATE "User" SET "permViewRequests" = true, "permManageGas" = true, "permManageSocialServices" = true, "permManageCitizenFeedback" = true, "permViewCitizens" = true WHERE "role" IN ('SUPER_ADMIN', 'MUNICIPALITY_ADMIN')`,
   );
   await executeIfTableExists(
     client,

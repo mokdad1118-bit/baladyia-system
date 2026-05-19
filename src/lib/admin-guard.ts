@@ -3,8 +3,14 @@ import type { Session } from "next-auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { citizenPortalOrigin } from "@/lib/staff-portal";
 import {
+  hasAnyStaffPanelPermission,
+  staffCanManageCitizenFeedback,
+  staffCanManageGas,
   staffCanManageServices,
+  staffCanManageSocialServices,
   staffCanManageUsers,
+  staffCanViewCitizens,
+  staffCanViewRequests,
   staffCanViewStats,
 } from "@/lib/staff-permissions";
 import { isAdminPanelRole, isSuperAdminRole } from "@/lib/roles";
@@ -14,11 +20,21 @@ type AuthSession = Session | null;
 export async function requireAdminPanel(session: AuthSession) {
   if (!session?.user?.role) redirect("/admin/login?next=/admin");
   if (session.user.role === UserRole.CITIZEN) redirect(citizenPortalOrigin() ?? "/");
-  if (session.user.role === UserRole.EMPLOYEE) redirect("/staff");
-  if (!isAdminPanelRole(session.user.role)) redirect(citizenPortalOrigin() ?? "/");
+  if (session.user.role === UserRole.EMPLOYEE && !hasAnyStaffPanelPermission(session)) redirect("/staff");
+  if (!isAdminPanelRole(session.user.role) && session.user.role !== UserRole.EMPLOYEE) {
+    redirect(citizenPortalOrigin() ?? "/");
+  }
 }
 
-export type StaffPanelPermissionKey = "services" | "users" | "stats";
+export type StaffPanelPermissionKey =
+  | "requests"
+  | "gas"
+  | "social"
+  | "feedback"
+  | "citizens"
+  | "services"
+  | "users"
+  | "stats";
 
 /** موظف بصلاحية محددة أو مدير نظام */
 export async function requireStaffPanelPermission(
@@ -26,12 +42,16 @@ export async function requireStaffPanelPermission(
   key: StaffPanelPermissionKey,
 ) {
   await requireAdminPanel(session);
-  const ok =
-    key === "services"
-      ? staffCanManageServices(session)
-      : key === "users"
-        ? staffCanManageUsers(session)
-        : staffCanViewStats(session);
+  const ok = {
+    requests: staffCanViewRequests(session),
+    gas: staffCanManageGas(session),
+    social: staffCanManageSocialServices(session),
+    feedback: staffCanManageCitizenFeedback(session),
+    citizens: staffCanViewCitizens(session),
+    services: staffCanManageServices(session),
+    users: staffCanManageUsers(session),
+    stats: staffCanViewStats(session),
+  }[key];
   if (!ok) redirect("/admin");
 }
 

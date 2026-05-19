@@ -18,8 +18,8 @@ import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextSocialServiceCaseNumber } from "@/lib/social-service-case-serial";
 import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/social-service-labels";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
-import { isAdminPanelRole } from "@/lib/roles";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
+import { staffCanManageSocialServices } from "@/lib/staff-permissions";
 
 export type SubmitSocialServiceCaseState = { error: string } | undefined;
 
@@ -193,7 +193,7 @@ export async function updateSocialServiceCaseStatusAction(
   statusRaw: string,
 ): Promise<{ ok: true } | { error: string }> {
   const session = await auth();
-  if (!session?.user || !isAdminPanelRole(session.user.role)) return { error: "غير مصرح." };
+  if (!session?.user || !staffCanManageSocialServices(session)) return { error: "غير مصرح." };
   if (!(Object.values(SocialServiceCaseStatus) as string[]).includes(statusRaw)) return { error: "حالة غير صالحة." };
   const status = statusRaw as SocialServiceCaseStatus;
   const row = await db.socialServiceCase.findFirst({

@@ -55,6 +55,11 @@ model User {
   isVerified     Boolean  @default(true)
   isActive       Boolean  @default(true)
   /// لوحة الإدارة — للموظف؛ المدير يُعامل كامتلاك الجميع في التطبيق
+  permViewRequests  Boolean @default(false)
+  permManageGas     Boolean @default(false)
+  permManageSocialServices Boolean @default(false)
+  permManageCitizenFeedback Boolean @default(false)
+  permViewCitizens  Boolean @default(false)
   permManageServices Boolean @default(false)
   permManageUsers    Boolean @default(false)
   permViewStats      Boolean @default(false)

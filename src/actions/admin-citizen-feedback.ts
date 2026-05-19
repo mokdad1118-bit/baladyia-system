@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { notifyUsers } from "@/lib/notify";
-import { isAdminPanelRole } from "@/lib/roles";
+import { staffCanManageCitizenFeedback } from "@/lib/staff-permissions";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 
 export type ReplyToCitizenFeedbackState = { error: string } | { ok: true } | undefined;
@@ -14,7 +14,7 @@ export async function replyToCitizenFeedback(
   formData: FormData,
 ): Promise<ReplyToCitizenFeedbackState> {
   const session = await auth();
-  if (!session?.user || !isAdminPanelRole(session.user.role)) {
+  if (!session?.user || !staffCanManageCitizenFeedback(session)) {
     return { error: "غير مصرح." };
   }
 

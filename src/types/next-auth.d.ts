@@ -14,6 +14,11 @@ declare module "next-auth" {
       /** لمشرف المحافظة: تصفية البيانات لبلدية واحدة، أو null لكل المحافظة */
       activeMunicipalityId: string | null;
       /** للموظف في لوحة الإدارة؛ المدير يُملأ دائماً بـ true من الخادم */
+      permViewRequests?: boolean;
+      permManageGas?: boolean;
+      permManageSocialServices?: boolean;
+      permManageCitizenFeedback?: boolean;
+      permViewCitizens?: boolean;
       permManageServices?: boolean;
       permManageUsers?: boolean;
       permViewStats?: boolean;
@@ -29,6 +34,11 @@ declare module "next-auth/jwt" {
     phone?: string | null;
     municipalityId?: string | null;
     activeMunicipalityId?: string | null;
+    permViewRequests?: boolean;
+    permManageGas?: boolean;
+    permManageSocialServices?: boolean;
+    permManageCitizenFeedback?: boolean;
+    permViewCitizens?: boolean;
     permManageServices?: boolean;
     permManageUsers?: boolean;
     permViewStats?: boolean;

@@ -24,28 +24,28 @@ const segments = [
     internal: "/admin/requests",
     label: "طلبات خدمات المدينة",
     desc: "مراجعة وتحديث الحالة",
-    perm: null,
+    perm: "viewRequests" as const,
     badgeKey: "cityServiceRequests" as const,
   },
   {
     internal: "/admin/gas-services",
     label: "خدمات الغاز",
     desc: "طلبات خدمات الغاز",
-    perm: null,
+    perm: "manageGas" as const,
     badgeKey: "gas" as const,
   },
   {
     internal: "/admin/social-services",
     label: "الخدمات الاجتماعية",
     desc: "العائدين وباقي الأقسام الاجتماعية",
-    perm: null,
+    perm: "manageSocialServices" as const,
     badgeKey: "social" as const,
   },
   {
     internal: "/admin/citizen-feedback",
     label: "شكاوي واقتراحات المواطنين",
     desc: "ملاحظات المستخدمين على التطبيق",
-    perm: null,
+    perm: "manageCitizenFeedback" as const,
     badgeKey: "feedback" as const,
   },
   {
@@ -54,7 +54,7 @@ const segments = [
     desc: "النماذج والمستندات والأسعار",
     perm: "manageServices" as const,
   },
-  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: null },
+  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" as const },
   {
     internal: "/admin/users",
     label: "حسابات الموظفين",
@@ -80,7 +80,7 @@ const segments = [
   internal: string;
   label: string;
   desc: string;
-  perm: null | "manageServices" | "manageUsers" | "viewStats";
+  perm: null | keyof StaffNavPermissions;
   badgeKey?: keyof AdminNavBadgeCounts;
   superAdminOnly?: boolean;
 }[];

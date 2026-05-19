@@ -15,10 +15,19 @@ import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 
 function parseEmployeePerms(formData: FormData) {
   return {
+    permViewRequests: formData.get("permViewRequests") === "on",
+    permManageGas: formData.get("permManageGas") === "on",
+    permManageSocialServices: formData.get("permManageSocialServices") === "on",
+    permManageCitizenFeedback: formData.get("permManageCitizenFeedback") === "on",
+    permViewCitizens: formData.get("permViewCitizens") === "on",
     permManageServices: formData.get("permManageServices") === "on",
     permManageUsers: formData.get("permManageUsers") === "on",
     permViewStats: formData.get("permViewStats") === "on",
   };
+}
+
+function hasAnyEmployeePerm(p: ReturnType<typeof parseEmployeePerms>) {
+  return Object.values(p).some(Boolean);
 }
 
 function parseStaffRole(raw: string): UserRole | null {
@@ -81,17 +90,32 @@ export async function createStaffUser(
   let permManageServices = false;
   let permManageUsers = false;
   let permViewStats = false;
+  let permViewRequests = false;
+  let permManageGas = false;
+  let permManageSocialServices = false;
+  let permManageCitizenFeedback = false;
+  let permViewCitizens = false;
   if (role === UserRole.SUPER_ADMIN || role === UserRole.MUNICIPALITY_ADMIN) {
+    permViewRequests = true;
+    permManageGas = true;
+    permManageSocialServices = true;
+    permManageCitizenFeedback = true;
+    permViewCitizens = true;
     permManageServices = true;
     permManageUsers = true;
     permViewStats = true;
   } else {
     const p = parseEmployeePerms(formData);
-    if (!p.permManageServices && !p.permManageUsers && !p.permViewStats) {
+    if (!hasAnyEmployeePerm(p)) {
       return { error: "اختر صلاحية واحدة على الأقل للموظف" };
     }
     const assignErr = validateAssignableEmployeePerms(s, p);
     if (assignErr) return { error: assignErr };
+    permViewRequests = p.permViewRequests;
+    permManageGas = p.permManageGas;
+    permManageSocialServices = p.permManageSocialServices;
+    permManageCitizenFeedback = p.permManageCitizenFeedback;
+    permViewCitizens = p.permViewCitizens;
     permManageServices = p.permManageServices;
     permManageUsers = p.permManageUsers;
     permViewStats = p.permViewStats;
@@ -104,11 +128,59 @@ export async function createStaffUser(
       passwordHash: await hashPassword(password),
       role,
       municipalityId,
+      permViewRequests,
+      permManageGas,
+      permManageSocialServices,
+      permManageCitizenFeedback,
+      permViewCitizens,
       permManageServices,
       permManageUsers,
       permViewStats,
     },
   });
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  return { error: undefined, ok: true as const };
+}
+
+export async function updateEmployeePermissions(
+  _p: { error?: string } | undefined,
+  formData: FormData,
+) {
+  const s = await auth();
+  if (!staffCanManageUsers(s)) {
+    return { error: "غير مصرّح" };
+  }
+  const userId = String(formData.get("userId") ?? "").trim();
+  if (!userId) return { error: "المستخدم غير موجود" };
+  if (userId === s!.user!.id) return { error: "لا يمكنك تعديل صلاحيات حسابك" };
+
+  const target = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true, municipalityId: true },
+  });
+  if (!target) return { error: "المستخدم غير موجود" };
+  if (target.role !== UserRole.EMPLOYEE) {
+    return { error: "يمكن تعديل صلاحيات الموظفين فقط" };
+  }
+  if (target.municipalityId) {
+    try {
+      assertStaffCanAccessMunicipality(s, target.municipalityId);
+    } catch {
+      return { error: "غير مصرّح" };
+    }
+  } else if (!isSuperAdminRole(s!.user!.role)) {
+    return { error: "غير مصرّح" };
+  }
+
+  const p = parseEmployeePerms(formData);
+  if (!hasAnyEmployeePerm(p)) {
+    return { error: "اختر صلاحية واحدة على الأقل للموظف" };
+  }
+  const assignErr = validateAssignableEmployeePerms(s, p);
+  if (assignErr) return { error: assignErr };
+
+  await db.user.update({ where: { id: userId }, data: p });
   revalidatePath("/admin/users");
   revalidatePath("/admin");
   return { error: undefined, ok: true as const };

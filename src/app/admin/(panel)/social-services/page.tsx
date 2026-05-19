@@ -9,7 +9,7 @@ import { AdminSocialServicesTableWithSearch } from "@/components/admin/AdminSoci
 import { SocialServiceCategory } from "@/generated/prisma/enums";
 import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/social-service-labels";
 import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
-import { isAdminPanelRole } from "@/lib/roles";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 
 const sections = [
   { key: "returnees", label: "تسجيل العائدين" },
@@ -35,8 +35,9 @@ type Props = { searchParams: Promise<{ tab?: string; dateFrom?: string; dateTo?:
 
 export default async function AdminSocialServicesIndexPage({ searchParams }: Props) {
   const session = await auth();
+  await requireStaffPanelPermission(session, "social");
   const mun = staffMunicipalityIdFilter(session);
-  if (session?.user && isAdminPanelRole(session.user.role)) {
+  if (session?.user) {
     await db.notification.updateMany({
       where: {
         userId: session.user.id,

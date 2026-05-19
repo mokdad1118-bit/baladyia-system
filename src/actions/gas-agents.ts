@@ -6,8 +6,9 @@ import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { UserRole } from "@/generated/prisma/enums";
 import { digitsOnly, normalizeCitizenPhoneForStorage } from "@/lib/phone";
-import { isAdminPanelRole, isSuperAdminRole } from "@/lib/roles";
+import { isSuperAdminRole } from "@/lib/roles";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
+import { staffCanManageGas } from "@/lib/staff-permissions";
 
 export type CreateGasAgentResult =
   | { ok: true; message: string }
@@ -19,7 +20,7 @@ export type UpdateGasAgentResult =
 
 export async function createGasAgentAction(formData: FormData): Promise<CreateGasAgentResult> {
   const s = await auth();
-  if (!s?.user || !isAdminPanelRole(s.user.role)) {
+  if (!s?.user || !staffCanManageGas(s)) {
     return { ok: false, error: "غير مصرّح" };
   }
 
@@ -79,7 +80,7 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
 
 export async function updateGasAgentAction(formData: FormData): Promise<UpdateGasAgentResult> {
   const s = await auth();
-  if (!s?.user || !isAdminPanelRole(s.user.role)) {
+  if (!s?.user || !staffCanManageGas(s)) {
     return { ok: false, error: "غير مصرّح" };
   }
 

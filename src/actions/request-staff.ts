@@ -12,6 +12,7 @@ import { requestOriginFromHeaders, staffActionRedirectPath } from "@/lib/staff-p
 import { Prisma } from "@/generated/prisma/client";
 import { digitsOnly } from "@/lib/phone";
 import { isAdminPanelRole } from "@/lib/roles";
+import { staffCanViewRequests } from "@/lib/staff-permissions";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 
 const STAFF_REVALIDATE = [
@@ -94,7 +95,7 @@ export async function updateRequestStatus(formData: FormData) {
   const s = await auth();
   const actorPortal = String(formData.get("actorPortal") ?? "");
   if (actorPortal !== "staff" && actorPortal !== "employee") return;
-  if (!s?.user || (s.user.role !== UserRole.EMPLOYEE && !isAdminPanelRole(s.user.role))) return;
+  if (!s?.user || (s.user.role === UserRole.EMPLOYEE ? !staffCanViewRequests(s) : !isAdminPanelRole(s.user.role))) return;
 
   const id = String(formData.get("requestId") ?? "");
   const to = String(formData.get("toStatus") ?? "") as RequestStatus;
@@ -209,7 +210,7 @@ export async function addRequestNote(formData: FormData) {
   const s = await auth();
   const actorPortal = String(formData.get("actorPortal") ?? "");
   if (actorPortal !== "staff" && actorPortal !== "employee") return;
-  if (!s?.user || (s.user.role !== UserRole.EMPLOYEE && !isAdminPanelRole(s.user.role))) return;
+  if (!s?.user || (s.user.role === UserRole.EMPLOYEE ? !staffCanViewRequests(s) : !isAdminPanelRole(s.user.role))) return;
 
   const requestId = String(formData.get("requestId") ?? "");
   const body = String(formData.get("body") ?? "").trim();

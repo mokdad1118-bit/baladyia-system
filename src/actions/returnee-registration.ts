@@ -14,8 +14,8 @@ import { FileKind, ReturneeRegistrationStatus, UserRole } from "@/generated/pris
 import { db } from "@/lib/db";
 import { acceptsForFileKind } from "@/lib/file-validation";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
-import { isAdminPanelRole } from "@/lib/roles";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
+import { staffCanManageSocialServices } from "@/lib/staff-permissions";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextReturneeRegistrationNumber } from "@/lib/returnee-registration-serial";
 import { returneeRegistrationStatusLabelAr } from "@/lib/returnee-registration-labels";
@@ -178,7 +178,7 @@ export async function updateReturneeRegistrationStatusAction(
   statusRaw: string,
 ): Promise<{ ok: true } | { error: string }> {
   const session = await auth();
-  if (!session?.user || !isAdminPanelRole(session.user.role)) {
+  if (!session?.user || !staffCanManageSocialServices(session)) {
     return { error: "غير مصرح." };
   }
   if (!RETURNEE_STATUS_SET.has(statusRaw)) {

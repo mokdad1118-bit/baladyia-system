@@ -10,8 +10,9 @@ import { GasAgentToggleButton } from "@/components/admin/GasAgentToggleButton";
 import { UserRole } from "@/generated/prisma/enums";
 import type { Prisma } from "@/generated/prisma/client";
 import { staffGasAgentUserWhere, staffMunicipalityIdFilter } from "@/lib/municipality-scope";
-import { isAdminPanelRole, isSuperAdminRole } from "@/lib/roles";
+import { isSuperAdminRole } from "@/lib/roles";
 import { listActiveMunicipalities } from "@/lib/municipalities";
+import { requireStaffPanelPermission } from "@/lib/admin-guard";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
 type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
@@ -20,8 +21,9 @@ type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
 
 export default async function AdminGasServicesPage({ searchParams }: S) {
   const session = await auth();
+  await requireStaffPanelPermission(session, "gas");
   const mun = staffMunicipalityIdFilter(session);
-  if (session?.user && isAdminPanelRole(session.user.role)) {
+  if (session?.user) {
     try {
       await db.notification.updateMany({
         where: {

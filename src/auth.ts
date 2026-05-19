@@ -108,6 +108,11 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           role: user.role,
           municipalityId: user.municipalityId,
           activeMunicipalityId: user.role === UserRole.SUPER_ADMIN ? null : null,
+          permViewRequests: isElevatedAdmin || user.permViewRequests,
+          permManageGas: isElevatedAdmin || user.permManageGas,
+          permManageSocialServices: isElevatedAdmin || user.permManageSocialServices,
+          permManageCitizenFeedback: isElevatedAdmin || user.permManageCitizenFeedback,
+          permViewCitizens: isElevatedAdmin || user.permViewCitizens,
           permManageServices: isElevatedAdmin || user.permManageServices,
           permManageUsers: isElevatedAdmin || user.permManageUsers,
           permViewStats: isElevatedAdmin || user.permViewStats,
@@ -125,6 +130,11 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           phone?: string | null;
           municipalityId?: string | null;
           activeMunicipalityId?: string | null;
+          permViewRequests?: boolean;
+          permManageGas?: boolean;
+          permManageSocialServices?: boolean;
+          permManageCitizenFeedback?: boolean;
+          permViewCitizens?: boolean;
           permManageServices?: boolean;
           permManageUsers?: boolean;
           permViewStats?: boolean;
@@ -136,6 +146,11 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.municipalityId = u.municipalityId ?? null;
         token.activeMunicipalityId =
           u.role === UserRole.SUPER_ADMIN ? (u.activeMunicipalityId ?? null) : null;
+        token.permViewRequests = Boolean(u.permViewRequests);
+        token.permManageGas = Boolean(u.permManageGas);
+        token.permManageSocialServices = Boolean(u.permManageSocialServices);
+        token.permManageCitizenFeedback = Boolean(u.permManageCitizenFeedback);
+        token.permViewCitizens = Boolean(u.permViewCitizens);
         token.permManageServices = Boolean(u.permManageServices);
         token.permManageUsers = Boolean(u.permManageUsers);
         token.permViewStats = Boolean(u.permViewStats);
@@ -154,6 +169,11 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         session.user.municipalityId = (token.municipalityId as string | null | undefined) ?? null;
         session.user.activeMunicipalityId =
           (token.activeMunicipalityId as string | null | undefined) ?? null;
+        session.user.permViewRequests = Boolean(token.permViewRequests);
+        session.user.permManageGas = Boolean(token.permManageGas);
+        session.user.permManageSocialServices = Boolean(token.permManageSocialServices);
+        session.user.permManageCitizenFeedback = Boolean(token.permManageCitizenFeedback);
+        session.user.permViewCitizens = Boolean(token.permViewCitizens);
         session.user.permManageServices = Boolean(token.permManageServices);
         session.user.permManageUsers = Boolean(token.permManageUsers);
         session.user.permViewStats = Boolean(token.permViewStats);

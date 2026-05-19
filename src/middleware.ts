@@ -57,6 +57,18 @@ export async function middleware(req: NextRequest) {
   const token = await readJwt(req);
   const role = token?.role as UserRole | undefined;
   const hasSession = Boolean(token);
+  const employeeHasAdminPerm =
+    role === UserRole.EMPLOYEE &&
+    Boolean(
+      token?.permViewRequests ||
+        token?.permManageGas ||
+        token?.permManageSocialServices ||
+        token?.permManageCitizenFeedback ||
+        token?.permViewCitizens ||
+        token?.permManageServices ||
+        token?.permManageUsers ||
+        token?.permViewStats,
+    );
 
   if (pathname === "/admin/login") return NextResponse.next();
   if (pathname.startsWith("/admin")) {
@@ -65,7 +77,7 @@ export async function middleware(req: NextRequest) {
       u.searchParams.set("next", pathname + search);
       return NextResponse.redirect(u);
     }
-    if (!isAdminPanelRole(role as UserRole)) {
+    if (!isAdminPanelRole(role as UserRole) && !employeeHasAdminPerm) {
       if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
       return NextResponse.redirect(new URL("/citizen/welcome", req.url));
@@ -96,7 +108,7 @@ export async function middleware(req: NextRequest) {
     }
     if (role !== UserRole.GAS_AGENT) {
       if (isAdminPanelRole(role as UserRole)) return NextResponse.redirect(new URL("/admin", req.url));
-      if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+      if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL(employeeHasAdminPerm ? "/admin" : "/staff", req.url));
       if (role === UserRole.CITIZEN) return NextResponse.redirect(new URL("/citizen", req.url));
       return NextResponse.redirect(new URL("/citizen/welcome", req.url));
     }
@@ -123,7 +135,7 @@ export async function middleware(req: NextRequest) {
   }
   if (role !== UserRole.CITIZEN) {
     if (role === UserRole.GAS_AGENT) return NextResponse.redirect(new URL("/gas-agent", req.url));
-    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL("/staff", req.url));
+    if (role === UserRole.EMPLOYEE) return NextResponse.redirect(new URL(employeeHasAdminPerm ? "/admin" : "/staff", req.url));
     if (isAdminPanelRole(role as UserRole)) return NextResponse.redirect(new URL("/admin", req.url));
     return NextResponse.redirect(new URL("/citizen/welcome", req.url));
   }
