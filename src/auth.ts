@@ -12,6 +12,7 @@ import { verifyPassword } from "@/lib/password";
 import type { LoginPageSurface } from "@/lib/auth-portal";
 import { getAuthSecret } from "@/lib/auth-secret";
 import { isAdminPanelRole } from "@/lib/roles";
+import { writeOperationLog } from "@/lib/operation-log";
 
 function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
   if (surface === "citizen") return role === UserRole.CITIZEN || role === UserRole.GAS_AGENT;
@@ -100,6 +101,23 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         const ok = await verifyPassword(String(credentials.password), user.passwordHash);
         if (!ok) return null;
         const isElevatedAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.MUNICIPALITY_ADMIN;
+        await writeOperationLog({
+          actorId: user.id,
+          municipalityId: user.municipalityId,
+          action: "LOGIN",
+          module: "AUTH",
+          title: "تسجيل دخول",
+          description: `تسجيل دخول إلى واجهة ${surface}`,
+          entityType: "USER",
+          entityId: user.id,
+          metadata: {
+            loginPage: surface,
+            role: user.role,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+          },
+        });
         return {
           id: user.id,
           name: user.name,
@@ -113,6 +131,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           permManageSocialServices: isElevatedAdmin || user.permManageSocialServices,
           permManageCitizenFeedback: isElevatedAdmin || user.permManageCitizenFeedback,
           permViewCitizens: isElevatedAdmin || user.permViewCitizens,
+          permViewOperationLog: isElevatedAdmin || user.permViewOperationLog,
           permManageServices: isElevatedAdmin || user.permManageServices,
           permManageUsers: isElevatedAdmin || user.permManageUsers,
           permViewStats: isElevatedAdmin || user.permViewStats,
@@ -135,6 +154,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           permManageSocialServices?: boolean;
           permManageCitizenFeedback?: boolean;
           permViewCitizens?: boolean;
+          permViewOperationLog?: boolean;
           permManageServices?: boolean;
           permManageUsers?: boolean;
           permViewStats?: boolean;
@@ -151,6 +171,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.permManageSocialServices = Boolean(u.permManageSocialServices);
         token.permManageCitizenFeedback = Boolean(u.permManageCitizenFeedback);
         token.permViewCitizens = Boolean(u.permViewCitizens);
+        token.permViewOperationLog = Boolean(u.permViewOperationLog);
         token.permManageServices = Boolean(u.permManageServices);
         token.permManageUsers = Boolean(u.permManageUsers);
         token.permViewStats = Boolean(u.permViewStats);
@@ -174,6 +195,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         session.user.permManageSocialServices = Boolean(token.permManageSocialServices);
         session.user.permManageCitizenFeedback = Boolean(token.permManageCitizenFeedback);
         session.user.permViewCitizens = Boolean(token.permViewCitizens);
+        session.user.permViewOperationLog = Boolean(token.permViewOperationLog);
         session.user.permManageServices = Boolean(token.permManageServices);
         session.user.permManageUsers = Boolean(token.permManageUsers);
         session.user.permViewStats = Boolean(token.permViewStats);

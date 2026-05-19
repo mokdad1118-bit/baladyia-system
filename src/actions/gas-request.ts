@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextGasRequestNumber } from "@/lib/gas-request-serial";
+import { writeOperationLog } from "@/lib/operation-log";
 
 export type SubmitGasRequestState = { error: string } | undefined;
 
@@ -66,6 +67,17 @@ export async function submitGasRequest(
       phone,
       nationalId,
     },
+  });
+  await writeOperationLog({
+    session,
+    municipalityId: citizenMun,
+    action: "CREATE",
+    module: "GAS",
+    title: "تقديم طلب غاز",
+    description: `تم تقديم طلب الغاز ${number}`,
+    entityType: "GAS_REQUEST",
+    entityId: created.id,
+    metadata: { gasRequestNumber: number, fullName, phone, nationalId, area, assignedAgentId: agent.id },
   });
 
   try {
@@ -129,6 +141,17 @@ export async function completeGasRequestAction(requestId: string): Promise<{ ok:
         isCompleted: true,
         completedAt: new Date(),
       },
+    });
+    await writeOperationLog({
+      session,
+      municipalityId: row.municipalityId,
+      action: "COMPLETE",
+      module: "GAS",
+      title: "إكمال طلب غاز",
+      description: `تم إكمال طلب الغاز ${row.gasRequestNumber}`,
+      entityType: "GAS_REQUEST",
+      entityId: row.id,
+      metadata: row,
     });
     try {
       await notifyUsers({

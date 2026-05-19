@@ -8,6 +8,7 @@ export type StaffNavPermissions = {
   manageSocialServices: boolean;
   manageCitizenFeedback: boolean;
   viewCitizens: boolean;
+  viewOperationLog: boolean;
   manageServices: boolean;
   manageUsers: boolean;
   viewStats: boolean;
@@ -19,6 +20,7 @@ export const emptyStaffNavPermissions: StaffNavPermissions = {
   manageSocialServices: false,
   manageCitizenFeedback: false,
   viewCitizens: false,
+  viewOperationLog: false,
   manageServices: false,
   manageUsers: false,
   viewStats: false,
@@ -30,6 +32,7 @@ export const fullStaffNavPermissions: StaffNavPermissions = {
   manageSocialServices: true,
   manageCitizenFeedback: true,
   viewCitizens: true,
+  viewOperationLog: true,
   manageServices: true,
   manageUsers: true,
   viewStats: true,
@@ -55,6 +58,7 @@ export function staffNavPermissions(s: Session | null): StaffNavPermissions {
     manageSocialServices: Boolean(u.permManageSocialServices),
     manageCitizenFeedback: Boolean(u.permManageCitizenFeedback),
     viewCitizens: Boolean(u.permViewCitizens),
+    viewOperationLog: Boolean(u.permViewOperationLog),
     manageServices: Boolean(u.permManageServices),
     manageUsers: Boolean(u.permManageUsers),
     viewStats: Boolean(u.permViewStats),
@@ -85,6 +89,10 @@ export function staffCanViewCitizens(s: Session | null): boolean {
   return staffNavPermissions(s).viewCitizens;
 }
 
+export function staffCanViewOperationLog(s: Session | null): boolean {
+  return staffNavPermissions(s).viewOperationLog;
+}
+
 export function staffCanManageServices(s: Session | null): boolean {
   return staffNavPermissions(s).manageServices;
 }
@@ -103,6 +111,7 @@ export type EmployeePermPayload = {
   permManageSocialServices: boolean;
   permManageCitizenFeedback: boolean;
   permViewCitizens: boolean;
+  permViewOperationLog: boolean;
   permManageServices: boolean;
   permManageUsers: boolean;
   permViewStats: boolean;
@@ -131,6 +140,9 @@ export function validateAssignableEmployeePerms(
   }
   if (p.permViewCitizens && !u.permViewCitizens) {
     return "لا يمكنك منح صلاحية حسابات المواطنين";
+  }
+  if (p.permViewOperationLog && !u.permViewOperationLog) {
+    return "لا يمكنك منح صلاحية سجل العمليات";
   }
   if (p.permManageServices && !u.permManageServices) {
     return "لا يمكنك منح صلاحية إدارة الخدمات";

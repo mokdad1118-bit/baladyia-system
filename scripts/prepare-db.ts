@@ -99,6 +99,7 @@ async function cleanInterruptedTableRebuilds(client: LibsqlClient) {
     "GasRequest",
     "GasRequestSerial",
     "Notification",
+    "OperationLog",
     "PendingCitizenRegistration",
     "Request",
     "RequestSerial",
@@ -181,6 +182,7 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await addColumnIfMissing(client, "User", "permManageSocialServices", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permManageCitizenFeedback", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permViewCitizens", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "permViewOperationLog", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "Department", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Service", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Request", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
@@ -204,8 +206,27 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await executeIfTableExists(
     client,
     "User",
-    `UPDATE "User" SET "permViewRequests" = true, "permManageGas" = true, "permManageSocialServices" = true, "permManageCitizenFeedback" = true, "permViewCitizens" = true WHERE "role" IN ('SUPER_ADMIN', 'MUNICIPALITY_ADMIN')`,
+    `UPDATE "User" SET "permViewRequests" = true, "permManageGas" = true, "permManageSocialServices" = true, "permManageCitizenFeedback" = true, "permViewCitizens" = true, "permViewOperationLog" = true WHERE "role" IN ('SUPER_ADMIN', 'MUNICIPALITY_ADMIN')`,
   );
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS "OperationLog" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "municipalityId" TEXT,
+      "actorId" TEXT,
+      "action" TEXT NOT NULL,
+      "module" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL DEFAULT '',
+      "entityType" TEXT,
+      "entityId" TEXT,
+      "requestId" TEXT,
+      "metadataJson" TEXT NOT NULL DEFAULT '{}',
+      "ipAddress" TEXT,
+      "userAgent" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
   await executeIfTableExists(
     client,
     "Department",
@@ -235,6 +256,13 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
     `CREATE UNIQUE INDEX IF NOT EXISTS "Department_municipalityId_code_key" ON "Department"("municipalityId", "code")`,
     `CREATE INDEX IF NOT EXISTS "GasRequest_municipalityId_idx" ON "GasRequest"("municipalityId")`,
     `CREATE INDEX IF NOT EXISTS "Notification_municipalityId_idx" ON "Notification"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "OperationLog_municipalityId_idx" ON "OperationLog"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "OperationLog_actorId_idx" ON "OperationLog"("actorId")`,
+    `CREATE INDEX IF NOT EXISTS "OperationLog_requestId_idx" ON "OperationLog"("requestId")`,
+    `CREATE INDEX IF NOT EXISTS "OperationLog_action_idx" ON "OperationLog"("action")`,
+    `CREATE INDEX IF NOT EXISTS "OperationLog_module_idx" ON "OperationLog"("module")`,
+    `CREATE INDEX IF NOT EXISTS "OperationLog_createdAt_idx" ON "OperationLog"("createdAt")`,
+    `CREATE INDEX IF NOT EXISTS "OperationLog_entityType_entityId_idx" ON "OperationLog"("entityType", "entityId")`,
     `CREATE INDEX IF NOT EXISTS "Request_municipalityId_idx" ON "Request"("municipalityId")`,
     `CREATE INDEX IF NOT EXISTS "ReturneeRegistration_municipalityId_idx" ON "ReturneeRegistration"("municipalityId")`,
     `CREATE INDEX IF NOT EXISTS "Service_municipalityId_idx" ON "Service"("municipalityId")`,

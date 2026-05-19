@@ -65,6 +65,7 @@ export async function middleware(req: NextRequest) {
         token?.permManageSocialServices ||
         token?.permManageCitizenFeedback ||
         token?.permViewCitizens ||
+        token?.permViewOperationLog ||
         token?.permManageServices ||
         token?.permManageUsers ||
         token?.permViewStats,

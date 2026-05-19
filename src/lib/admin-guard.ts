@@ -10,6 +10,7 @@ import {
   staffCanManageSocialServices,
   staffCanManageUsers,
   staffCanViewCitizens,
+  staffCanViewOperationLog,
   staffCanViewRequests,
   staffCanViewStats,
 } from "@/lib/staff-permissions";
@@ -32,6 +33,7 @@ export type StaffPanelPermissionKey =
   | "social"
   | "feedback"
   | "citizens"
+  | "operationLog"
   | "services"
   | "users"
   | "stats";
@@ -48,6 +50,7 @@ export async function requireStaffPanelPermission(
     social: staffCanManageSocialServices(session),
     feedback: staffCanManageCitizenFeedback(session),
     citizens: staffCanViewCitizens(session),
+    operationLog: staffCanViewOperationLog(session),
     services: staffCanManageServices(session),
     users: staffCanManageUsers(session),
     stats: staffCanViewStats(session),

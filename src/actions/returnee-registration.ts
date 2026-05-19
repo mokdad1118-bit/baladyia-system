@@ -20,6 +20,7 @@ import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextReturneeRegistrationNumber } from "@/lib/returnee-registration-serial";
 import { returneeRegistrationStatusLabelAr } from "@/lib/returnee-registration-labels";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
+import { writeOperationLog } from "@/lib/operation-log";
 
 export type SubmitReturneeRegistrationState = { error: string } | undefined;
 
@@ -135,6 +136,17 @@ export async function submitReturneeRegistration(
       returnStatementSize: file.size,
     },
   });
+  await writeOperationLog({
+    session,
+    municipalityId,
+    action: "CREATE",
+    module: "SOCIAL_SERVICES",
+    title: "تقديم طلب تسجيل عائدين",
+    description: `تم تقديم طلب تسجيل عائدين رقم ${number}`,
+    entityType: "RETURNEE_REGISTRATION",
+    entityId: created.id,
+    metadata: { registrationNumber: number, fullName, nationalId, phone, email: emailParsed.email },
+  });
 
   try {
     const staff = await getStaffToNotify(municipalityId);
@@ -206,6 +218,17 @@ export async function updateReturneeRegistrationStatusAction(
   await db.returneeRegistration.update({
     where: { id: registrationId },
     data: { status },
+  });
+  await writeOperationLog({
+    session,
+    municipalityId: row.municipalityId,
+    action: "UPDATE_STATUS",
+    module: "SOCIAL_SERVICES",
+    title: "تغيير حالة طلب عائدين",
+    description: `تم تغيير حالة طلب العائدين ${row.registrationNumber} إلى ${returneeRegistrationStatusLabelAr[status]}`,
+    entityType: "RETURNEE_REGISTRATION",
+    entityId: row.id,
+    metadata: { registrationNumber: row.registrationNumber, fromStatus: row.status, toStatus: status },
   });
   try {
     await notifyUsers({

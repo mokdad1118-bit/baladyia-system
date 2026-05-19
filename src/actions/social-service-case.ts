@@ -20,6 +20,7 @@ import { socialServiceCategoryLabelAr, socialServiceStatusLabelAr } from "@/lib/
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 import { staffCanManageSocialServices } from "@/lib/staff-permissions";
+import { writeOperationLog } from "@/lib/operation-log";
 
 export type SubmitSocialServiceCaseState = { error: string } | undefined;
 
@@ -155,6 +156,17 @@ export async function submitSocialServiceCase(
   }
 
   const created = await db.socialServiceCase.create({ data: data as never });
+  await writeOperationLog({
+    session,
+    municipalityId,
+    action: "CREATE",
+    module: "SOCIAL_SERVICES",
+    title: "تقديم طلب خدمة اجتماعية",
+    description: `تم تقديم طلب ${socialServiceCategoryLabelAr[category]} رقم ${created.caseNumber}`,
+    entityType: "SOCIAL_SERVICE_CASE",
+    entityId: created.id,
+    metadata: { caseNumber: created.caseNumber, category, phone, email, data },
+  });
 
   try {
     const staff = await getStaffToNotify(municipalityId);
@@ -215,6 +227,17 @@ export async function updateSocialServiceCaseStatusAction(
   }
   if (row.status === status) return { ok: true };
   await db.socialServiceCase.update({ where: { id: caseId }, data: { status } });
+  await writeOperationLog({
+    session,
+    municipalityId: row.municipalityId,
+    action: "UPDATE_STATUS",
+    module: "SOCIAL_SERVICES",
+    title: "تغيير حالة طلب خدمة اجتماعية",
+    description: `تم تغيير حالة الطلب ${row.caseNumber} إلى ${socialServiceStatusLabelAr[status]}`,
+    entityType: "SOCIAL_SERVICE_CASE",
+    entityId: row.id,
+    metadata: { caseNumber: row.caseNumber, category: row.category, fromStatus: row.status, toStatus: status },
+  });
   try {
     await notifyUsers({
       userIds: [row.citizenId],

@@ -9,6 +9,7 @@ import { digitsOnly, normalizeCitizenPhoneForStorage } from "@/lib/phone";
 import { isSuperAdminRole } from "@/lib/roles";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 import { staffCanManageGas } from "@/lib/staff-permissions";
+import { writeOperationLog } from "@/lib/operation-log";
 
 export type CreateGasAgentResult =
   | { ok: true; message: string }
@@ -61,7 +62,7 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
   });
   if (areaTaken) return { ok: false, error: "هذه المنطقة مخصصة لمعتمد آخر في نفس البلدية." };
 
-  await db.user.create({
+  const created = await db.user.create({
     data: {
       municipalityId,
       name,
@@ -72,6 +73,17 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
       isVerified: true,
       isActive: true,
     },
+  });
+  await writeOperationLog({
+    session: s,
+    municipalityId,
+    action: "CREATE",
+    module: "GAS",
+    title: "إنشاء حساب معتمد غاز",
+    description: `تم إنشاء حساب معتمد الغاز: ${name}`,
+    entityType: "USER",
+    entityId: created.id,
+    metadata: { name, phone, area, role: UserRole.GAS_AGENT },
   });
 
   revalidatePath("/admin/gas-services");
@@ -131,7 +143,7 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
     return { ok: false, error: "كلمة المرور 6 أحرف على الأقل إذا أردت تغييرها." };
   }
 
-  await db.user.update({
+  const updated = await db.user.update({
     where: { id: userId },
     data: {
       name,
@@ -139,6 +151,17 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
       gasArea: area,
       ...(password.length > 0 ? { passwordHash: await hashPassword(password) } : {}),
     },
+  });
+  await writeOperationLog({
+    session: s,
+    municipalityId: existing.municipalityId,
+    action: "UPDATE",
+    module: "GAS",
+    title: "تعديل معتمد غاز",
+    description: `تم تعديل بيانات معتمد الغاز: ${name}`,
+    entityType: "USER",
+    entityId: userId,
+    metadata: { before: existing, after: { id: updated.id, name, phone, gasArea: area } },
   });
 
   revalidatePath("/admin/gas-services");

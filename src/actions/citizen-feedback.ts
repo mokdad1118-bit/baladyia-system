@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
+import { writeOperationLog } from "@/lib/operation-log";
 
 export type SubmitCitizenFeedbackState =
   | { error: string }
@@ -39,6 +40,17 @@ export async function submitCitizenFeedback(
       citizenId: session.user.id,
       message,
     },
+  });
+  await writeOperationLog({
+    session,
+    municipalityId,
+    action: "CREATE",
+    module: "FEEDBACK",
+    title: "إرسال شكوى أو اقتراح",
+    description: `تم إرسال شكوى/اقتراح من ${session.user.name ?? "مواطن"}`,
+    entityType: "CITIZEN_FEEDBACK",
+    entityId: row.id,
+    metadata: { message },
   });
 
   try {

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { notifyUsers } from "@/lib/notify";
 import { staffCanManageCitizenFeedback } from "@/lib/staff-permissions";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
+import { writeOperationLog } from "@/lib/operation-log";
 
 export type ReplyToCitizenFeedbackState = { error: string } | { ok: true } | undefined;
 
@@ -44,6 +45,17 @@ export async function replyToCitizenFeedback(
       adminReplyAt: new Date(),
       adminRepliedById: session.user.id,
     },
+  });
+  await writeOperationLog({
+    session,
+    municipalityId: row.municipalityId,
+    action: isUpdate ? "UPDATE_REPLY" : "REPLY",
+    module: "FEEDBACK",
+    title: isUpdate ? "تحديث رد على شكوى" : "رد على شكوى",
+    description: isUpdate ? "تم تحديث رد الإدارة على شكوى مواطن" : "تم الرد على شكوى مواطن",
+    entityType: "CITIZEN_FEEDBACK",
+    entityId: row.id,
+    metadata: { reply, citizenId: row.citizenId },
   });
 
   try {

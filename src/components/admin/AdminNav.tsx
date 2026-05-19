@@ -56,6 +56,12 @@ const segments = [
   },
   { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" as const },
   {
+    internal: "/admin/operation-log",
+    label: "سجل العمليات",
+    desc: "كل ما يحدث داخل النظام",
+    perm: "viewOperationLog" as const,
+  },
+  {
     internal: "/admin/users",
     label: "حسابات الموظفين",
     desc: "الموظفون والمديرون والصلاحيات",

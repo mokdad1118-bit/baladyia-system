@@ -10,6 +10,7 @@ import {
   resolveMunicipalityIdForStaffCreate,
   staffMunicipalityIdFilter,
 } from "@/lib/municipality-scope";
+import { writeOperationLog } from "@/lib/operation-log";
 
 function parseFileKind(v: string | File | null | undefined): FileKind | null {
   const s = String(v ?? "");
@@ -68,6 +69,10 @@ export async function upsertService(
   if (id) {
     const access = await assertCanManageService(id);
     if ("error" in access) return { error: access.error };
+    const before = await db.service.findUnique({
+      where: { id },
+      select: { id: true, municipalityId: true, name: true, description: true, price: true },
+    });
     await db.serviceDocument.deleteMany({ where: { serviceId: id } });
     await db.service.update({
       where: { id },
@@ -85,6 +90,17 @@ export async function upsertService(
         },
       },
     });
+    await writeOperationLog({
+      session: s,
+      municipalityId: before?.municipalityId,
+      action: "UPDATE",
+      module: "SERVICES",
+      title: "تعديل خدمة",
+      description: `تم تعديل الخدمة: ${name}`,
+      entityType: "SERVICE",
+      entityId: id,
+      metadata: { before, after: { name, description, price, documents } },
+    });
   } else {
     const municipalityId = resolveMunicipalityIdForStaffCreate(s, formData);
     if (!municipalityId) return { error: "يرجى اختيار البلدية" };
@@ -93,7 +109,7 @@ export async function upsertService(
     } catch {
       return { error: "غير مصرّح" };
     }
-    await db.service.create({
+    const created = await db.service.create({
       data: {
         municipalityId,
         name,
@@ -109,6 +125,17 @@ export async function upsertService(
         },
       },
     });
+    await writeOperationLog({
+      session: s,
+      municipalityId,
+      action: "CREATE",
+      module: "SERVICES",
+      title: "إضافة خدمة",
+      description: `تمت إضافة الخدمة: ${name}`,
+      entityType: "SERVICE",
+      entityId: created.id,
+      metadata: { name, description, price, documents },
+    });
   }
   revalidatePath("/admin/services");
   revalidatePath("/services");
@@ -118,9 +145,24 @@ export async function upsertService(
 export async function deleteService(serviceId: string) {
   const access = await assertCanManageService(serviceId);
   if ("error" in access) return { error: access.error };
+  const service = await db.service.findUnique({
+    where: { id: serviceId },
+    select: { id: true, municipalityId: true, name: true },
+  });
   await db.service.update({
     where: { id: serviceId },
     data: { isActive: false },
+  });
+  await writeOperationLog({
+    session: access.session,
+    municipalityId: service?.municipalityId,
+    action: "DEACTIVATE",
+    module: "SERVICES",
+    title: "تعطيل خدمة",
+    description: `تم تعطيل الخدمة: ${service?.name ?? serviceId}`,
+    entityType: "SERVICE",
+    entityId: serviceId,
+    metadata: service,
   });
   revalidatePath("/admin/services");
   revalidatePath("/services");

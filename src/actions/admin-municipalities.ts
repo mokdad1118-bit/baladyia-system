@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { isSuperAdminRole } from "@/lib/roles";
 import { z } from "zod";
+import { writeOperationLog } from "@/lib/operation-log";
 
 const MUNICIPALITY_PATHS = [
   "/admin/municipalities",
@@ -59,7 +60,7 @@ export async function createMunicipality(
   const exists = await db.municipality.findUnique({ where: { code: codeParsed.data } });
   if (exists) return { error: "معرّف البلدية مستخدم مسبقاً" };
 
-  await db.municipality.create({
+  const created = await db.municipality.create({
     data: {
       name: nameParsed.data,
       code: codeParsed.data,
@@ -67,6 +68,17 @@ export async function createMunicipality(
       governorate: "درعا",
       isActive: true,
     },
+  });
+  await writeOperationLog({
+    session: gate.session,
+    municipalityId: created.id,
+    action: "CREATE",
+    module: "MUNICIPALITIES",
+    title: "إضافة بلدية",
+    description: `تمت إضافة بلدية: ${created.name}`,
+    entityType: "MUNICIPALITY",
+    entityId: created.id,
+    metadata: created,
   });
 
   revalidateMunicipalityViews();
@@ -92,12 +104,23 @@ export async function updateMunicipality(
   const row = await db.municipality.findUnique({ where: { id } });
   if (!row) return { error: "البلدية غير موجودة" };
 
-  await db.municipality.update({
+  const updated = await db.municipality.update({
     where: { id },
     data: {
       name: nameParsed.data,
       sortOrder: Math.round(sortOrder),
     },
+  });
+  await writeOperationLog({
+    session: gate.session,
+    municipalityId: id,
+    action: "UPDATE",
+    module: "MUNICIPALITIES",
+    title: "تعديل بلدية",
+    description: `تم تعديل بلدية: ${updated.name}`,
+    entityType: "MUNICIPALITY",
+    entityId: id,
+    metadata: { before: row, after: updated },
   });
 
   revalidateMunicipalityViews();
@@ -121,6 +144,17 @@ export async function setMunicipalityActive(
   await db.municipality.update({
     where: { id: municipalityId },
     data: { isActive },
+  });
+  await writeOperationLog({
+    session: gate.session,
+    municipalityId,
+    action: isActive ? "ACTIVATE" : "DEACTIVATE",
+    module: "MUNICIPALITIES",
+    title: isActive ? "تفعيل بلدية" : "تعطيل بلدية",
+    description: `${isActive ? "تم تفعيل" : "تم تعطيل"} بلدية: ${row.name}`,
+    entityType: "MUNICIPALITY",
+    entityId: municipalityId,
+    metadata: { before: row, isActive },
   });
 
   revalidateMunicipalityViews();
@@ -179,6 +213,17 @@ export async function deleteMunicipality(
     };
   }
 
+  await writeOperationLog({
+    session: gate.session,
+    municipalityId: id,
+    action: "DELETE",
+    module: "MUNICIPALITIES",
+    title: "حذف بلدية",
+    description: `تم حذف بلدية: ${row.name}`,
+    entityType: "MUNICIPALITY",
+    entityId: id,
+    metadata: { id: row.id, name: row.name, code: row.code },
+  });
   await db.municipality.delete({ where: { id } });
   revalidateMunicipalityViews();
   return { ok: true };

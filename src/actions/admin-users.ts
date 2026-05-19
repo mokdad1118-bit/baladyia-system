@@ -12,6 +12,7 @@ import {
 } from "@/lib/staff-permissions";
 import { isMunicipalityAdminRole, isSuperAdminRole } from "@/lib/roles";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
+import { writeOperationLog } from "@/lib/operation-log";
 
 function parseEmployeePerms(formData: FormData) {
   return {
@@ -20,6 +21,7 @@ function parseEmployeePerms(formData: FormData) {
     permManageSocialServices: formData.get("permManageSocialServices") === "on",
     permManageCitizenFeedback: formData.get("permManageCitizenFeedback") === "on",
     permViewCitizens: formData.get("permViewCitizens") === "on",
+    permViewOperationLog: formData.get("permViewOperationLog") === "on",
     permManageServices: formData.get("permManageServices") === "on",
     permManageUsers: formData.get("permManageUsers") === "on",
     permViewStats: formData.get("permViewStats") === "on",
@@ -95,12 +97,14 @@ export async function createStaffUser(
   let permManageSocialServices = false;
   let permManageCitizenFeedback = false;
   let permViewCitizens = false;
+  let permViewOperationLog = false;
   if (role === UserRole.SUPER_ADMIN || role === UserRole.MUNICIPALITY_ADMIN) {
     permViewRequests = true;
     permManageGas = true;
     permManageSocialServices = true;
     permManageCitizenFeedback = true;
     permViewCitizens = true;
+    permViewOperationLog = true;
     permManageServices = true;
     permManageUsers = true;
     permViewStats = true;
@@ -116,12 +120,13 @@ export async function createStaffUser(
     permManageSocialServices = p.permManageSocialServices;
     permManageCitizenFeedback = p.permManageCitizenFeedback;
     permViewCitizens = p.permViewCitizens;
+    permViewOperationLog = p.permViewOperationLog;
     permManageServices = p.permManageServices;
     permManageUsers = p.permManageUsers;
     permViewStats = p.permViewStats;
   }
 
-  await db.user.create({
+  const created = await db.user.create({
     data: {
       name,
       email,
@@ -133,10 +138,22 @@ export async function createStaffUser(
       permManageSocialServices,
       permManageCitizenFeedback,
       permViewCitizens,
+      permViewOperationLog,
       permManageServices,
       permManageUsers,
       permViewStats,
     },
+  });
+  await writeOperationLog({
+    session: s,
+    municipalityId,
+    action: "CREATE",
+    module: "USERS",
+    title: "إنشاء حساب موظف/مدير",
+    description: `تم إنشاء الحساب: ${name}`,
+    entityType: "USER",
+    entityId: created.id,
+    metadata: { name, email, role, permissions: parseEmployeePerms(formData) },
   });
   revalidatePath("/admin/users");
   revalidatePath("/admin");
@@ -181,6 +198,17 @@ export async function updateEmployeePermissions(
   if (assignErr) return { error: assignErr };
 
   await db.user.update({ where: { id: userId }, data: p });
+  await writeOperationLog({
+    session: s,
+    municipalityId: target.municipalityId,
+    action: "UPDATE_PERMISSIONS",
+    module: "USERS",
+    title: "تعديل صلاحيات موظف",
+    description: "تم تعديل صلاحيات حساب موظف",
+    entityType: "USER",
+    entityId: userId,
+    metadata: { permissions: p },
+  });
   revalidatePath("/admin/users");
   revalidatePath("/admin");
   return { error: undefined, ok: true as const };
@@ -194,7 +222,7 @@ export async function setUserActive(userId: string, isActive: boolean) {
   if (userId === s!.user!.id) return { error: "لا يمكنك تعطيل حسابك" };
   const target = await db.user.findUnique({
     where: { id: userId },
-    select: { role: true, municipalityId: true },
+    select: { role: true, municipalityId: true, name: true },
   });
   if (!target) return { error: "المستخدم غير موجود" };
   if (target.role === UserRole.CITIZEN && target.municipalityId) {
@@ -215,6 +243,17 @@ export async function setUserActive(userId: string, isActive: boolean) {
     }
   }
   await db.user.update({ where: { id: userId }, data: { isActive } });
+  await writeOperationLog({
+    session: s,
+    municipalityId: target.municipalityId,
+    action: isActive ? "ACTIVATE" : "DEACTIVATE",
+    module: "USERS",
+    title: isActive ? "تفعيل حساب" : "تعطيل حساب",
+    description: `${isActive ? "تم تفعيل" : "تم تعطيل"} الحساب: ${target.name}`,
+    entityType: "USER",
+    entityId: userId,
+    metadata: { role: target.role, isActive },
+  });
   revalidatePath("/admin/users");
   revalidatePath("/admin/citizens");
   return { ok: true as const };
@@ -268,6 +307,17 @@ export async function deleteCitizenAccount(userId: string) {
     await tx.request.deleteMany({ where: { citizenId: userId } });
 
     await tx.user.delete({ where: { id: userId, role: UserRole.CITIZEN } });
+  });
+  await writeOperationLog({
+    session: s,
+    municipalityId: user.municipalityId,
+    action: "DELETE",
+    module: "USERS",
+    title: "حذف حساب مواطن",
+    description: `تم حذف حساب مواطن: ${user.email ?? user.notificationEmail ?? user.id}`,
+    entityType: "USER",
+    entityId: userId,
+    metadata: user,
   });
 
   revalidatePath("/admin/citizens");

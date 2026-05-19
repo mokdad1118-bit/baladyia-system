@@ -14,6 +14,7 @@ import { digitsOnly } from "@/lib/phone";
 import { isAdminPanelRole } from "@/lib/roles";
 import { staffCanViewRequests } from "@/lib/staff-permissions";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
+import { writeOperationLog } from "@/lib/operation-log";
 
 const STAFF_REVALIDATE = [
   "/admin/requests",
@@ -144,6 +145,7 @@ export async function updateRequestStatus(formData: FormData) {
       ),
     );
   }
+  const statusChanged = r.status !== to;
 
   try {
     /** بدون معاملة prisma — أنسب لبعض إعدادات LibSQL/Turso وتجنّب أعطال غامضة */
@@ -160,6 +162,21 @@ export async function updateRequestStatus(formData: FormData) {
         ...(note ? { noteForCitizen: note } : {}),
       },
     });
+    await writeOperationLog({
+      session: s,
+      actorId: actorDbId,
+      municipalityId: r.municipalityId,
+      action: statusChanged ? "UPDATE_STATUS" : "SEND_MESSAGE",
+      module: "REQUESTS",
+      title: statusChanged ? "تغيير حالة طلب" : "إرسال تنبيه بخصوص طلب",
+      description: statusChanged
+        ? `تم تغيير حالة الطلب ${r.requestNumber} من ${requestStatusAr[r.status]} إلى ${requestStatusAr[to]}`
+        : `تم إرسال تنبيه بخصوص الطلب ${r.requestNumber}`,
+      entityType: "REQUEST",
+      entityId: id,
+      requestId: id,
+      metadata: { requestNumber: r.requestNumber, fromStatus: r.status, toStatus: to, note },
+    });
   } catch (e) {
     unstable_rethrow(e);
     const prismaMsg =
@@ -170,7 +187,6 @@ export async function updateRequestStatus(formData: FormData) {
     redirect(staffActionRedirectPath(host, `${detailPath}?statusError=1`, origin));
   }
 
-  const statusChanged = r.status !== to;
   const statusLine = `الطلب ${r.requestNumber} أصبح: ${requestStatusAr[to]}`;
   const noteLine =
     to === RequestStatus.NEEDS_MODIFICATION && note
@@ -252,6 +268,19 @@ export async function addRequestNote(formData: FormData) {
 
   await db.requestNote.create({
     data: { requestId, authorId: actorDbId, body },
+  });
+  await writeOperationLog({
+    session: s,
+    actorId: actorDbId,
+    municipalityId: r.municipalityId,
+    action: "ADD_NOTE",
+    module: "REQUESTS",
+    title: "إضافة ملاحظة داخلية",
+    description: `تمت إضافة ملاحظة داخلية على الطلب ${r.requestNumber}`,
+    entityType: "REQUEST",
+    entityId: requestId,
+    requestId,
+    metadata: { requestNumber: r.requestNumber, note: body },
   });
   revalidateStaffViews();
   revalidatePath(detailPath);

@@ -13,6 +13,7 @@ const adminTiles = [
   { href: "/admin/social-services", title: "الخدمات الاجتماعية", sub: "العائدون وباقي الأقسام", perm: "manageSocialServices" as const },
   { href: "/admin/citizen-feedback", title: "شكاوى المواطنين", sub: "الرد على الشكاوى والاقتراحات", perm: "manageCitizenFeedback" as const },
   { href: "/admin/citizens", title: "حسابات المواطنين", sub: "عرض حسابات المسجّلين", perm: "viewCitizens" as const },
+  { href: "/admin/operation-log", title: "سجل العمليات", sub: "كل ما يحدث داخل النظام", perm: "viewOperationLog" as const },
   { href: "/admin/services", title: "الخدمات", sub: "النماذج والمستندات والأسعار", perm: "manageServices" as const },
   { href: "/admin/users", title: "حسابات الموظفين", sub: "موظفون ومديرون", perm: "manageUsers" as const },
   { href: "/admin/stats", title: "الإحصائيات", sub: "تقارير", perm: "viewStats" as const },

@@ -18,6 +18,7 @@ import { nextRequestNumber } from "@/lib/request-serial";
 import { UserRole, RequestStatus } from "@/generated/prisma/enums";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
+import { writeOperationLog } from "@/lib/operation-log";
 
 async function defaultAssigneeId(municipalityId: string) {
   const e = await db.user.findFirst({
@@ -184,6 +185,26 @@ export async function submitRequest(
         submittedNotificationEmail: notif,
         formPayload: "{}",
         files: { create: fileRecords },
+      },
+    });
+    await writeOperationLog({
+      session,
+      municipalityId,
+      action: "CREATE",
+      module: "REQUESTS",
+      title: "تقديم طلب خدمات مدينة",
+      description: `تم تقديم الطلب ${number} للخدمة: ${service.name}`,
+      entityType: "REQUEST",
+      entityId: req.id,
+      requestId: req.id,
+      metadata: {
+        requestNumber: number,
+        serviceId: service.id,
+        serviceName: service.name,
+        citizenId,
+        fullName,
+        phone: phoneNorm,
+        filesCount: fileRecords.length,
       },
     });
 

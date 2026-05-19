@@ -24,6 +24,7 @@ export type StaffUserRow = {
   permManageSocialServices: boolean;
   permManageCitizenFeedback: boolean;
   permViewCitizens: boolean;
+  permViewOperationLog: boolean;
   permManageServices: boolean;
   permManageUsers: boolean;
   permViewStats: boolean;
@@ -41,6 +42,7 @@ function haystack(u: StaffUserRow): string {
     u.permManageSocialServices ? "اجتماعية" : "",
     u.permManageCitizenFeedback ? "شكاوى" : "",
     u.permViewCitizens ? "مواطنون" : "",
+    u.permViewOperationLog ? "سجل عمليات" : "",
     u.permManageServices ? "خدمات" : "",
     u.permManageUsers ? "موظفون" : "",
     u.permViewStats ? "إحصائيات" : "",
@@ -57,6 +59,7 @@ const permissionOptions = [
   { name: "permManageSocialServices", key: "social", label: "الخدمات الاجتماعية", valueKey: "permManageSocialServices" },
   { name: "permManageCitizenFeedback", key: "feedback", label: "الشكاوى", valueKey: "permManageCitizenFeedback" },
   { name: "permViewCitizens", key: "citizens", label: "المواطنون", valueKey: "permViewCitizens" },
+  { name: "permViewOperationLog", key: "operationLog", label: "سجل العمليات", valueKey: "permViewOperationLog" },
   { name: "permManageServices", key: "services", label: "الخدمات", valueKey: "permManageServices" },
   { name: "permManageUsers", key: "users", label: "الموظفون", valueKey: "permManageUsers" },
   { name: "permViewStats", key: "stats", label: "الإحصائيات", valueKey: "permViewStats" },
@@ -75,7 +78,7 @@ function EmployeePermissionsForm({
   assignablePerms,
 }: {
   user: StaffUserRow;
-  assignablePerms: { requests: boolean; gas: boolean; social: boolean; feedback: boolean; citizens: boolean; services: boolean; users: boolean; stats: boolean };
+  assignablePerms: { requests: boolean; gas: boolean; social: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean };
 }) {
   const [state, action] = useActionState(updateEmployeePermissions, undefined);
   return (
@@ -127,7 +130,7 @@ export function StaffUsersListWithSearch({
   municipalities?: { id: string; name: string }[];
   isSuperAdmin?: boolean;
   isFullAdmin: boolean;
-  assignablePerms: { requests: boolean; gas: boolean; social: boolean; feedback: boolean; citizens: boolean; services: boolean; users: boolean; stats: boolean };
+  assignablePerms: { requests: boolean; gas: boolean; social: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean };
 }) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
