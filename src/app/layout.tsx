@@ -3,7 +3,7 @@ import Script from "next/script";
 import { Tajawal } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-import { APP_NAME_AR, CITIZEN_PORTAL_NAME_AR, OFFICIAL_SCOPE_AR, SUPERVISING_AUTHORITY_AR } from "@/lib/entity";
+import { APP_NAME_AR, OFFICIAL_SCOPE_AR, SUPERVISING_AUTHORITY_AR } from "@/lib/entity";
 
 const tajawal = Tajawal({
   subsets: ["arabic", "latin"],
@@ -13,7 +13,7 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: `${CITIZEN_PORTAL_NAME_AR} — ${APP_NAME_AR}`,
+  title: APP_NAME_AR,
   description:
     `${OFFICIAL_SCOPE_AR} — ${SUPERVISING_AUTHORITY_AR}. خدمات المواطنين ولوحات موظفي البلديات ضمن منصة واحدة.`,
   applicationName: APP_NAME_AR,

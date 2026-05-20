@@ -8,6 +8,8 @@ import { isSuperAdminRole } from "@/lib/roles";
 import { writeOperationLog } from "@/lib/operation-log";
 
 const DARAA_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
+const DARAA_PORTAL_NAME = "بوابة محافظة درعا";
+const NOTIFICATION_ICON_PATH = "/brand/icon-192.png";
 
 export type BroadcastNotificationState =
   | { ok: true; message: string }
@@ -33,6 +35,21 @@ function resolveOpenUrl(raw: string): string | null {
   const base = process.env.AUTH_URL?.trim() || process.env.NEXTAUTH_URL?.trim() || "";
   if (!base) return value;
   return new URL(value, base).toString();
+}
+
+function publicBaseUrl(): string | null {
+  return (
+    process.env.AUTH_URL?.trim() ||
+    process.env.NEXTAUTH_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    null
+  );
+}
+
+function absolutePublicUrl(path: string): string | null {
+  const base = publicBaseUrl();
+  if (!base) return null;
+  return new URL(path, base).toString();
 }
 
 function tagFilter(key: string, value: string) {
@@ -105,7 +122,7 @@ export async function sendBroadcastNotification(
     app_id: appId,
     target_channel: "push",
     filters: buildFilters(targetRole, municipalityId),
-    headings: { ar: title, en: title },
+    headings: { ar: DARAA_PORTAL_NAME, en: DARAA_PORTAL_NAME },
     contents: { ar: message, en: message },
     data: {
       governorate: "daraa",
@@ -115,6 +132,11 @@ export async function sendBroadcastNotification(
     },
   };
   if (openUrl) payload.url = openUrl;
+  const notificationIconUrl = absolutePublicUrl(NOTIFICATION_ICON_PATH);
+  if (notificationIconUrl) {
+    payload.chrome_web_icon = notificationIconUrl;
+    payload.chrome_web_badge = notificationIconUrl;
+  }
   if (imageUrl) {
     payload.chrome_web_image = imageUrl;
     payload.big_picture = imageUrl;

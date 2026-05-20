@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@/generated/prisma/enums";
 
-const DARAa_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
+const DARAA_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
+const DARAA_PORTAL_NAME = "بوابة محافظة درعا";
 
 type OneSignalSdk = {
   init: (options: Record<string, unknown>) => Promise<void>;
@@ -39,7 +40,7 @@ export function OneSignalClient() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || DARAa_ONESIGNAL_APP_ID;
+    const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || DARAA_ONESIGNAL_APP_ID;
     if (!appId || typeof window === "undefined") return;
 
     window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -50,6 +51,11 @@ export function OneSignalClient() {
           await OneSignal.init({
             appId,
             serviceWorkerPath: "OneSignalSDKWorker.js",
+            welcomeNotification: {
+              title: DARAA_PORTAL_NAME,
+              message: "تم تفعيل إشعارات بوابة محافظة درعا.",
+              url: "/citizen/notifications",
+            },
           });
           window.__daraaOneSignalInitialized = true;
         } catch (error) {

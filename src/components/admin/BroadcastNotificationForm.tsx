@@ -39,7 +39,7 @@ export function BroadcastNotificationForm({
     <form action={action} className="space-y-4 rounded border border-[var(--gov-border)] bg-white p-4">
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="font-medium text-slate-700">العنوان</span>
+          <span className="font-medium text-slate-700">عنوان داخلي في السجل</span>
           <input name="title" required maxLength={80} className="gov-input w-full px-3 py-2" />
         </label>
         <label className="space-y-1 text-sm">
