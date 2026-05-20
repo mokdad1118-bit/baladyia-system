@@ -146,6 +146,7 @@ export async function sendBroadcastNotification(
   let status = "SENT";
   let onesignalMessageId: string | null = null;
   let errorMessage: string | null = null;
+  let recipients: number | null = null;
 
   try {
     const res = await fetch("https://api.onesignal.com/notifications", {
@@ -157,11 +158,18 @@ export async function sendBroadcastNotification(
       body: JSON.stringify(payload),
     });
     responseBody = await res.text();
-    const parsed = responseBody ? (JSON.parse(responseBody) as { id?: string; errors?: unknown }) : {};
+    const parsed = responseBody
+      ? (JSON.parse(responseBody) as { id?: string; errors?: unknown; recipients?: number })
+      : {};
     onesignalMessageId = parsed.id ?? null;
+    recipients = typeof parsed.recipients === "number" ? parsed.recipients : null;
     if (!res.ok || parsed.errors) {
       status = "FAILED";
       errorMessage = responseBody.slice(0, 1000);
+    } else if (recipients === 0) {
+      status = "FAILED";
+      errorMessage =
+        "تم قبول الطلب من OneSignal لكن لا يوجد أي جهاز مشترك مطابق للفلاتر. افتح حساب مواطن على نفس الدومين واضغط السماح بالإشعارات.";
     }
   } catch (error) {
     status = "FAILED";
@@ -193,11 +201,11 @@ export async function sendBroadcastNotification(
     title: "إرسال إشعار OneSignal",
     description: title,
     entityType: "BROADCAST_NOTIFICATION",
-    metadata: { targetRole, municipalityId, status, onesignalMessageId, errorMessage },
+    metadata: { targetRole, municipalityId, status, onesignalMessageId, recipients, errorMessage },
   });
 
   revalidatePath("/admin/broadcast-notifications");
 
   if (status === "FAILED") return { error: errorMessage || "تعذر إرسال الإشعار." };
-  return { ok: true, message: "تم إرسال الإشعار وحفظه في السجل." };
+  return { ok: true, message: `تم إرسال الإشعار إلى ${recipients ?? "المستلمين"} جهاز/اشتراك.` };
 }

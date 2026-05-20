@@ -13,10 +13,22 @@ type OneSignalSdk = {
   logout: () => Promise<void>;
   User: {
     addTags: (tags: Record<string, string>) => Promise<void> | void;
+    PushSubscription: {
+      addEventListener: (
+        event: "change",
+        listener: (event: { current?: { id?: string | null; token?: string | null; optedIn?: boolean } }) => void,
+      ) => void;
+      optIn: () => Promise<void> | void;
+      optedIn?: boolean;
+    };
   };
   Notifications: {
     isPushSupported?: () => boolean;
     requestPermission: () => Promise<boolean | void> | boolean | void;
+    permission?: boolean;
+  };
+  Slidedown?: {
+    promptPush: () => Promise<void> | void;
   };
 };
 
@@ -25,6 +37,7 @@ declare global {
     OneSignalDeferred?: Array<(OneSignal: OneSignalSdk) => void | Promise<void>>;
     __daraaOneSignalInitialized?: boolean;
     __daraaOneSignalInitFailed?: boolean;
+    __daraaOneSignalSubscriptionListener?: boolean;
   }
 }
 
@@ -79,22 +92,42 @@ export function OneSignalClient() {
       if (status !== "authenticated" || !user?.id || !user.role) return;
 
       const role = onesignalRole(user.role);
-      await OneSignal.login(user.id);
-      await OneSignal.User.addTags({
+      const tags = {
         governorate: "daraa",
         municipalityId: user.municipalityId?.trim() || "all",
         role,
-      });
+      };
+      const identifyUser = async () => {
+        await OneSignal.login(user.id);
+        await OneSignal.User.addTags(tags);
+      };
+
+      await identifyUser();
+      if (!window.__daraaOneSignalSubscriptionListener) {
+        OneSignal.User.PushSubscription.addEventListener("change", () => {
+          void identifyUser();
+        });
+        window.__daraaOneSignalSubscriptionListener = true;
+      }
 
       if (user.role !== UserRole.CITIZEN) return;
       if (OneSignal.Notifications.isPushSupported && !OneSignal.Notifications.isPushSupported()) return;
       if (typeof Notification === "undefined") return;
+      if (OneSignal.User.PushSubscription.optedIn) return;
+
+      if (Notification.permission === "granted") {
+        await OneSignal.User.PushSubscription.optIn();
+        await identifyUser();
+        return;
+      }
       if (Notification.permission !== "default") return;
 
-      const storageKey = `daraa-push-permission-asked:${user.id}`;
-      if (window.localStorage.getItem(storageKey)) return;
-      window.localStorage.setItem(storageKey, "1");
-      await OneSignal.Notifications.requestPermission();
+      if (OneSignal.Slidedown?.promptPush) {
+        await OneSignal.Slidedown.promptPush();
+      } else {
+        await OneSignal.Notifications.requestPermission();
+      }
+      await identifyUser();
     });
   }, [session?.user?.id, session?.user?.municipalityId, session?.user?.role, status]);
 
