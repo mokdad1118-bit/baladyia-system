@@ -41,6 +41,11 @@ export async function submitCitizenFeedback(
       message,
     },
   });
+  const municipality = await db.municipality.findUnique({
+    where: { id: municipalityId },
+    select: { name: true },
+  });
+  const municipalityName = municipality?.name ?? "بلدية غير محددة";
   await writeOperationLog({
     session,
     municipalityId,
@@ -50,7 +55,7 @@ export async function submitCitizenFeedback(
     description: `تم إرسال شكوى/اقتراح من ${session.user.name ?? "مواطن"}`,
     entityType: "CITIZEN_FEEDBACK",
     entityId: row.id,
-    metadata: { message },
+    metadata: { message, municipalityName },
   });
 
   try {
@@ -59,7 +64,7 @@ export async function submitCitizenFeedback(
       userIds: staff,
       type: "FEEDBACK_SUBMITTED",
       title: "شكوى أو اقتراح جديد",
-      message: `وصلت ملاحظة من ${session.user.name ?? "مواطن"} (${message.slice(0, 120)}${message.length > 120 ? "…" : ""}).`,
+      message: `وصلت ملاحظة من ${session.user.name ?? "مواطن"} - ${municipalityName}: ${message.slice(0, 120)}${message.length > 120 ? "…" : ""}`,
       municipalityId,
       citizenFeedbackId: row.id,
     });

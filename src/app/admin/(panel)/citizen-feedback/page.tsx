@@ -30,7 +30,12 @@ export default async function AdminCitizenFeedbackPage() {
           name: true,
           email: true,
           phone: true,
+          nationalId: true,
+          notificationEmail: true,
         },
+      },
+      municipality: {
+        select: { name: true, governorate: true },
       },
       adminRepliedBy: {
         select: { name: true },
@@ -53,12 +58,14 @@ export default async function AdminCitizenFeedbackPage() {
         </p>
       ) : (
         <div className="gov-table-wrap overflow-x-auto">
-          <table className="gov-table min-w-[72rem]">
+          <table className="gov-table min-w-[88rem]">
             <thead>
               <tr>
                 <th>المواطن</th>
+                <th>البلدية</th>
                 <th>البريد</th>
                 <th>الهاتف</th>
+                <th>الرقم الوطني</th>
                 <th>نص الشكوى / المقترح</th>
                 <th>رد الإدارة الحالي</th>
                 <th>الرد على المواطن</th>
@@ -68,11 +75,24 @@ export default async function AdminCitizenFeedbackPage() {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id}>
-                  <td>{row.citizen?.name ?? "مواطن محذوف"}</td>
+                  <td>
+                    <div className="font-medium text-[var(--gov-text)]">{row.citizen?.name ?? "مواطن محذوف"}</div>
+                    <div className="mt-1 text-xs text-[var(--gov-muted)]">
+                      بريد الإشعارات:{" "}
+                      <span dir="ltr" className="break-all">
+                        {row.citizen?.notificationEmail ?? "—"}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="font-medium text-[var(--gov-text)]">{row.municipality?.name ?? "—"}</div>
+                    <div className="mt-1 text-xs text-[var(--gov-muted)]">{row.municipality?.governorate ?? ""}</div>
+                  </td>
                   <td dir="ltr" className="max-w-[14rem] break-all text-sm">
                     {row.citizen?.email ?? "—"}
                   </td>
                   <td dir="ltr">{row.citizen?.phone ?? "—"}</td>
+                  <td dir="ltr">{row.citizen?.nationalId ?? "—"}</td>
                   <td className="max-w-[28rem] whitespace-pre-wrap break-words">{row.message}</td>
                   <td className="max-w-[20rem] whitespace-pre-wrap break-words text-sm">
                     {row.adminReply ? (
