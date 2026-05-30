@@ -20,6 +20,21 @@ const statusLabel: Record<string, string> = {
   FAILED: "فشل",
 };
 
+function deliverySummary(onesignalResponse: string | null, errorMessage: string | null) {
+  if (errorMessage) return errorMessage;
+  if (!onesignalResponse) return null;
+
+  try {
+    const parsed = JSON.parse(onesignalResponse) as { recipients?: unknown; errors?: unknown };
+    if (typeof parsed.recipients === "number") return `الأجهزة المطابقة: ${parsed.recipients}`;
+    if (parsed.errors) return `خطأ OneSignal: ${JSON.stringify(parsed.errors).slice(0, 180)}`;
+  } catch {
+    return onesignalResponse.slice(0, 180);
+  }
+
+  return null;
+}
+
 export default async function BroadcastNotificationsPage() {
   const session = await auth();
   await requireAdminPanel(session);
@@ -87,6 +102,11 @@ export default async function BroadcastNotificationsPage() {
                       <Badge className={row.status === "FAILED" ? "border-rose-200 bg-rose-50 text-rose-800" : ""}>
                         {statusLabel[row.status] ?? row.status}
                       </Badge>
+                      {deliverySummary(row.onesignalResponse, row.errorMessage) ? (
+                        <div className="mt-1 max-w-xs truncate text-xs text-slate-500">
+                          {deliverySummary(row.onesignalResponse, row.errorMessage)}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-3 py-2">{row.actor?.name ?? "غير معروف"}</td>
                     <td className="px-3 py-2" dir="ltr">

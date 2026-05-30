@@ -6,8 +6,8 @@ import { UserRole } from "@/generated/prisma/enums";
 import { APP_NAME_AR } from "@/lib/entity";
 
 const DARAA_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
-const ONESIGNAL_WORKER_PATH = "push/onesignal/OneSignalSDKWorker.js";
-const ONESIGNAL_WORKER_URL = `/${ONESIGNAL_WORKER_PATH}`;
+const ONESIGNAL_WORKER_PATH = "/push/onesignal/OneSignalSDKWorker.js";
+const ONESIGNAL_UPDATER_WORKER_PATH = "/push/onesignal/OneSignalSDKUpdaterWorker.js";
 const ONESIGNAL_WORKER_SCOPE = "/push/onesignal/";
 
 type OneSignalSdk = {
@@ -62,7 +62,7 @@ async function ensureOneSignalServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   if (!window.isSecureContext && window.location.hostname !== "localhost") return;
   try {
-    await navigator.serviceWorker.register(ONESIGNAL_WORKER_URL, { scope: ONESIGNAL_WORKER_SCOPE });
+    await navigator.serviceWorker.register(ONESIGNAL_WORKER_PATH, { scope: ONESIGNAL_WORKER_SCOPE });
   } catch (error) {
     console.warn("[OneSignal] service worker registration skipped:", error);
   }
@@ -89,6 +89,7 @@ export function OneSignalClient() {
             appId,
             autoResubscribe: true,
             serviceWorkerPath: ONESIGNAL_WORKER_PATH,
+            serviceWorkerUpdaterPath: ONESIGNAL_UPDATER_WORKER_PATH,
             serviceWorkerParam: { scope: ONESIGNAL_WORKER_SCOPE },
             notificationClickHandlerMatch: "origin",
             notificationClickHandlerAction: "focus",
