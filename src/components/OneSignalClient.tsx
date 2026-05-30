@@ -6,6 +6,8 @@ import { UserRole } from "@/generated/prisma/enums";
 import { APP_NAME_AR } from "@/lib/entity";
 
 const DARAA_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
+const ONESIGNAL_WORKER_PATH = "push/onesignal/OneSignalSDKWorker.js";
+const ONESIGNAL_WORKER_SCOPE = "/push/onesignal/";
 
 type OneSignalSdk = {
   init: (options: Record<string, unknown>) => Promise<void>;
@@ -51,6 +53,10 @@ function onesignalRole(role: UserRole): string {
   return "citizen";
 }
 
+function shouldRequestPushPermission(role: UserRole): boolean {
+  return role === UserRole.CITIZEN || role === UserRole.SUPER_ADMIN || role === UserRole.MUNICIPALITY_ADMIN;
+}
+
 export function OneSignalClient() {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
@@ -64,13 +70,14 @@ export function OneSignalClient() {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal) => {
       if (window.__daraaOneSignalInitFailed) return;
+      const origin = window.location.origin;
       if (!window.__daraaOneSignalInitialized) {
-        const origin = window.location.origin;
         try {
           await OneSignal.init({
             appId,
-            serviceWorkerPath: "OneSignalSDKWorker.js",
-            serviceWorkerParam: { scope: "/" },
+            autoResubscribe: true,
+            serviceWorkerPath: ONESIGNAL_WORKER_PATH,
+            serviceWorkerParam: { scope: ONESIGNAL_WORKER_SCOPE },
             notificationClickHandlerMatch: "origin",
             notificationClickHandlerAction: "focus",
             welcomeNotification: {
@@ -79,8 +86,6 @@ export function OneSignalClient() {
               url: "/citizen/notifications",
             },
           });
-          OneSignal.Notifications.setDefaultTitle?.(APP_NAME_AR);
-          OneSignal.Notifications.setDefaultUrl?.(new URL("/citizen/notifications", origin).toString());
           window.__daraaOneSignalInitialized = true;
         } catch (error) {
           const message = error instanceof Error ? error.message : "";
@@ -93,6 +98,8 @@ export function OneSignalClient() {
           }
         }
       }
+      OneSignal.Notifications.setDefaultTitle?.(APP_NAME_AR);
+      OneSignal.Notifications.setDefaultUrl?.(new URL("/citizen/notifications", origin).toString());
 
       if (status === "unauthenticated") {
         await OneSignal.logout();
@@ -120,7 +127,7 @@ export function OneSignalClient() {
         window.__daraaOneSignalSubscriptionListener = true;
       }
 
-      if (userRole !== UserRole.CITIZEN) return;
+      if (!shouldRequestPushPermission(userRole)) return;
       if (OneSignal.Notifications.isPushSupported && !OneSignal.Notifications.isPushSupported()) return;
       if (typeof Notification === "undefined") return;
       if (OneSignal.User.PushSubscription.optedIn) return;
