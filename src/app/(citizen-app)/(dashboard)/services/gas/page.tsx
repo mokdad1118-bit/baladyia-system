@@ -21,7 +21,12 @@ export default async function CitizenGasServicePage({ searchParams }: Props) {
     select: { name: true, phone: true, nationalId: true },
   });
   const gasAgents = await db.user.findMany({
-    where: { role: UserRole.GAS_AGENT, isActive: true, gasArea: { not: null } },
+    where: {
+      role: UserRole.GAS_AGENT,
+      isActive: true,
+      municipalityId: s.user.municipalityId ?? "__none__",
+      gasArea: { not: null },
+    },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });

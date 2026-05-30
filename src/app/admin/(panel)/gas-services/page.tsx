@@ -51,6 +51,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
     phone: string | null;
     gasArea: string | null;
     isActive: boolean;
+    municipality: { name: string } | null;
   }[] = [];
   let loadError = false;
 
@@ -74,6 +75,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
           phone: true,
           gasArea: true,
           isActive: true,
+          municipality: { select: { name: true } },
         },
       }),
     ]);
@@ -129,6 +131,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
               <thead>
                 <tr>
                   <th>الاسم</th>
+                  <th>البلدية</th>
                   <th>رقم الهاتف</th>
                   <th>المنطقة</th>
                   <th>الحالة</th>
@@ -139,6 +142,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
                 {agents.map((a) => (
                   <tr key={a.id}>
                     <td>{a.name}</td>
+                    <td>{a.municipality?.name ?? "—"}</td>
                     <td dir="ltr">{a.phone ?? "—"}</td>
                     <td>{a.gasArea ?? "—"}</td>
                     <td>{a.isActive ? "مفعّل" : "معطّل"}</td>

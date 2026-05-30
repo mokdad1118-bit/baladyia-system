@@ -14,6 +14,7 @@ export default async function AdminCitizensPage() {
   const citizens = await db.user.findMany({
     where: staffCitizenUserWhere(s),
     orderBy: { createdAt: "desc" },
+    include: { municipality: { select: { name: true } } },
   });
 
   return (
@@ -26,6 +27,7 @@ export default async function AdminCitizensPage() {
         notificationEmail: u.notificationEmail,
         phone: u.phone,
         nationalId: u.nationalId,
+        municipalityName: u.municipality?.name ?? null,
         isVerified: u.isVerified,
         role: u.role,
         isActive: u.isActive,

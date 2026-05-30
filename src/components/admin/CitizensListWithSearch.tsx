@@ -17,6 +17,7 @@ export type CitizenRow = {
   notificationEmail: string | null;
   phone: string | null;
   nationalId: string | null;
+  municipalityName: string | null;
   isVerified: boolean;
   role: UserRole;
   isActive: boolean;
@@ -29,6 +30,7 @@ function haystack(u: CitizenRow): string {
     u.notificationEmail,
     u.phone,
     u.nationalId,
+    u.municipalityName,
     userRoleAr[u.role],
     u.isActive ? "" : "معطّل",
     u.isVerified ? "" : "غير مُفعّل",
@@ -90,6 +92,10 @@ export function CitizensListWithSearch({
                               <dd className="min-w-0 break-all">{u.notificationEmail}</dd>
                             </div>
                           ) : null}
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                            <dt className="font-medium text-slate-500">البلدية</dt>
+                            <dd className="min-w-0">{u.municipalityName ?? "—"}</dd>
+                          </div>
                           <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                             <dt className="font-medium text-slate-500">الهاتف</dt>
                             <dd dir="ltr" className="min-w-0 text-start">
