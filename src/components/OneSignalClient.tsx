@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@/generated/prisma/enums";
+import { APP_NAME_AR } from "@/lib/entity";
 
 const DARAA_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
-const DARAA_PORTAL_NAME = "بوابة محافظة درعا";
 
 type OneSignalSdk = {
   init: (options: Record<string, unknown>) => Promise<void>;
@@ -25,6 +25,8 @@ type OneSignalSdk = {
   Notifications: {
     isPushSupported?: () => boolean;
     requestPermission: () => Promise<boolean | void> | boolean | void;
+    setDefaultTitle?: (title: string) => void;
+    setDefaultUrl?: (url: string) => void;
     permission?: boolean;
   };
   Slidedown?: {
@@ -51,6 +53,9 @@ function onesignalRole(role: UserRole): string {
 
 export function OneSignalClient() {
   const { data: session, status } = useSession();
+  const userId = session?.user?.id;
+  const userMunicipalityId = session?.user?.municipalityId;
+  const userRole = session?.user?.role;
 
   useEffect(() => {
     const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || DARAA_ONESIGNAL_APP_ID;
@@ -60,16 +65,22 @@ export function OneSignalClient() {
     window.OneSignalDeferred.push(async (OneSignal) => {
       if (window.__daraaOneSignalInitFailed) return;
       if (!window.__daraaOneSignalInitialized) {
+        const origin = window.location.origin;
         try {
           await OneSignal.init({
             appId,
             serviceWorkerPath: "OneSignalSDKWorker.js",
+            serviceWorkerParam: { scope: "/" },
+            notificationClickHandlerMatch: "origin",
+            notificationClickHandlerAction: "focus",
             welcomeNotification: {
-              title: DARAA_PORTAL_NAME,
+              title: APP_NAME_AR,
               message: "تم تفعيل إشعارات بوابة محافظة درعا.",
               url: "/citizen/notifications",
             },
           });
+          OneSignal.Notifications.setDefaultTitle?.(APP_NAME_AR);
+          OneSignal.Notifications.setDefaultUrl?.(new URL("/citizen/notifications", origin).toString());
           window.__daraaOneSignalInitialized = true;
         } catch (error) {
           const message = error instanceof Error ? error.message : "";
@@ -88,17 +99,16 @@ export function OneSignalClient() {
         return;
       }
 
-      const user = session?.user;
-      if (status !== "authenticated" || !user?.id || !user.role) return;
+      if (status !== "authenticated" || !userId || !userRole) return;
 
-      const role = onesignalRole(user.role);
+      const role = onesignalRole(userRole);
       const tags = {
         governorate: "daraa",
-        municipalityId: user.municipalityId?.trim() || "all",
+        municipalityId: userMunicipalityId?.trim() || "all",
         role,
       };
       const identifyUser = async () => {
-        await OneSignal.login(user.id);
+        await OneSignal.login(userId);
         await OneSignal.User.addTags(tags);
       };
 
@@ -110,7 +120,7 @@ export function OneSignalClient() {
         window.__daraaOneSignalSubscriptionListener = true;
       }
 
-      if (user.role !== UserRole.CITIZEN) return;
+      if (userRole !== UserRole.CITIZEN) return;
       if (OneSignal.Notifications.isPushSupported && !OneSignal.Notifications.isPushSupported()) return;
       if (typeof Notification === "undefined") return;
       if (OneSignal.User.PushSubscription.optedIn) return;
@@ -129,7 +139,7 @@ export function OneSignalClient() {
       }
       await identifyUser();
     });
-  }, [session?.user?.id, session?.user?.municipalityId, session?.user?.role, status]);
+  }, [status, userId, userMunicipalityId, userRole]);
 
   return null;
 }

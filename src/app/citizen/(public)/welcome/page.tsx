@@ -6,7 +6,7 @@ import { APP_NAME_AR } from "@/lib/entity";
 export const metadata: Metadata = {
   title: `الترحيب — ${APP_NAME_AR}`,
   icons: {
-    apple: [{ url: "/brand/welcome-pwa-icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 

@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { APP_NAME_AR } from "@/lib/entity";
 import { isSuperAdminRole } from "@/lib/roles";
 import { writeOperationLog } from "@/lib/operation-log";
 
 const DARAA_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
-const DARAA_PORTAL_NAME = "بوابة محافظة درعا";
-const NOTIFICATION_ICON_PATH = "/brand/icon-192.png";
+const NOTIFICATION_ICON_PATH = "/brand/icon-256.png";
 
 export type BroadcastNotificationState =
   | { ok: true; message: string }
@@ -122,7 +122,7 @@ export async function sendBroadcastNotification(
     app_id: appId,
     target_channel: "push",
     filters: buildFilters(targetRole, municipalityId),
-    headings: { ar: DARAA_PORTAL_NAME, en: DARAA_PORTAL_NAME },
+    headings: { ar: APP_NAME_AR, en: APP_NAME_AR },
     contents: { ar: message, en: message },
     data: {
       governorate: "daraa",
