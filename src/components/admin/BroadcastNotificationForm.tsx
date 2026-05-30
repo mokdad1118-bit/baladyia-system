@@ -103,7 +103,11 @@ export function BroadcastNotificationForm({
       {state && "error" in state ? <p className="text-sm text-rose-700">{state.error}</p> : null}
       {state && "ok" in state ? <p className="text-sm text-emerald-700">{state.message}</p> : null}
 
-      <button type="submit" disabled={pending} className="gov-btn w-full px-4 py-2 text-sm md:w-auto">
+      <button
+        type="submit"
+        disabled={pending}
+        className="gov-btn-primary w-full px-5 py-2.5 text-sm font-semibold disabled:opacity-60 md:w-auto"
+      >
         {pending ? "جاري الإرسال..." : "إرسال الإشعار"}
       </button>
     </form>

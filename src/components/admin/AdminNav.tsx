@@ -58,7 +58,7 @@ const segments = [
   {
     internal: "/admin/broadcast-notifications",
     label: "إرسال الإشعارات",
-    desc: "OneSignal للمواطنين والمستخدمين",
+    desc: "للمواطنين والمستخدمين",
     perm: null,
     adminOnly: true,
   },

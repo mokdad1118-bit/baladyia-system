@@ -7,6 +7,7 @@ import { requireAdminPanel } from "@/lib/admin-guard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { BroadcastNotificationForm } from "@/components/admin/BroadcastNotificationForm";
+import { DeleteBroadcastNotificationButton } from "@/components/admin/DeleteBroadcastNotificationButton";
 
 const roleLabel: Record<string, string> = {
   citizen: "مواطن",
@@ -70,6 +71,7 @@ export default async function BroadcastNotificationsPage() {
                   <th className="px-3 py-2 text-start">الحالة</th>
                   <th className="px-3 py-2 text-start">المرسل</th>
                   <th className="px-3 py-2 text-start">التاريخ</th>
+                  <th className="px-3 py-2 text-start">إجراء</th>
                 </tr>
               </thead>
               <tbody>
@@ -89,6 +91,9 @@ export default async function BroadcastNotificationsPage() {
                     <td className="px-3 py-2">{row.actor?.name ?? "غير معروف"}</td>
                     <td className="px-3 py-2" dir="ltr">
                       {row.createdAt.toLocaleString("ar-SY")}
+                    </td>
+                    <td className="px-3 py-2">
+                      <DeleteBroadcastNotificationButton id={row.id} title={row.title} />
                     </td>
                   </tr>
                 ))}

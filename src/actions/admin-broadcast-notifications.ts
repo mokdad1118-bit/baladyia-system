@@ -209,3 +209,44 @@ export async function sendBroadcastNotification(
   if (status === "FAILED") return { error: errorMessage || "تعذر إرسال الإشعار." };
   return { ok: true, message: `تم إرسال الإشعار إلى ${recipients ?? "المستلمين"} جهاز/اشتراك.` };
 }
+
+export async function deleteBroadcastNotification(id: string): Promise<{ ok?: true; error?: string }> {
+  const session = await auth();
+  if (!session?.user) return { error: "غير مصرح." };
+
+  const isGovernorateAdmin = isSuperAdminRole(session.user.role);
+  const isMunicipalityAdmin = session.user.role === UserRole.MUNICIPALITY_ADMIN;
+  if (!isGovernorateAdmin && !isMunicipalityAdmin) return { error: "هذه الصفحة مخصصة للمديرين فقط." };
+
+  const notification = await db.broadcastNotification.findUnique({
+    where: { id },
+    select: { id: true, title: true, municipalityId: true, targetRole: true, targetScope: true },
+  });
+  if (!notification) return { error: "الإشعار غير موجود." };
+
+  if (isMunicipalityAdmin) {
+    const ownMunicipalityId = session.user.municipalityId?.trim();
+    if (!ownMunicipalityId || notification.municipalityId !== ownMunicipalityId) {
+      return { error: "لا تملك صلاحية حذف هذا الإشعار." };
+    }
+  }
+
+  await db.broadcastNotification.delete({ where: { id } });
+  await writeOperationLog({
+    actorId: session.user.id,
+    municipalityId: notification.municipalityId,
+    action: "DELETE_BROADCAST_NOTIFICATION",
+    module: "NOTIFICATIONS",
+    title: "حذف إشعار مرسل",
+    description: notification.title,
+    entityType: "BROADCAST_NOTIFICATION",
+    entityId: notification.id,
+    metadata: {
+      targetRole: notification.targetRole,
+      targetScope: notification.targetScope,
+    },
+  });
+
+  revalidatePath("/admin/broadcast-notifications");
+  return { ok: true };
+}
