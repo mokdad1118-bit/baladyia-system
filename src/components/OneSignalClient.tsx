@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { UserRole } from "@/generated/prisma/enums";
 import { APP_NAME_AR } from "@/lib/entity";
 
@@ -9,6 +10,7 @@ const DARAA_ONESIGNAL_APP_ID = "30f2deb1-debf-4b7c-80c0-0d11dd28f01d";
 const ONESIGNAL_WORKER_PATH = "/push/onesignal/OneSignalSDKWorker.js";
 const ONESIGNAL_UPDATER_WORKER_PATH = "/push/onesignal/OneSignalSDKUpdaterWorker.js";
 const ONESIGNAL_WORKER_SCOPE = "/push/onesignal/";
+const ONESIGNAL_SDK_SRC = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
 
 type OneSignalSdk = {
   init: (options: Record<string, unknown>) => Promise<void>;
@@ -43,6 +45,7 @@ declare global {
     __daraaOneSignalInitialized?: boolean;
     __daraaOneSignalInitFailed?: boolean;
     __daraaOneSignalSubscriptionListener?: boolean;
+    __daraaOneSignalScriptLoading?: boolean;
   }
 }
 
@@ -68,13 +71,29 @@ async function ensureOneSignalServiceWorker() {
   }
 }
 
+function ensureOneSignalSdkScript() {
+  if (window.__daraaOneSignalScriptLoading) return;
+  if (document.querySelector(`script[src="${ONESIGNAL_SDK_SRC}"]`)) {
+    window.__daraaOneSignalScriptLoading = true;
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = ONESIGNAL_SDK_SRC;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+  window.__daraaOneSignalScriptLoading = true;
+}
+
 export function OneSignalClient() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const userId = session?.user?.id;
   const userMunicipalityId = session?.user?.municipalityId;
   const userRole = session?.user?.role;
 
   useEffect(() => {
+    if (!pathname?.startsWith("/citizen")) return;
     const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || DARAA_ONESIGNAL_APP_ID;
     if (!appId || typeof window === "undefined") return;
 
@@ -159,7 +178,8 @@ export function OneSignalClient() {
       }
       await identifyUser();
     });
-  }, [status, userId, userMunicipalityId, userRole]);
+    ensureOneSignalSdkScript();
+  }, [pathname, status, userId, userMunicipalityId, userRole]);
 
   return null;
 }

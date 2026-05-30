@@ -2,16 +2,16 @@
 
 import { useEffect } from "react";
 
-const ADMIN_CACHE_RESET_KEY = "admin_pwa_cache_reset_v1";
+const ADMIN_CACHE_RESET_KEY = "admin_pwa_cache_reset_v2";
 
 function isRootPwaWorker(registration: ServiceWorkerRegistration): boolean {
-  const rootScope = `${window.location.origin}/`;
+  const adminUrl = `${window.location.origin}/admin/`;
   const activeScript =
     registration.active?.scriptURL ||
     registration.waiting?.scriptURL ||
     registration.installing?.scriptURL ||
     "";
-  return registration.scope === rootScope && activeScript.endsWith("/sw.js");
+  return adminUrl.startsWith(registration.scope) && /\/sw\.js(?:$|\?)/.test(activeScript);
 }
 
 export function AdminNoPwaCacheReset() {
@@ -35,10 +35,13 @@ export function AdminNoPwaCacheReset() {
 
       if ("caches" in window) {
         const names = await caches.keys();
-        const adminSensitiveCaches = names.filter((name) =>
-          /^(apis|pages|pages-rsc|pages-rsc-prefetch|next-data|next-static-js-assets|static-js-assets|start-url)$/.test(
-            name,
-          ),
+        const adminSensitiveCaches = names.filter(
+          (name) =>
+            /^(apis|pages|pages-rsc|pages-rsc-prefetch|next-data|next-static-js-assets|static-js-assets|start-url)$/.test(
+              name,
+            ) ||
+            name.includes("workbox") ||
+            name.includes("next-pwa"),
         );
         if (adminSensitiveCaches.length > 0) changed = true;
         await Promise.all(adminSensitiveCaches.map((name) => caches.delete(name)));

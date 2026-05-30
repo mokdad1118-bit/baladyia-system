@@ -51,7 +51,41 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="h-full">
       <body className={`min-h-full antialiased [font-feature-settings:'tnum'] ${tajawal.className} gov-page`}>
-        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
+        <Script id="admin-pwa-cache-reset" strategy="beforeInteractive">
+          {`
+            (function () {
+              if (!location.pathname.startsWith('/admin')) return;
+              if (!('serviceWorker' in navigator)) return;
+              var key = 'admin_pwa_cache_reset_inline_v1';
+              if (sessionStorage.getItem(key) === '1') return;
+              Promise.all([
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                  return Promise.all(registrations.map(function (registration) {
+                    var script =
+                      (registration.active && registration.active.scriptURL) ||
+                      (registration.waiting && registration.waiting.scriptURL) ||
+                      (registration.installing && registration.installing.scriptURL) ||
+                      '';
+                    var coversAdmin = (location.origin + '/admin/').indexOf(registration.scope) === 0;
+                    if (coversAdmin && /\\/sw\\.js(?:$|\\?)/.test(script)) return registration.unregister();
+                  }));
+                }),
+                'caches' in window
+                  ? caches.keys().then(function (names) {
+                      return Promise.all(names.filter(function (name) {
+                        return /^(apis|pages|pages-rsc|pages-rsc-prefetch|next-data|next-static-js-assets|static-js-assets|start-url)$/.test(name) ||
+                          name.indexOf('workbox') !== -1 ||
+                          name.indexOf('next-pwa') !== -1;
+                      }).map(function (name) { return caches.delete(name); }));
+                    })
+                  : Promise.resolve()
+              ]).then(function () {
+                sessionStorage.setItem(key, '1');
+                location.reload();
+              }).catch(function () {});
+            })();
+          `}
+        </Script>
         <Providers>{children}</Providers>
       </body>
     </html>
