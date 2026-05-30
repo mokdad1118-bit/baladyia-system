@@ -3,7 +3,7 @@
   "short_name": "بوابة محافظة درعا",
   "description": "بوابة محافظة درعا للخدمات الإلكترونية",
   "start_url": "/citizen/welcome",
-  "scope": "/",
+  "scope": "/citizen/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0B2B26",

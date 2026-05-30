@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 const INTRO_STORAGE_KEY = "citizen_pwa_intro_v1";
+const CITIZEN_SW_URL = "/sw.js";
+const CITIZEN_SW_SCOPE = "/citizen/";
 
 type BeforeInstallPromptEventLike = Event & {
   prompt: () => Promise<void>;
@@ -41,6 +43,16 @@ function dismissIntro() {
   }
 }
 
+async function registerCitizenServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  if (!window.isSecureContext && window.location.hostname !== "localhost") return;
+  try {
+    await navigator.serviceWorker.register(CITIZEN_SW_URL, { scope: CITIZEN_SW_SCOPE });
+  } catch (error) {
+    console.warn("[PWA] citizen service worker registration failed:", error);
+  }
+}
+
 export function CitizenPwaLayer() {
   const [introOpen, setIntroOpen] = useState(false);
   const [iosHelpOpen, setIosHelpOpen] = useState(false);
@@ -48,6 +60,7 @@ export function CitizenPwaLayer() {
   const [installBusy, setInstallBusy] = useState(false);
 
   useEffect(() => {
+    void registerCitizenServiceWorker();
     if (isStandalone()) return;
 
     const t = window.setTimeout(() => {

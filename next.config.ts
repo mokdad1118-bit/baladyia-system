@@ -12,6 +12,7 @@ const pwaDisabled =
 const withPWA = withPWAInit({
   dest: "public",
   disable: pwaDisabled,
+  register: false,
   /** لا نُخزّن مرفقات المواطنين في الـ SW وقت البناء (تتغير بعد النشر وتسبب 404/نسخة قديمة). */
   publicExcludes: ["!uploads/**"],
   /** دمج قواعد التخزين الافتراضية مع قاعدة مرفقات لا تُخزَّن (قبل مسار «الصفحات» العام). */
