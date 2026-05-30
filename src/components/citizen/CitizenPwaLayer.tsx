@@ -9,6 +9,12 @@ type BeforeInstallPromptEventLike = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+declare global {
+  interface Window {
+    __daraaBeforeInstallPrompt?: BeforeInstallPromptEventLike | null;
+  }
+}
+
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   const mq = window.matchMedia("(display-mode: standalone)").matches;
@@ -44,18 +50,26 @@ export function CitizenPwaLayer() {
   useEffect(() => {
     if (isStandalone()) return;
 
-    try {
-      if (!localStorage.getItem(INTRO_STORAGE_KEY)) setIntroOpen(true);
-    } catch {
-      setIntroOpen(true);
-    }
+    const t = window.setTimeout(() => {
+      try {
+        if (!localStorage.getItem(INTRO_STORAGE_KEY)) setIntroOpen(true);
+      } catch {
+        setIntroOpen(true);
+      }
+    }, 0);
 
     const onBip = (e: Event) => {
       e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEventLike);
+      const promptEvent = e as BeforeInstallPromptEventLike;
+      window.__daraaBeforeInstallPrompt = promptEvent;
+      setDeferred(promptEvent);
+      window.dispatchEvent(new Event("daraa:pwa-install-available"));
     };
     window.addEventListener("beforeinstallprompt", onBip);
-    return () => window.removeEventListener("beforeinstallprompt", onBip);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("beforeinstallprompt", onBip);
+    };
   }, []);
 
   const closeIntro = useCallback(() => {
@@ -64,14 +78,16 @@ export function CitizenPwaLayer() {
   }, []);
 
   const runAndroidInstall = useCallback(async () => {
-    if (!deferred) return;
+    const promptEvent = deferred ?? window.__daraaBeforeInstallPrompt;
+    if (!promptEvent) return;
     setInstallBusy(true);
     try {
-      await deferred.prompt();
-      await deferred.userChoice;
+      await promptEvent.prompt();
+      await promptEvent.userChoice;
     } catch {
       /* ignore */
     } finally {
+      window.__daraaBeforeInstallPrompt = null;
       setInstallBusy(false);
       setDeferred(null);
       closeIntro();
@@ -211,11 +227,15 @@ function IosShareHintOnce() {
     try {
       if (sessionStorage.getItem("citizen_pwa_ios_banner")) return;
       sessionStorage.setItem("citizen_pwa_ios_banner", "1");
-      setOpen(true);
+      const openTimer = window.setTimeout(() => setOpen(true), 0);
       const t = window.setTimeout(() => setOpen(false), 12000);
-      return () => window.clearTimeout(t);
+      return () => {
+        window.clearTimeout(openTimer);
+        window.clearTimeout(t);
+      };
     } catch {
-      setOpen(true);
+      const t = window.setTimeout(() => setOpen(true), 0);
+      return () => window.clearTimeout(t);
     }
   }, []);
 
