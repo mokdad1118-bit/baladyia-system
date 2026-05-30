@@ -4,7 +4,6 @@ import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { CitizenBottomNav } from "./CitizenBottomNav";
 import { CitizenAppBar } from "./CitizenAppBar";
-import { CitizenPwaLayer } from "./CitizenPwaLayer";
 import { CitizenRouteTransitionOverlay } from "./CitizenRouteTransitionOverlay";
 
 /**
@@ -48,7 +47,6 @@ export function CitizenMobileShell({
       </div>
       {isCitizen ? <CitizenBottomNav unreadNotifications={unreadNotifications} /> : null}
       <CitizenRouteTransitionOverlay />
-      <CitizenPwaLayer />
     </div>
   );
 }

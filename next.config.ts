@@ -3,12 +3,11 @@ import withPWAInit from "@ducanh2912/next-pwa";
 
 /**
  * PWA + Next 16 + مجموعات مسارات قد تُسبب client reference manifest لـ "/".
- * في `next build` لا يُضمن وجود RENDER — لذلك نُعطّل PWA في كل بناء إنتاج ما لم يُفعَّل صراحةً.
+ * PWA مطلوب لتثبيت تطبيق المواطن، لذلك يبقى مفعلاً في الإنتاج ما لم يُعطّل صراحةً.
  */
 const pwaDisabled =
   process.env.NODE_ENV === "development" ||
-  process.env.DISABLE_PWA === "1" ||
-  process.env.ENABLE_PWA !== "1";
+  process.env.DISABLE_PWA === "1";
 
 const withPWA = withPWAInit({
   dest: "public",
