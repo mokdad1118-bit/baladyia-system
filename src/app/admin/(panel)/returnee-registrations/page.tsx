@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
@@ -22,7 +21,6 @@ export default async function AdminReturneeRegistrationsPage({ searchParams }: S
       },
       data: { read: true },
     });
-    revalidatePath("/admin");
   }
 
   const sp = await searchParams;

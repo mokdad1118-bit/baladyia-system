@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
@@ -19,7 +18,6 @@ export default async function AdminCitizenFeedbackPage() {
       },
       data: { read: true },
     });
-    revalidatePath("/admin");
   }
 
   const rows = await db.citizenFeedback.findMany({
@@ -70,11 +68,11 @@ export default async function AdminCitizenFeedbackPage() {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id}>
-                  <td>{row.citizen.name}</td>
+                  <td>{row.citizen?.name ?? "مواطن محذوف"}</td>
                   <td dir="ltr" className="max-w-[14rem] break-all text-sm">
-                    {row.citizen.email ?? "—"}
+                    {row.citizen?.email ?? "—"}
                   </td>
-                  <td dir="ltr">{row.citizen.phone ?? "—"}</td>
+                  <td dir="ltr">{row.citizen?.phone ?? "—"}</td>
                   <td className="max-w-[28rem] whitespace-pre-wrap break-words">{row.message}</td>
                   <td className="max-w-[20rem] whitespace-pre-wrap break-words text-sm">
                     {row.adminReply ? (

@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { requestStatusAr } from "@/lib/labels";
@@ -55,7 +54,6 @@ export default async function AdminRequestDetailPage({ params, searchParams }: P
       },
       data: { read: true },
     });
-    revalidatePath("/admin");
   }
 
   return (
