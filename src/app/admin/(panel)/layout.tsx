@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { AdminNav } from "@/components/admin/AdminNav";
-import { AdminCurrentMunicipalityLabel, AdminSuperMunicipalitySwitcher } from "@/components/admin/AdminMunicipalityHeader";
 import { AdminNoPwaCacheReset } from "@/components/admin/AdminNoPwaCacheReset";
 import { db } from "@/lib/db";
 import { hasAnyStaffPanelPermission, staffNavPermissions } from "@/lib/staff-permissions";
@@ -75,8 +74,6 @@ export default async function AdminPanelLayout({
       logoutCallbackUrl={logoutCallbackUrl}
     >
       <AdminNoPwaCacheReset />
-      <AdminSuperMunicipalitySwitcher />
-      <AdminCurrentMunicipalityLabel />
       {children}
     </GovWorkspaceShell>
   );

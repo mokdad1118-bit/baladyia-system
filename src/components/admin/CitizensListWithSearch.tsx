@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
+import { downloadCitizensExcel } from "@/lib/admin-users-export";
 
 export type CitizenRow = {
   id: string;
@@ -48,6 +49,7 @@ export function CitizensListWithSearch({
   isAdmin: boolean;
 }) {
   const [q, setQ] = useState("");
+  const [exporting, setExporting] = useState(false);
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return citizens;
@@ -67,6 +69,24 @@ export function CitizensListWithSearch({
           onChange={setQ}
           className="mb-4"
         />
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-[var(--gov-muted)]">عدد النتائج: {filtered.length}</p>
+          <button
+            type="button"
+            disabled={filtered.length === 0 || exporting}
+            className="gov-btn-secondary px-3 py-2 text-xs font-semibold disabled:opacity-60"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                await downloadCitizensExcel(filtered);
+              } finally {
+                setExporting(false);
+              }
+            }}
+          >
+            {exporting ? "جاري التصدير..." : "تصدير Excel"}
+          </button>
+        </div>
         {citizens.length === 0 ? (
           <p className="text-center text-sm text-[var(--gov-muted)]">لا يوجد مواطنون مسجّلون بعد.</p>
         ) : filtered.length === 0 ? (

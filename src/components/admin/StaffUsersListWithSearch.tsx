@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
+import { downloadStaffUsersExcel } from "@/lib/admin-users-export";
 
 export type StaffUserRow = {
   id: string;
@@ -17,6 +18,7 @@ export type StaffUserRow = {
   email: string | null;
   notificationEmail: string | null;
   phone: string | null;
+  municipalityName: string | null;
   role: UserRole;
   isActive: boolean;
   permViewRequests: boolean;
@@ -36,6 +38,7 @@ function haystack(u: StaffUserRow): string {
     u.email,
     u.notificationEmail,
     u.phone,
+    u.municipalityName,
     userRoleAr[u.role],
     u.permViewRequests ? "طلبات" : "",
     u.permManageGas ? "غاز" : "",
@@ -71,6 +74,11 @@ function PermissionBadge({ children }: { children: React.ReactNode }) {
       {children}
     </Badge>
   );
+}
+
+function permissionLabels(user: StaffUserRow): string[] {
+  if (user.role !== UserRole.EMPLOYEE) return [];
+  return permissionOptions.flatMap((p) => (user[p.valueKey] ? [p.label] : []));
 }
 
 function EmployeePermissionsForm({
@@ -133,6 +141,7 @@ export function StaffUsersListWithSearch({
   assignablePerms: { requests: boolean; gas: boolean; social: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean };
 }) {
   const [q, setQ] = useState("");
+  const [exporting, setExporting] = useState(false);
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return users;
@@ -172,6 +181,24 @@ export function StaffUsersListWithSearch({
           onChange={setQ}
           className="mb-4"
         />
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-[var(--gov-muted)]">عدد النتائج: {filtered.length}</p>
+          <button
+            type="button"
+            disabled={filtered.length === 0 || exporting}
+            className="gov-btn-secondary px-3 py-2 text-xs font-semibold disabled:opacity-60"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                await downloadStaffUsersExcel(filtered.map((u) => ({ ...u, permissions: permissionLabels(u) })));
+              } finally {
+                setExporting(false);
+              }
+            }}
+          >
+            {exporting ? "جاري التصدير..." : "تصدير Excel"}
+          </button>
+        </div>
         {users.length === 0 ? (
           <p className="text-center text-sm text-[var(--gov-muted)]">لا مستخدمين.</p>
         ) : filtered.length === 0 ? (
@@ -188,6 +215,7 @@ export function StaffUsersListWithSearch({
                         <p className="text-sm text-slate-500">
                           {u.email || u.notificationEmail || (u.phone ? `واتساب ${u.phone}` : "—")}
                         </p>
+                        <p className="text-sm text-slate-500">البلدية: {u.municipalityName ?? "—"}</p>
                         <p className="mt-1 flex flex-wrap items-center gap-1">
                           <Badge>{userRoleAr[u.role]}</Badge>
                           {u.role === UserRole.EMPLOYEE ? (
