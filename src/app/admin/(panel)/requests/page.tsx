@@ -9,14 +9,21 @@ import { buildRequestAttachmentExportLinks } from "@/lib/admin-requests-export";
 import { requestExportBaseUrl } from "@/lib/request-export-base-url";
 import { AdminRequestsTableWithSearch } from "@/components/admin/AdminRequestsTableWithSearch";
 import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { AdminPageMunicipalityScopeForm } from "@/components/admin/AdminPageMunicipalityScopeForm";
+import { listActiveMunicipalities } from "@/lib/municipalities";
+import { isSuperAdminRole } from "@/lib/roles";
 
-type S = { searchParams: Promise<{ status?: string; dateFrom?: string; dateTo?: string }> };
+type S = { searchParams: Promise<{ status?: string; dateFrom?: string; dateTo?: string; municipalityId?: string }> };
 
 export default async function AdminRequestsPage({ searchParams }: S) {
   const s = await auth();
   await requireStaffPanelPermission(s, "requests");
-  const mun = staffMunicipalityIdFilter(s);
   const sp = await searchParams;
+  const isSuperAdmin = s?.user ? isSuperAdminRole(s.user.role) : false;
+  const selectedMunicipalityId =
+    isSuperAdmin && sp.municipalityId && sp.municipalityId !== "__ALL__" ? sp.municipalityId : "";
+  const mun = isSuperAdmin ? (selectedMunicipalityId ? { municipalityId: selectedMunicipalityId } : {}) : staffMunicipalityIdFilter(s);
+  const municipalities = isSuperAdmin ? await listActiveMunicipalities() : [];
   const st = sp.status;
   const statusFilter =
     st && Object.values(RequestStatus).includes(st as RequestStatus) ? (st as RequestStatus) : undefined;
@@ -50,6 +57,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
 
   const filterForm = (
     <form className="flex flex-wrap items-end gap-3" method="get" action="/admin/requests">
+      {selectedMunicipalityId ? <input type="hidden" name="municipalityId" value={selectedMunicipalityId} /> : null}
       <div className="min-w-[10rem] flex-1 sm:max-w-xs">
         <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">الحالة</label>
         <select className="gov-input w-full px-3 py-2.5 text-sm" name="status" defaultValue={st ?? ""}>
@@ -91,5 +99,10 @@ export default async function AdminRequestsPage({ searchParams }: S) {
     attachments: buildRequestAttachmentExportLinks(r.files, baseUrl),
   }));
 
-  return <AdminRequestsTableWithSearch rows={rows} filterForm={filterForm} />;
+  return (
+    <>
+      <AdminPageMunicipalityScopeForm municipalities={municipalities} current={selectedMunicipalityId} />
+      <AdminRequestsTableWithSearch rows={rows} filterForm={filterForm} />
+    </>
+  );
 }

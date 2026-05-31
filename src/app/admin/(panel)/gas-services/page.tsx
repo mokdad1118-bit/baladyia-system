@@ -12,8 +12,9 @@ import { staffGasAgentUserWhere, staffMunicipalityIdFilter } from "@/lib/municip
 import { isSuperAdminRole } from "@/lib/roles";
 import { listActiveMunicipalities } from "@/lib/municipalities";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
+import { AdminPageMunicipalityScopeForm } from "@/components/admin/AdminPageMunicipalityScopeForm";
 
-type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string }> };
+type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string; municipalityId?: string }> };
 type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
   include: { assignedAgent: { select: { name: true } } };
 }>;
@@ -21,7 +22,14 @@ type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
 export default async function AdminGasServicesPage({ searchParams }: S) {
   const session = await auth();
   await requireStaffPanelPermission(session, "gas");
-  const mun = staffMunicipalityIdFilter(session);
+  const sp = await searchParams;
+  const isSuperAdmin = session?.user ? isSuperAdminRole(session.user.role) : false;
+  const selectedMunicipalityId =
+    isSuperAdmin && sp.municipalityId && sp.municipalityId !== "__ALL__" ? sp.municipalityId : "";
+  const mun = isSuperAdmin ? (selectedMunicipalityId ? { municipalityId: selectedMunicipalityId } : {}) : staffMunicipalityIdFilter(session);
+  const gasAgentWhere: Prisma.UserWhereInput = isSuperAdmin
+    ? { role: UserRole.GAS_AGENT, ...(selectedMunicipalityId ? { municipalityId: selectedMunicipalityId } : {}) }
+    : staffGasAgentUserWhere(session);
   if (session?.user) {
     try {
       await db.notification.updateMany({
@@ -37,7 +45,6 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
     }
   }
 
-  const sp = await searchParams;
   const d0 = parseDateStartParam(sp.dateFrom);
   const d1 = parseDateEndParam(sp.dateTo);
 
@@ -65,9 +72,9 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
           assignedAgent: { select: { name: true } },
         },
       }),
-      isSuperAdminRole(session?.user?.role ?? UserRole.CITIZEN) ? listActiveMunicipalities() : Promise.resolve([]),
+      isSuperAdmin ? listActiveMunicipalities() : Promise.resolve([]),
       db.user.findMany({
-        where: staffGasAgentUserWhere(session),
+        where: gasAgentWhere,
         orderBy: [{ gasArea: "asc" }, { createdAt: "asc" }],
         select: {
           id: true,
@@ -86,6 +93,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
 
   const filterForm = (
     <form className="flex flex-wrap items-end gap-3" method="get" action="/admin/gas-services">
+      {selectedMunicipalityId ? <input type="hidden" name="municipalityId" value={selectedMunicipalityId} /> : null}
       <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
         <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">من تاريخ</label>
         <input className="gov-input w-full px-3 py-2.5 text-sm" type="date" name="dateFrom" defaultValue={sp.dateFrom ?? ""} />
@@ -114,6 +122,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
 
   return (
     <div>
+      <AdminPageMunicipalityScopeForm municipalities={municipalities} current={selectedMunicipalityId} />
       {loadError ? (
         <div className="gov-card mb-6 border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
           تعذّر تحميل بعض بيانات خدمات الغاز. أعد المحاولة بعد اكتمال ترحيل قاعدة البيانات أو راجع سجلات Render.

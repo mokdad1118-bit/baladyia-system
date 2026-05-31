@@ -9,6 +9,7 @@ import {
 } from "@/actions/admin-municipalities";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export type MunicipalityAdminRow = {
   id: string;
@@ -183,6 +184,7 @@ export function MunicipalitiesManagePanel({ rows }: { rows: MunicipalityAdminRow
 }
 
 function MunicipalityDeleteButton({ row }: { row: MunicipalityAdminRow }) {
+  const router = useRouter();
   const [pending, setPending] = useState(false);
   const hasData = row.citizens + row.requests > 0;
   return (
@@ -200,6 +202,7 @@ function MunicipalityDeleteButton({ row }: { row: MunicipalityAdminRow }) {
         const res = await deleteMunicipality(row.id);
         setPending(false);
         if (res.error) alert(res.error);
+        else router.refresh();
       }}
     >
       {pending ? "…" : "حذف"}

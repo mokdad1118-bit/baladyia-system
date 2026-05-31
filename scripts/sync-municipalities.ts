@@ -8,19 +8,29 @@ import { createLibSqlAdapter } from "../src/lib/libsql-adapter";
 export async function syncDaraaMunicipalities() {
   const prisma = new PrismaClient({ adapter: createLibSqlAdapter() });
   try {
+    const seedCodes = DARAA_MUNICIPALITIES.map((m) => m.code);
+    const existingSeedCount = await prisma.municipality.count({ where: { code: { in: seedCodes } } });
+    const createMissingSeeds = existingSeedCount <= 1;
+
     for (const m of DARAA_MUNICIPALITIES) {
       const isLegacyBosra = m.code === "bosra-sham";
-      await prisma.municipality.upsert({
-        where: { code: m.code },
-        create: {
-          ...(isLegacyBosra ? { id: MIGRATION_DEFAULT_MUNICIPALITY_ID } : {}),
-          code: m.code,
-          name: m.name,
-          sortOrder: m.sortOrder,
-          governorate: "درعا",
-        },
-        update: { name: m.name, sortOrder: m.sortOrder, isActive: true },
-      });
+      const existing = await prisma.municipality.findUnique({ where: { code: m.code } });
+      if (existing) {
+        await prisma.municipality.update({
+          where: { code: m.code },
+          data: { name: m.name, sortOrder: m.sortOrder },
+        });
+      } else if (createMissingSeeds) {
+        await prisma.municipality.create({
+          data: {
+            ...(isLegacyBosra ? { id: MIGRATION_DEFAULT_MUNICIPALITY_ID } : {}),
+            code: m.code,
+            name: m.name,
+            sortOrder: m.sortOrder,
+            governorate: "درعا",
+          },
+        });
+      }
     }
     console.log(`[sync-municipalities] synced ${DARAA_MUNICIPALITIES.length} municipalities`);
   } finally {

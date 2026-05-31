@@ -73,12 +73,12 @@ export function CitizenBottomNav({
 
   return (
     <nav
-      className="fixed end-3 bottom-3 start-3 z-50 rounded-[2rem] border border-[var(--gov-border)]/80 bg-white/95 px-2 pt-2 shadow-[0_-8px_32px_-10px_rgba(18,74,56,0.14),0_4px_22px_-8px_rgba(18,74,56,0.16)] backdrop-blur-md md:hidden"
-      style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+      className="fixed end-2 bottom-2 start-2 z-50 rounded-[1.5rem] border border-[var(--gov-border)]/80 bg-white/95 px-1.5 pt-1.5 shadow-[0_-8px_32px_-10px_rgba(18,74,56,0.14),0_4px_22px_-8px_rgba(18,74,56,0.16)] backdrop-blur-md md:hidden"
+      style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
       role="navigation"
       aria-label="تنقّل المواطن"
     >
-      <ul className="mx-auto flex max-w-lg items-stretch gap-1 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="mx-auto flex max-w-lg items-stretch gap-0.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => {
           const { href, label, match, Icon } = tab;
           const badge = "badge" in tab ? tab.badge : undefined;
@@ -90,11 +90,11 @@ export function CitizenBottomNav({
           const badgeLabel = unreadCount > 99 ? "99+" : String(unreadCount);
 
           return (
-            <li key={href} className="min-w-[4.25rem] flex-1">
+            <li key={href} className="min-w-[3.55rem] flex-1">
               <Link
                 href={href}
                 className={cn(
-                  "touch-manipulation flex min-h-[4.25rem] flex-col items-center justify-center text-center transition-colors duration-200 active:opacity-90",
+                  "touch-manipulation flex min-h-[3.6rem] flex-col items-center justify-center text-center transition-colors duration-200 active:opacity-90",
                   active ? "text-[var(--gov-primary)]" : "text-[var(--gov-muted)]",
                 )}
                 aria-current={active ? "page" : undefined}
@@ -108,17 +108,17 @@ export function CitizenBottomNav({
                 >
                   <span
                     className={cn(
-                      "relative flex h-12 w-12 items-center justify-center rounded-full transition duration-300",
+                      "relative flex h-9 w-9 items-center justify-center rounded-full transition duration-300",
                       active
-                        ? "h-14 w-14 bg-[var(--gov-primary)] text-white shadow-[0_8px_24px_-10px_rgba(18,74,56,0.55)]"
+                        ? "h-10 w-10 bg-[var(--gov-primary)] text-white shadow-[0_8px_24px_-10px_rgba(18,74,56,0.55)]"
                         : "bg-slate-100/80 text-slate-500",
                     )}
                   >
-                    <Icon className={cn("h-6 w-6 shrink-0", active && "h-7 w-7")} />
+                    <Icon className="h-5 w-5 shrink-0" />
                   </span>
                   {showUnreadBadge ? (
                     <span
-                      className="absolute end-1 top-0 flex h-[1.25rem] min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--gov-primary)] px-1 text-[0.65rem] font-bold leading-none text-white ring-2 ring-white"
+                      className="absolute end-0 top-0 flex h-[1.05rem] min-w-[1.05rem] items-center justify-center rounded-full bg-[var(--gov-primary)] px-1 text-[0.6rem] font-bold leading-none text-white ring-2 ring-white"
                       aria-hidden
                     >
                       {badgeLabel}
@@ -126,7 +126,7 @@ export function CitizenBottomNav({
                   ) : null}
                   <span
                     className={cn(
-                      "max-w-[4.25rem] truncate text-[0.68rem] font-bold leading-tight sm:text-xs",
+                      "max-w-[3.55rem] truncate text-[0.58rem] font-bold leading-tight sm:text-[0.68rem]",
                       active ? "text-[var(--gov-primary)]" : "text-slate-500",
                     )}
                   >
