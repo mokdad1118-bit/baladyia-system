@@ -54,7 +54,7 @@ export function GovWorkspaceShell({
         </div>
         <div className="gov-divider-flag gov-divider-flag--full mx-auto max-w-[96rem] opacity-80" aria-hidden />
       </header>
-      <div className="mx-auto flex max-w-[96rem] flex-col gap-6 px-4 py-8 lg:flex-row-reverse lg:items-start">
+      <div className="mx-auto flex max-w-[96rem] flex-col gap-6 px-4 py-8 lg:flex-row lg:items-start">
         <aside
           id="admin-side-nav"
           className={cn("gov-card w-full p-0 lg:sticky lg:top-4 lg:w-56 lg:shrink-0", !navOpen && "hidden")}
