@@ -14,23 +14,47 @@ export default async function AdminAreaNewsPage() {
   const isSuperAdmin = isSuperAdminRole(session!.user!.role);
   const municipalityScope = staffMunicipalityIdFilter(session);
   const ownMunicipalityId = "municipalityId" in municipalityScope ? municipalityScope.municipalityId : "__none__";
+  const commentsWhere = isSuperAdmin ? {} : { municipalityId: ownMunicipalityId };
+  const postsWhere = isSuperAdmin
+    ? {}
+    : {
+        OR: [
+          { municipalityId: ownMunicipalityId },
+          { municipalityId: null, comments: { some: { municipalityId: ownMunicipalityId } } },
+        ],
+      };
 
   const [municipalities, posts] = await Promise.all([
     isSuperAdmin ? listActiveMunicipalities() : Promise.resolve([]),
     db.areaNewsPost.findMany({
-      where: isSuperAdmin ? {} : { municipalityId: ownMunicipalityId },
+      where: postsWhere,
       orderBy: { createdAt: "desc" },
       take: 100,
       include: {
         municipality: { select: { name: true } },
         author: { select: { name: true, role: true } },
+        _count: {
+          select: {
+            likes: isSuperAdmin ? true : { where: { municipalityId: ownMunicipalityId } },
+            comments: isSuperAdmin ? true : { where: { municipalityId: ownMunicipalityId } },
+          },
+        },
+        comments: {
+          where: commentsWhere,
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          include: {
+            municipality: { select: { name: true } },
+            citizen: { select: { name: true, phone: true, nationalId: true } },
+          },
+        },
       },
     }),
   ]);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="أخبار المنطقة" description="مناشير تظهر داخل تطبيق المواطن حسب نطاق البلدية." />
+      <PageHeader title="أخبار المنطقة" description="مناشير تظهر داخل تطبيق المواطن حسب نطاق البلدية مع تعليقات وإعجابات المواطنين." />
       <AreaNewsPostForm municipalities={municipalities} canSelectMunicipality={isSuperAdmin} />
 
       <section className="space-y-3">
@@ -50,10 +74,38 @@ export default async function AdminAreaNewsPage() {
                       {post.municipality?.name ?? "كل بلديات محافظة درعا"} - {post.author?.name ?? "غير معروف"} -{" "}
                       <span dir="ltr">{post.createdAt.toLocaleString("ar-SY")}</span>
                     </p>
+                    <p className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-[var(--gov-muted)]">
+                      <span className="rounded-full bg-slate-100 px-2 py-1">{post._count.likes} إعجاب</span>
+                      <span className="rounded-full bg-slate-100 px-2 py-1">{post._count.comments} تعليق</span>
+                    </p>
                   </div>
                   <DeleteAreaNewsPostButton id={post.id} title={post.title} />
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">{post.body}</p>
+
+                {post.comments.length ? (
+                  <div className="mt-4 border-t border-slate-100 pt-3">
+                    <h4 className="text-sm font-bold text-[var(--gov-text)]">تعليقات المواطنين</h4>
+                    <div className="mt-2 space-y-2">
+                      {post.comments.map((comment) => (
+                        <div key={comment.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="font-semibold text-[var(--gov-text)]">
+                              {comment.citizen.name} - {comment.municipality.name}
+                            </p>
+                            <time className="text-xs text-[var(--gov-muted)]" dateTime={comment.createdAt.toISOString()}>
+                              {comment.createdAt.toLocaleString("ar-SY")}
+                            </time>
+                          </div>
+                          <p className="mt-1 text-xs text-[var(--gov-muted)]">
+                            {comment.citizen.phone ?? "-"} - {comment.citizen.nationalId ?? "-"}
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap leading-6 text-slate-700">{comment.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>

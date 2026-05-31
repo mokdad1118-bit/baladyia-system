@@ -33,6 +33,8 @@ model Municipality {
   notifications             Notification[]
   broadcastNotifications    BroadcastNotification[]
   areaNewsPosts             AreaNewsPost[]
+  areaNewsComments          AreaNewsComment[]
+  areaNewsLikes             AreaNewsLike[]
   requestSerials            RequestSerial[]
   gasRequestSerials         GasRequestSerial[]
   socialServiceCaseSerials  SocialServiceCaseSerial[]
@@ -92,6 +94,8 @@ model User {
   socialServiceCases SocialServiceCase[]
   authoredAreaNewsPosts AreaNewsPost[] @relation("AreaNewsAuthor")
   areaNewsReads      AreaNewsRead[]
+  areaNewsComments   AreaNewsComment[]
+  areaNewsLikes      AreaNewsLike[]
 
   /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها — فريدة ضمن البلدية
   gasArea            String?
@@ -399,10 +403,45 @@ model AreaNewsPost {
   isPublished    Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  comments       AreaNewsComment[]
+  likes          AreaNewsLike[]
 
   @@index([municipalityId])
   @@index([authorId])
   @@index([createdAt])
+}
+
+model AreaNewsComment {
+  id             String   @id @default(cuid())
+  postId         String
+  post           AreaNewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  citizenId      String
+  citizen        User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime @default(now())
+
+  @@index([postId])
+  @@index([municipalityId])
+  @@index([citizenId])
+  @@index([createdAt])
+}
+
+model AreaNewsLike {
+  id             String   @id @default(cuid())
+  postId         String
+  post           AreaNewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  citizenId      String
+  citizen        User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@unique([postId, citizenId])
+  @@index([postId])
+  @@index([municipalityId])
+  @@index([citizenId])
 }
 
 model AreaNewsRead {

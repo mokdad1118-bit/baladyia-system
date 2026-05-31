@@ -39,6 +39,9 @@ const actionLabels: Record<string, string> = {
   UPDATE_REPLY: "تحديث رد",
   COMPLETE: "إكمال",
   UPDATE_PERMISSIONS: "صلاحيات",
+  LIKE: "إعجاب",
+  UNLIKE: "إزالة إعجاب",
+  COMMENT: "تعليق",
 };
 
 const moduleLabels: Record<string, string> = {

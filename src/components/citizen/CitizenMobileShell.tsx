@@ -36,7 +36,7 @@ export function CitizenMobileShell({
         "min-h-0",
         /* شريط علوي (شعار + عنوان) على الموبايل لجميع زوار مسار المواطن */
         "pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:pt-0",
-        isCitizen && "pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] md:pb-0",
+        isCitizen && "pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] md:pb-0",
       )}
     >
       <CitizenAppBar isCitizen={isCitizen} />

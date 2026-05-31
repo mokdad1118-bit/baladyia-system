@@ -20,6 +20,21 @@ export default async function CitizenAreaNewsPage() {
     include: {
       municipality: { select: { name: true } },
       author: { select: { name: true } },
+      likes: {
+        select: { citizenId: true },
+      },
+      comments: {
+        where: { municipalityId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { citizen: { select: { name: true } } },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: { where: { municipalityId } },
+        },
+      },
     },
   });
 
@@ -34,6 +49,15 @@ export default async function CitizenAreaNewsPage() {
           municipalityName: post.municipality?.name ?? null,
           authorName: post.author?.name ?? null,
           createdAt: post.createdAt.toISOString(),
+          likesCount: post._count.likes,
+          commentsCount: post._count.comments,
+          likedByMe: post.likes.some((like) => like.citizenId === session.user.id),
+          comments: post.comments.map((comment) => ({
+            id: comment.id,
+            body: comment.body,
+            createdAt: comment.createdAt.toISOString(),
+            citizenName: comment.citizen.name,
+          })),
         }))}
       />
     </>

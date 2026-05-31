@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { BRAND_ASSETS } from "@/lib/entity";
 
 /**
  * يظهر عند النقر على روابط التنقّل الداخلي حتى يتغيّر المسار (RSC جاهز).
@@ -61,10 +62,10 @@ export function CitizenRouteTransitionOverlay() {
         )}
       >
         <div className="mx-auto mb-4 flex justify-center">
-          <span
-            className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-[var(--gov-primary)] border-t-transparent"
-            aria-hidden
-          />
+          <span className="flex h-16 w-16 animate-pulse items-center justify-center rounded-full border border-[var(--gov-border)] bg-white shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element -- شعار ثابت من public للتحميل السريع داخل طبقة الانتظار */}
+            <img src={BRAND_ASSETS.stateEmblemPng} alt="" className="h-12 w-12 rounded-full object-contain" aria-hidden />
+          </span>
         </div>
         <p className="text-base font-bold text-[var(--gov-text)]">يرجى الانتظار</p>
         <p className="mt-1.5 text-sm text-[var(--gov-muted)]">جاري التحميل…</p>

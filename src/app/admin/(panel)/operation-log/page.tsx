@@ -32,6 +32,9 @@ const actions = [
   ["UPDATE_REPLY", "تحديث رد"],
   ["COMPLETE", "إكمال"],
   ["UPDATE_PERMISSIONS", "صلاحيات"],
+  ["LIKE", "إعجاب"],
+  ["UNLIKE", "إزالة إعجاب"],
+  ["COMMENT", "تعليق"],
 ] as const;
 
 const modules = [
