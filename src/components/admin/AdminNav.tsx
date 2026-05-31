@@ -26,6 +26,7 @@ type NavSegment = {
   badgeKey?: keyof AdminNavBadgeCounts;
   superAdminOnly?: boolean;
   adminOnly?: boolean;
+  exact?: boolean;
   children?: readonly NavSegment[];
 };
 
@@ -62,6 +63,13 @@ const segments: readonly NavSegment[] = [
         internal: "/admin/services",
         label: "إدارة الخدمات",
         desc: "النماذج والمستندات والأسعار",
+        perm: "manageServices",
+        exact: true,
+      },
+      {
+        internal: "/admin/services/in-person",
+        label: "الخدمات المقدمة حضورياً",
+        desc: "خدمات تتطلب مراجعة البلدية",
         perm: "manageServices",
       },
     ],
@@ -122,10 +130,11 @@ function hrefFor(staffRoot: boolean, internal: string) {
   return internal.replace(/^\/admin/, "") || "/";
 }
 
-function navActive(staffRoot: boolean, internal: string, path: string) {
+function navActive(staffRoot: boolean, internal: string, path: string, exact = false) {
   const href = hrefFor(staffRoot, internal);
   if (href === "/") return path === "/" || path === "";
   if (internal === "/admin") return staffRoot ? path === "/" || path === "" : path === "/admin";
+  if (exact) return path === href;
   return path === href || path.startsWith(`${href}/`);
 }
 
@@ -166,8 +175,8 @@ export function AdminNav({
         const primaryInternal = visibleChildren[0]?.internal ?? item.internal;
         const href = hrefFor(staffRoot, primaryInternal);
         const active = visibleChildren.length
-          ? visibleChildren.some((child) => navActive(staffRoot, child.internal, path))
-          : navActive(staffRoot, item.internal, path);
+          ? visibleChildren.some((child) => navActive(staffRoot, child.internal, path, child.exact))
+          : navActive(staffRoot, item.internal, path, item.exact);
 
         return (
           <div key={item.internal}>
@@ -199,7 +208,7 @@ export function AdminNav({
               <div className="ms-3 mt-1 space-y-1 border-s border-[var(--gov-border)] ps-2">
                 {visibleChildren.map((child) => {
                   const childHref = hrefFor(staffRoot, child.internal);
-                  const childActive = navActive(staffRoot, child.internal, path);
+                  const childActive = navActive(staffRoot, child.internal, path, child.exact);
 
                   return (
                     <Link

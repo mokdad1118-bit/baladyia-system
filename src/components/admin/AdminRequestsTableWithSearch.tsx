@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
-import { RequestStatus } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
@@ -15,12 +14,18 @@ import {
 export type AdminRequestRow = AdminRequestsExportSourceRow & {
   id: string;
   detailHref: string;
+  nationalId: string;
+  phone: string;
+  municipalityName: string;
 };
 
 function haystack(r: AdminRequestRow): string {
   return [
     r.requestNumber,
     r.citizenName,
+    r.nationalId,
+    r.phone,
+    r.municipalityName,
     r.serviceName,
     requestStatusAr[r.status],
     r.createdAt,
@@ -111,11 +116,14 @@ export function AdminRequestsTableWithSearch({
         <p className="text-center text-sm text-[var(--gov-muted)]">لا نتائج مطابقة للبحث.</p>
       ) : (
         <div className="gov-table-wrap">
-          <table className="gov-table">
+          <table className="gov-table min-w-[72rem]">
             <thead>
               <tr>
                 <th>رقم الطلب</th>
                 <th>المواطن</th>
+                <th>الرقم الوطني</th>
+                <th>رقم الواتساب</th>
+                <th>البلدية</th>
                 <th>الخدمة</th>
                 <th>الحالة</th>
                 <th>التاريخ</th>
@@ -133,6 +141,9 @@ export function AdminRequestsTableWithSearch({
                     </Link>
                   </td>
                   <td>{r.citizenName}</td>
+                  <td dir="ltr">{r.nationalId || "—"}</td>
+                  <td dir="ltr">{r.phone || "—"}</td>
+                  <td>{r.municipalityName || "—"}</td>
                   <td>{r.serviceName}</td>
                   <td>
                     <StatusBadge status={r.status} />

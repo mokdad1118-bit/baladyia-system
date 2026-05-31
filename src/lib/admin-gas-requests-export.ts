@@ -2,6 +2,7 @@ export type GasRequestExportRow = {
   gasRequestNumber: string;
   area: string;
   agentName: string;
+  municipalityName?: string;
   fullName: string;
   phone: string;
   nationalId: string;
@@ -29,8 +30,9 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
     { header: "رقم طلب الغاز", key: "gasRequestNumber", width: 24 },
     { header: "المنطقة", key: "area", width: 20 },
     { header: "المعتمد", key: "agentName", width: 24 },
+    { header: "البلدية", key: "municipalityName", width: 24 },
     { header: "الاسم الثلاثي", key: "fullName", width: 30 },
-    { header: "رقم الهاتف", key: "phone", width: 20 },
+    { header: "رقم الواتساب", key: "phone", width: 20 },
     { header: "الرقم الوطني", key: "nationalId", width: 20 },
     { header: "الحالة", key: "statusLabel", width: 16 },
     { header: "تاريخ التقديم", key: "createdAtLabel", width: 18 },
@@ -50,6 +52,7 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
       gasRequestNumber: r.gasRequestNumber,
       area: r.area,
       agentName: r.agentName,
+      municipalityName: r.municipalityName ?? "",
       fullName: r.fullName,
       phone: r.phone,
       nationalId: r.nationalId,

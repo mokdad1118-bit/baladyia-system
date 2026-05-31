@@ -48,6 +48,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
     include: {
       service: true,
       citizen: true,
+      municipality: { select: { name: true } },
       assignee: true,
       files: { select: { id: true, storedName: true, mimeType: true } },
     },
@@ -92,6 +93,9 @@ export default async function AdminRequestsPage({ searchParams }: S) {
     id: r.id,
     requestNumber: r.requestNumber,
     citizenName: r.citizen.name,
+    nationalId: r.citizen.nationalId ?? "",
+    phone: r.submittedPhone || r.citizen.phone || "",
+    municipalityName: r.municipality.name,
     serviceName: r.service.name,
     status: r.status,
     createdAt: r.createdAt.toISOString(),

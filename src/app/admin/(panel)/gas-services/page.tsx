@@ -16,7 +16,10 @@ import { AdminPageMunicipalityScopeForm } from "@/components/admin/AdminPageMuni
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string; municipalityId?: string }> };
 type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
-  include: { assignedAgent: { select: { name: true } } };
+  include: {
+    assignedAgent: { select: { name: true } };
+    municipality: { select: { name: true } };
+  };
 }>;
 
 export default async function AdminGasServicesPage({ searchParams }: S) {
@@ -70,6 +73,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
         take: 500,
         include: {
           assignedAgent: { select: { name: true } },
+          municipality: { select: { name: true } },
         },
       }),
       isSuperAdmin ? listActiveMunicipalities() : Promise.resolve([]),
@@ -113,6 +117,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
     gasRequestNumber: r.gasRequestNumber,
     area: r.area,
     agentName: r.assignedAgent?.name ?? "",
+    municipalityName: r.municipality.name,
     fullName: r.fullName,
     phone: r.phone,
     nationalId: r.nationalId,

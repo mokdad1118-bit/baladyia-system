@@ -9,6 +9,9 @@ export type AdminRequestAttachmentLink = {
 export type AdminRequestsExportSourceRow = {
   requestNumber: string;
   citizenName: string;
+  nationalId?: string;
+  phone?: string;
+  municipalityName?: string;
   serviceName: string;
   status: RequestStatus;
   createdAt: string;
@@ -60,6 +63,9 @@ function rowLabels(r: AdminRequestsExportSourceRow) {
   return {
     requestNumber: r.requestNumber,
     citizenName: r.citizenName,
+    nationalId: r.nationalId ?? "",
+    phone: r.phone ?? "",
+    municipalityName: r.municipalityName ?? "",
     serviceName: r.serviceName,
     statusLabel: requestStatusAr[r.status],
     dateLabel: new Date(r.createdAt).toLocaleDateString("ar"),
@@ -100,6 +106,9 @@ export async function downloadAdminRequestsExcel(rows: AdminRequestsExportSource
   sheet.columns = [
     { header: "رقم الطلب", key: "requestNumber", width: 22 },
     { header: "المواطن", key: "citizenName", width: 28 },
+    { header: "الرقم الوطني", key: "nationalId", width: 20 },
+    { header: "رقم الواتساب", key: "phone", width: 20 },
+    { header: "البلدية", key: "municipalityName", width: 24 },
     { header: "الخدمة", key: "serviceName", width: 36 },
     { header: "الحالة", key: "statusLabel", width: 18 },
     { header: "التاريخ", key: "dateLabel", width: 16 },
@@ -126,6 +135,9 @@ export async function downloadAdminRequestsExcel(rows: AdminRequestsExportSource
     sheet.addRow({
       requestNumber: L.requestNumber,
       citizenName: L.citizenName,
+      nationalId: L.nationalId,
+      phone: L.phone,
+      municipalityName: L.municipalityName,
       serviceName: L.serviceName,
       statusLabel: L.statusLabel,
       dateLabel: L.dateLabel,
@@ -136,7 +148,7 @@ export async function downloadAdminRequestsExcel(rows: AdminRequestsExportSource
   sheet.eachRow((row, i) => {
     if (i > 1) {
       row.alignment = { vertical: "middle", horizontal: "right", wrapText: true };
-      const attCell = row.getCell(6);
+      const attCell = row.getCell(9);
       attCell.alignment = { vertical: "top", horizontal: "right", wrapText: true };
     }
   });
@@ -204,6 +216,9 @@ export async function downloadAdminRequestsPdf(rows: AdminRequestsExportSourceRo
       <tr style="background:#1a5c40;color:#fff;">
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">رقم الطلب</th>
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">المواطن</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">الرقم الوطني</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">رقم الواتساب</th>
+        <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">البلدية</th>
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">الخدمة</th>
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">الحالة</th>
         <th style="border:1px solid #0c3528;padding:8px;text-align:right;font-weight:700;">التاريخ</th>
@@ -220,6 +235,9 @@ export async function downloadAdminRequestsPdf(rows: AdminRequestsExportSourceRo
     tr.innerHTML = `
       <td style="border:1px solid #ddd;padding:7px;text-align:right;white-space:nowrap;font-family:ui-monospace,monospace;">${escapeHtml(L.requestNumber)}</td>
       <td style="border:1px solid #ddd;padding:7px;text-align:right;">${escapeHtml(L.citizenName)}</td>
+      <td style="border:1px solid #ddd;padding:7px;text-align:right;white-space:nowrap;">${escapeHtml(L.nationalId || "—")}</td>
+      <td style="border:1px solid #ddd;padding:7px;text-align:right;white-space:nowrap;">${escapeHtml(L.phone || "—")}</td>
+      <td style="border:1px solid #ddd;padding:7px;text-align:right;">${escapeHtml(L.municipalityName || "—")}</td>
       <td style="border:1px solid #ddd;padding:7px;text-align:right;">${escapeHtml(L.serviceName)}</td>
       <td style="border:1px solid #ddd;padding:7px;text-align:right;">${escapeHtml(L.statusLabel)}</td>
       <td style="border:1px solid #ddd;padding:7px;text-align:right;white-space:nowrap;">${escapeHtml(L.dateLabel)}</td>
