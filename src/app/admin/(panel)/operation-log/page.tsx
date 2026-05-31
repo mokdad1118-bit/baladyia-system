@@ -4,11 +4,14 @@ import { requireStaffPanelPermission } from "@/lib/admin-guard";
 import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
 import { AdminOperationLogWithSearch } from "@/components/admin/AdminOperationLogWithSearch";
 import { userRoleAr } from "@/lib/labels";
+import { isSuperAdminRole } from "@/lib/roles";
+import { listActiveMunicipalities } from "@/lib/municipalities";
 
 type Props = {
   searchParams: Promise<{
     action?: string;
     module?: string;
+    municipalityId?: string;
     dateFrom?: string;
     dateTo?: string;
   }>;
@@ -23,9 +26,12 @@ const actions = [
   ["ACTIVATE", "تفعيل"],
   ["DEACTIVATE", "تعطيل"],
   ["UPDATE_STATUS", "تغيير حالة"],
+  ["SEND_MESSAGE", "تنبيه"],
   ["ADD_NOTE", "ملاحظة"],
   ["REPLY", "رد"],
+  ["UPDATE_REPLY", "تحديث رد"],
   ["COMPLETE", "إكمال"],
+  ["UPDATE_PERMISSIONS", "صلاحيات"],
 ] as const;
 
 const modules = [
@@ -37,6 +43,8 @@ const modules = [
   ["GAS", "الغاز"],
   ["SOCIAL_SERVICES", "الخدمات الاجتماعية"],
   ["FEEDBACK", "الشكاوى"],
+  ["AREA_NEWS", "أخبار المنطقة"],
+  ["NOTIFICATIONS", "الإشعارات"],
   ["MUNICIPALITIES", "البلديات"],
 ] as const;
 
@@ -58,15 +66,24 @@ export default async function AdminOperationLogPage({ searchParams }: Props) {
 
   const sp = await searchParams;
   const action = actions.some(([value]) => value === sp.action) ? sp.action : "";
-  const module = modules.some(([value]) => value === sp.module) ? sp.module : "";
+  const moduleFilter = modules.some(([value]) => value === sp.module) ? sp.module : "";
+  const isSuperAdmin = session?.user ? isSuperAdminRole(session.user.role) : false;
+  const selectedMunicipalityId =
+    isSuperAdmin && sp.municipalityId && sp.municipalityId !== "__ALL__" ? sp.municipalityId : "";
+  const municipalityWhere = isSuperAdmin
+    ? selectedMunicipalityId
+      ? { municipalityId: selectedMunicipalityId }
+      : {}
+    : staffMunicipalityIdFilter(session);
+  const municipalities = isSuperAdmin ? await listActiveMunicipalities() : [];
   const dateFrom = parseDateStart(sp.dateFrom);
   const dateTo = parseDateEnd(sp.dateTo);
 
   const rows = await db.operationLog.findMany({
     where: {
-      ...staffMunicipalityIdFilter(session),
+      ...municipalityWhere,
       ...(action ? { action } : {}),
-      ...(module ? { module } : {}),
+      ...(moduleFilter ? { module: moduleFilter } : {}),
       ...(dateFrom || dateTo
         ? {
             createdAt: {
@@ -79,6 +96,7 @@ export default async function AdminOperationLogPage({ searchParams }: Props) {
     orderBy: { createdAt: "desc" },
     take: 800,
     include: {
+      municipality: { select: { name: true } },
       actor: { select: { name: true, role: true, email: true, phone: true } },
       request: {
         select: {
@@ -105,7 +123,7 @@ export default async function AdminOperationLogPage({ searchParams }: Props) {
       </div>
       <div className="min-w-[10rem] flex-1 sm:max-w-xs">
         <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">القسم</label>
-        <select className="gov-input w-full px-3 py-2.5 text-sm" name="module" defaultValue={module}>
+        <select className="gov-input w-full px-3 py-2.5 text-sm" name="module" defaultValue={moduleFilter}>
           {modules.map(([value, label]) => (
             <option key={value || "all"} value={value}>
               {label}
@@ -113,6 +131,23 @@ export default async function AdminOperationLogPage({ searchParams }: Props) {
           ))}
         </select>
       </div>
+      {isSuperAdmin ? (
+        <div className="min-w-[12rem] flex-1 sm:max-w-xs">
+          <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">البلدية</label>
+          <select
+            className="gov-input w-full px-3 py-2.5 text-sm"
+            name="municipalityId"
+            defaultValue={selectedMunicipalityId || "__ALL__"}
+          >
+            <option value="__ALL__">كل بلديات محافظة درعا</option>
+            {municipalities.map((municipality) => (
+              <option key={municipality.id} value={municipality.id}>
+                {municipality.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
       <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
         <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">من تاريخ</label>
         <input className="gov-input w-full px-3 py-2.5 text-sm" type="date" name="dateFrom" defaultValue={sp.dateFrom ?? ""} />
@@ -122,7 +157,7 @@ export default async function AdminOperationLogPage({ searchParams }: Props) {
         <input className="gov-input w-full px-3 py-2.5 text-sm" type="date" name="dateTo" defaultValue={sp.dateTo ?? ""} />
       </div>
       <button type="submit" className="gov-btn-primary px-5 py-2.5 text-sm font-semibold">
-        تطبيق
+        تطبيق النطاق
       </button>
     </form>
   );
@@ -142,6 +177,7 @@ export default async function AdminOperationLogPage({ searchParams }: Props) {
         requestNumber: row.request?.requestNumber ?? "",
         citizenName: row.request?.citizen.name ?? "",
         serviceName: row.request?.service.name ?? "",
+        municipalityName: row.municipality?.name ?? "",
         requestHref: row.requestId ? `/admin/requests/${row.requestId}` : null,
         entityType: row.entityType ?? "",
         entityId: row.entityId ?? "",

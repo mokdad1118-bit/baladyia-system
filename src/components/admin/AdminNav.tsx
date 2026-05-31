@@ -18,49 +18,68 @@ function NavNewBadge({ count, ariaLabel }: { count: number; ariaLabel: string })
   );
 }
 
-const segments = [
+type NavSegment = {
+  internal: string;
+  label: string;
+  desc: string;
+  perm: null | keyof StaffNavPermissions;
+  badgeKey?: keyof AdminNavBadgeCounts;
+  superAdminOnly?: boolean;
+  adminOnly?: boolean;
+  children?: readonly NavSegment[];
+};
+
+const segments: readonly NavSegment[] = [
   { internal: "/admin", label: "لوحة التحكم", desc: "نظرة عامة", perm: null },
   {
-    internal: "/admin/requests",
-    label: "طلبات خدمات المدينة",
-    desc: "مراجعة وتحديث الحالة",
-    perm: "viewRequests" as const,
-    badgeKey: "cityServiceRequests" as const,
-  },
-  {
-    internal: "/admin/gas-services",
-    label: "خدمات الغاز",
-    desc: "طلبات خدمات الغاز",
-    perm: "manageGas" as const,
-    badgeKey: "gas" as const,
-  },
-  {
     internal: "/admin/social-services",
-    label: "الخدمات الاجتماعية",
-    desc: "العائدين وباقي الأقسام الاجتماعية",
-    perm: "manageSocialServices" as const,
-    badgeKey: "social" as const,
+    label: "الخدمات",
+    desc: "الخدمات الاجتماعية والمدينة والغاز",
+    perm: null,
+    children: [
+      {
+        internal: "/admin/social-services",
+        label: "الخدمات الاجتماعية",
+        desc: "العائدين وباقي الأقسام الاجتماعية",
+        perm: "manageSocialServices",
+        badgeKey: "social",
+      },
+      {
+        internal: "/admin/requests",
+        label: "طلبات خدمات المدينة",
+        desc: "مراجعة وتحديث الحالة",
+        perm: "viewRequests",
+        badgeKey: "cityServiceRequests",
+      },
+      {
+        internal: "/admin/gas-services",
+        label: "خدمات الغاز",
+        desc: "طلبات خدمات الغاز",
+        perm: "manageGas",
+        badgeKey: "gas",
+      },
+      {
+        internal: "/admin/services",
+        label: "إدارة الخدمات",
+        desc: "النماذج والمستندات والأسعار",
+        perm: "manageServices",
+      },
+    ],
   },
   {
     internal: "/admin/citizen-feedback",
-    label: "شكاوي واقتراحات المواطنين",
+    label: "شكاوى واقتراحات المواطنين",
     desc: "ملاحظات المستخدمين على التطبيق",
-    perm: "manageCitizenFeedback" as const,
-    badgeKey: "feedback" as const,
+    perm: "manageCitizenFeedback",
+    badgeKey: "feedback",
   },
   {
     internal: "/admin/area-news",
     label: "أخبار المنطقة",
     desc: "مناشير تظهر داخل تطبيق المواطن",
-    perm: "manageAreaNews" as const,
+    perm: "manageAreaNews",
   },
-  {
-    internal: "/admin/services",
-    label: "الخدمات",
-    desc: "النماذج والمستندات والأسعار",
-    perm: "manageServices" as const,
-  },
-  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" as const },
+  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" },
   {
     internal: "/admin/broadcast-notifications",
     label: "إرسال الإشعارات",
@@ -72,15 +91,15 @@ const segments = [
     internal: "/admin/operation-log",
     label: "سجل العمليات",
     desc: "كل ما يحدث داخل النظام",
-    perm: "viewOperationLog" as const,
+    perm: "viewOperationLog",
   },
   {
     internal: "/admin/users",
     label: "حسابات الموظفين",
     desc: "الموظفون والمديرون والصلاحيات",
-    perm: "manageUsers" as const,
+    perm: "manageUsers",
   },
-  { internal: "/admin/stats", label: "الإحصائيات", desc: "تقارير", perm: "viewStats" as const },
+  { internal: "/admin/stats", label: "الإحصائيات", desc: "تقارير", perm: "viewStats" },
   {
     internal: "/admin/municipalities",
     label: "إدارة البلديات",
@@ -95,15 +114,7 @@ const segments = [
     perm: null,
     superAdminOnly: true,
   },
-] as const satisfies readonly {
-  internal: string;
-  label: string;
-  desc: string;
-  perm: null | keyof StaffNavPermissions;
-  badgeKey?: keyof AdminNavBadgeCounts;
-  superAdminOnly?: boolean;
-  adminOnly?: boolean;
-}[];
+];
 
 function hrefFor(staffRoot: boolean, internal: string) {
   if (!staffRoot) return internal;
@@ -139,42 +150,82 @@ export function AdminNav({
   isAdminManager?: boolean;
 }) {
   const path = usePathname() ?? "";
-  const items = segments.filter((i) => {
-    if ("superAdminOnly" in i && i.superAdminOnly && !isSuperAdmin) return false;
-    if ("adminOnly" in i && i.adminOnly && !isAdminManager) return false;
-    if (!i.perm) return true;
-    return staffPerms[i.perm];
-  });
+  const isVisible = (item: NavSegment): boolean => {
+    if (item.superAdminOnly && !isSuperAdmin) return false;
+    if (item.adminOnly && !isAdminManager) return false;
+    if (item.children) return item.children.some(isVisible);
+    if (!item.perm) return true;
+    return staffPerms[item.perm];
+  };
+  const items = segments.filter(isVisible);
+
   return (
     <nav className="space-y-1">
-      {items.map((i) => {
-        const href = hrefFor(staffRoot, i.internal);
-        const active = navActive(staffRoot, i.internal, path);
+      {items.map((item) => {
+        const visibleChildren = item.children?.filter(isVisible) ?? [];
+        const primaryInternal = visibleChildren[0]?.internal ?? item.internal;
+        const href = hrefFor(staffRoot, primaryInternal);
+        const active = visibleChildren.length
+          ? visibleChildren.some((child) => navActive(staffRoot, child.internal, path))
+          : navActive(staffRoot, item.internal, path);
+
         return (
-          <Link
-            key={i.internal}
-            href={href}
-            prefetch={false}
-            className={cn(
-              "group flex flex-col gap-0.5 border border-transparent px-2.5 py-2 text-start transition",
-              active
-                ? "border-[var(--gov-border)] bg-[#e4f0ea]"
-                : "hover:border-[var(--gov-border)] hover:bg-white/80",
-            )}
-          >
-            <span
+          <div key={item.internal}>
+            <Link
+              href={href}
+              prefetch={false}
               className={cn(
-                "flex items-center gap-2 text-sm font-semibold",
-                active ? "text-[var(--gov-primary)]" : "text-[var(--gov-text)]",
+                "group flex flex-col gap-0.5 border border-transparent px-2.5 py-2 text-start transition",
+                active
+                  ? "border-[var(--gov-border)] bg-[#e4f0ea]"
+                  : "hover:border-[var(--gov-border)] hover:bg-white/80",
               )}
             >
-              {i.label}
-              {"badgeKey" in i && i.badgeKey ? (
-                <NavNewBadge count={badgeCounts[i.badgeKey]} ariaLabel={BADGE_ARIA[i.badgeKey]} />
-              ) : null}
-            </span>
-            <span className="text-[0.7rem] text-[var(--gov-muted)]">{i.desc}</span>
-          </Link>
+              <span
+                className={cn(
+                  "flex items-center gap-2 text-sm font-semibold",
+                  active ? "text-[var(--gov-primary)]" : "text-[var(--gov-text)]",
+                )}
+              >
+                {item.label}
+                {item.badgeKey ? (
+                  <NavNewBadge count={badgeCounts[item.badgeKey]} ariaLabel={BADGE_ARIA[item.badgeKey]} />
+                ) : null}
+              </span>
+              <span className="text-[0.7rem] text-[var(--gov-muted)]">{item.desc}</span>
+            </Link>
+
+            {visibleChildren.length ? (
+              <div className="ms-3 mt-1 space-y-1 border-s border-[var(--gov-border)] ps-2">
+                {visibleChildren.map((child) => {
+                  const childHref = hrefFor(staffRoot, child.internal);
+                  const childActive = navActive(staffRoot, child.internal, path);
+
+                  return (
+                    <Link
+                      key={child.internal}
+                      href={childHref}
+                      prefetch={false}
+                      className={cn(
+                        "flex flex-col gap-0.5 border border-transparent px-2.5 py-1.5 text-start transition",
+                        childActive
+                          ? "border-[var(--gov-border)] bg-white text-[var(--gov-primary)]"
+                          : "text-[var(--gov-text)] hover:border-[var(--gov-border)] hover:bg-white/80",
+                      )}
+                    >
+                      <span className="flex items-center gap-2 text-[0.8rem] font-semibold">
+                        {child.label}
+                        {child.badgeKey ? (
+                          <NavNewBadge count={badgeCounts[child.badgeKey]} ariaLabel={BADGE_ARIA[child.badgeKey]} />
+                        ) : null}
+                      </span>
+                      <span className="text-[0.65rem] text-[var(--gov-muted)]">{child.desc}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         );
       })}
     </nav>

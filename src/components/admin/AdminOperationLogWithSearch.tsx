@@ -17,6 +17,7 @@ export type OperationLogRow = {
   requestNumber: string;
   citizenName: string;
   serviceName: string;
+  municipalityName: string;
   requestHref: string | null;
   entityType: string;
   entityId: string;
@@ -48,10 +49,13 @@ const moduleLabels: Record<string, string> = {
   GAS: "الغاز",
   SOCIAL_SERVICES: "الخدمات الاجتماعية",
   FEEDBACK: "الشكاوى",
+  AREA_NEWS: "أخبار المنطقة",
+  NOTIFICATIONS: "الإشعارات",
   MUNICIPALITIES: "البلديات",
 };
 
 function haystack(row: OperationLogRow) {
+  const createdAtLabel = new Date(row.createdAt).toLocaleString("ar");
   return [
     row.action,
     actionLabels[row.action],
@@ -64,10 +68,12 @@ function haystack(row: OperationLogRow) {
     row.requestNumber,
     row.citizenName,
     row.serviceName,
+    row.municipalityName,
     row.entityType,
     row.entityId,
     row.ipAddress,
     row.metadata,
+    createdAtLabel,
   ]
     .filter(Boolean)
     .join(" ")
@@ -106,7 +112,7 @@ export function AdminOperationLogWithSearch({
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
         <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">سجل العمليات</h1>
         <p className="mt-1 text-sm text-[var(--gov-muted)]">
-          متابعة منظمة لكل العمليات المهمة داخل النظام مع بيانات المنفذ والطلب والتفاصيل التقنية.
+          متابعة منظمة لكل العمليات المهمة داخل النظام مع بيانات المنفذ والبلدية والطلب والتفاصيل التقنية.
         </p>
       </header>
 
@@ -130,7 +136,7 @@ export function AdminOperationLogWithSearch({
       <AdminListSearchField
         id="admin-operation-log-search"
         label="بحث في سجل العمليات"
-        placeholder="رقم الطلب، اسم المواطن، اسم الموظف، نوع العملية، القسم..."
+        placeholder="رقم الطلب، البلدية، المواطن، الموظف، نوع العملية، القسم، IP، أو أي تفصيل موجود..."
         value={q}
         onChange={setQ}
         className="mb-4"
@@ -160,6 +166,11 @@ export function AdminOperationLogWithSearch({
                         {row.requestNumber}
                       </Badge>
                     ) : null}
+                    {row.municipalityName ? (
+                      <Badge className="border-sky-200 bg-sky-50 font-normal text-sky-900">
+                        {row.municipalityName}
+                      </Badge>
+                    ) : null}
                   </div>
                   <h2 className="text-base font-bold text-[var(--gov-text)]">{row.title}</h2>
                   {row.description ? (
@@ -172,7 +183,7 @@ export function AdminOperationLogWithSearch({
                 </div>
               </div>
 
-              <dl className="mt-4 grid gap-3 border-t border-[var(--gov-border)] pt-3 text-sm md:grid-cols-4">
+              <dl className="mt-4 grid gap-3 border-t border-[var(--gov-border)] pt-3 text-sm md:grid-cols-5">
                 <div>
                   <dt className="text-xs font-semibold text-[var(--gov-muted)]">الموظف/المستخدم</dt>
                   <dd className="mt-1 text-[var(--gov-text)]">{row.actorName || "النظام"}</dd>
@@ -186,6 +197,10 @@ export function AdminOperationLogWithSearch({
                   <dd className="mt-1 text-[var(--gov-text)]">
                     {row.serviceName || row.requestNumber || row.entityType || "-"}
                   </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold text-[var(--gov-muted)]">البلدية</dt>
+                  <dd className="mt-1 text-[var(--gov-text)]">{row.municipalityName || "-"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-semibold text-[var(--gov-muted)]">إجراء</dt>
