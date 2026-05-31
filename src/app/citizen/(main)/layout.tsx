@@ -7,6 +7,7 @@ import { StateEmblem } from "@/components/gov/StateEmblem";
 import { ENTITY_NAME_AR, PORTAL_SUBTITLE } from "@/lib/entity";
 import { CitizenDesktopNavLinks } from "@/components/citizen/CitizenDesktopNavLinks";
 import { municipalityCouncilName } from "@/lib/municipality-display";
+import { countUnreadAreaNews } from "@/lib/area-news";
 
 export default async function CitizenMainChromeLayout({
   children,
@@ -18,6 +19,10 @@ export default async function CitizenMainChromeLayout({
   const unreadNotifications =
     isCitizen && s.user?.id
       ? await db.notification.count({ where: { userId: s.user.id, read: false } })
+      : 0;
+  const unreadAreaNews =
+    isCitizen && s.user?.id && s.user.municipalityId
+      ? await countUnreadAreaNews(s.user.id, s.user.municipalityId)
       : 0;
   const municipality =
     isCitizen && s.user.municipalityId
@@ -39,12 +44,20 @@ export default async function CitizenMainChromeLayout({
               <p className="text-sm font-bold text-[var(--gov-text)]">{citizenEntityName}</p>
             </div>
           </Link>
-          <CitizenDesktopNavLinks isCitizen={isCitizen} unreadNotifications={unreadNotifications} />
+          <CitizenDesktopNavLinks
+            isCitizen={isCitizen}
+            unreadNotifications={unreadNotifications}
+            unreadAreaNews={unreadAreaNews}
+          />
         </div>
         <div className="gov-divider-flag mx-auto max-w-6xl opacity-70" aria-hidden />
       </div>
       <div className="citizen-main-full mx-auto max-w-6xl px-0 md:px-4 md:py-6">
-        <CitizenMobileShell isCitizen={isCitizen} unreadNotifications={unreadNotifications}>
+        <CitizenMobileShell
+          isCitizen={isCitizen}
+          unreadNotifications={unreadNotifications}
+          unreadAreaNews={unreadAreaNews}
+        >
           {children}
         </CitizenMobileShell>
       </div>

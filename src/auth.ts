@@ -135,6 +135,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           permManageServices: isElevatedAdmin || user.permManageServices,
           permManageUsers: isElevatedAdmin || user.permManageUsers,
           permViewStats: isElevatedAdmin || user.permViewStats,
+          permManageAreaNews: isElevatedAdmin || user.permManageAreaNews,
         };
       },
     }),
@@ -158,6 +159,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           permManageServices?: boolean;
           permManageUsers?: boolean;
           permViewStats?: boolean;
+          permManageAreaNews?: boolean;
         };
         token.id = u.id;
         token.role = u.role;
@@ -175,6 +177,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.permManageServices = Boolean(u.permManageServices);
         token.permManageUsers = Boolean(u.permManageUsers);
         token.permViewStats = Boolean(u.permViewStats);
+        token.permManageAreaNews = Boolean(u.permManageAreaNews);
       }
       if (trigger === "update" && session?.user && "activeMunicipalityId" in session.user) {
         token.activeMunicipalityId = session.user.activeMunicipalityId ?? null;
@@ -199,6 +202,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         session.user.permManageServices = Boolean(token.permManageServices);
         session.user.permManageUsers = Boolean(token.permManageUsers);
         session.user.permViewStats = Boolean(token.permViewStats);
+        session.user.permManageAreaNews = Boolean(token.permManageAreaNews);
       }
       return session;
     },

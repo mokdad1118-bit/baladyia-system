@@ -16,13 +16,16 @@ function linkClass(active: boolean) {
 export function CitizenDesktopNavLinks({
   isCitizen,
   unreadNotifications = 0,
+  unreadAreaNews = 0,
 }: {
   isCitizen: boolean;
   unreadNotifications?: number;
+  unreadAreaNews?: number;
 }) {
   const path = usePathname() ?? "";
   const base: "" | "/citizen" = path.startsWith("/citizen") ? "/citizen" : "";
   const services = `${base}/services`;
+  const news = `${base}/news`;
   const requests = `${base}/requests`;
   const notifications = `${base}/notifications`;
   const feedback = `${base}/feedback`;
@@ -30,6 +33,7 @@ export function CitizenDesktopNavLinks({
   const home = base === "/citizen" ? "/citizen" : "/";
 
   const activeServices = path === services || path.startsWith(`${services}/`);
+  const activeNews = path === news || path.startsWith(`${news}/`);
   const activeRequests =
     path === requests || (path.startsWith(`${requests}/`) && !path.includes("/new/"));
   const activeNotifications = path === notifications || path.startsWith(`${notifications}/`);
@@ -44,6 +48,9 @@ export function CitizenDesktopNavLinks({
       </Link>
       {isCitizen ? (
         <>
+          <Link href={news} className={linkClass(activeNews)}>
+            {unreadAreaNews > 0 ? `أخبار المنطقة (${unreadAreaNews})` : "أخبار المنطقة"}
+          </Link>
           <Link href={requests} className={linkClass(activeRequests)}>
             طلباتي
           </Link>

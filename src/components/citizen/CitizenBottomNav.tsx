@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import { IconGrid, IconInbox, IconBellSm, IconMessageSm, IconUserSm } from "./citizen-icons";
+import { IconGrid, IconInbox, IconBellSm, IconMessageSm, IconUserSm, IconNewsSm } from "./citizen-icons";
 
 function buildTabs(base: "" | "/citizen") {
   const services = `${base}/services`;
+  const news = `${base}/news`;
   const requests = `${base}/requests`;
   const notificationsPath = `${base}/notifications`;
   const feedback = `${base}/feedback`;
@@ -17,6 +18,13 @@ function buildTabs(base: "" | "/citizen") {
       label: "الخدمات",
       match: (p: string) => p === services || p.startsWith(`${services}/`),
       Icon: IconGrid,
+    },
+    {
+      href: news,
+      label: "أخبار المنطقة",
+      match: (p: string) => p === news || p.startsWith(`${news}/`),
+      Icon: IconNewsSm,
+      badge: "news" as const,
     },
     {
       href: requests,
@@ -47,7 +55,13 @@ function buildTabs(base: "" | "/citizen") {
   ] as const;
 }
 
-export function CitizenBottomNav({ unreadNotifications = 0 }: { unreadNotifications?: number }) {
+export function CitizenBottomNav({
+  unreadNotifications = 0,
+  unreadAreaNews = 0,
+}: {
+  unreadNotifications?: number;
+  unreadAreaNews?: number;
+}) {
   const path = usePathname() ?? "";
   const base: "" | "/citizen" = path.startsWith("/citizen") ? "/citizen" : "";
   const tabs = buildTabs(base);
@@ -60,12 +74,15 @@ export function CitizenBottomNav({ unreadNotifications = 0 }: { unreadNotificati
       aria-label="تنقّل المواطن"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-around">
-        {tabs.map(({ href, label, match, Icon }) => {
+        {tabs.map((tab) => {
+          const { href, label, match, Icon } = tab;
+          const badge = "badge" in tab ? tab.badge : undefined;
           const active = match(path);
           const showUnreadBadge =
-            unreadNotifications > 0 && (href.endsWith("/notifications") || href === "/notifications");
-          const badge =
-            unreadNotifications > 99 ? "99+" : String(unreadNotifications);
+            (badge === "news" && unreadAreaNews > 0) ||
+            (!badge && unreadNotifications > 0 && (href.endsWith("/notifications") || href === "/notifications"));
+          const unreadCount = badge === "news" ? unreadAreaNews : unreadNotifications;
+          const badgeLabel = unreadCount > 99 ? "99+" : String(unreadCount);
           return (
             <li key={href} className="min-w-0 flex-1">
               <Link
@@ -76,7 +93,7 @@ export function CitizenBottomNav({ unreadNotifications = 0 }: { unreadNotificati
                 )}
                 aria-current={active ? "page" : undefined}
                 aria-label={
-                  showUnreadBadge ? `${label}، ${unreadNotifications} غير مقروء` : undefined
+                  showUnreadBadge ? `${label}، ${unreadCount} غير مقروء` : undefined
                 }
               >
                 <span
@@ -93,7 +110,7 @@ export function CitizenBottomNav({ unreadNotifications = 0 }: { unreadNotificati
                       className="absolute end-1 top-0 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[var(--gov-primary)] px-1 text-[0.65rem] font-bold leading-none text-white"
                       aria-hidden
                     >
-                      {badge}
+                      {badgeLabel}
                     </span>
                   ) : null}
                   <span className="text-[0.7rem] font-medium leading-tight sm:text-xs">{label}</span>

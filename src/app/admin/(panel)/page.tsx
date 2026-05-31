@@ -12,6 +12,7 @@ const adminTiles = [
   { href: "/admin/gas-services", title: "خدمات الغاز", sub: "طلبات ومعتمدو الغاز", perm: "manageGas" as const },
   { href: "/admin/social-services", title: "الخدمات الاجتماعية", sub: "العائدون وباقي الأقسام", perm: "manageSocialServices" as const },
   { href: "/admin/citizen-feedback", title: "شكاوى المواطنين", sub: "الرد على الشكاوى والاقتراحات", perm: "manageCitizenFeedback" as const },
+  { href: "/admin/area-news", title: "أخبار المنطقة", sub: "نشر الأخبار للمواطنين", perm: "manageAreaNews" as const },
   { href: "/admin/citizens", title: "حسابات المواطنين", sub: "عرض حسابات المسجّلين", perm: "viewCitizens" as const },
   { href: "/admin/operation-log", title: "سجل العمليات", sub: "كل ما يحدث داخل النظام", perm: "viewOperationLog" as const },
   { href: "/admin/services", title: "الخدمات", sub: "النماذج والمستندات والأسعار", perm: "manageServices" as const },

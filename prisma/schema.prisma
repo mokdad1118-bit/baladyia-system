@@ -32,6 +32,7 @@ model Municipality {
   socialServiceCases        SocialServiceCase[]
   notifications             Notification[]
   broadcastNotifications    BroadcastNotification[]
+  areaNewsPosts             AreaNewsPost[]
   requestSerials            RequestSerial[]
   gasRequestSerials         GasRequestSerial[]
   socialServiceCaseSerials  SocialServiceCaseSerial[]
@@ -66,6 +67,7 @@ model User {
   permManageServices Boolean @default(false)
   permManageUsers    Boolean @default(false)
   permViewStats      Boolean @default(false)
+  permManageAreaNews Boolean @default(false)
   /// null فقط لمشرف المحافظة (يرى كل البلديات)
   municipalityId String?
   municipality   Municipality? @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
@@ -88,6 +90,8 @@ model User {
   assignedGasRequests GasRequest[] @relation("GasRequestAgent")
   returneeRegistrations ReturneeRegistration[]
   socialServiceCases SocialServiceCase[]
+  authoredAreaNewsPosts AreaNewsPost[] @relation("AreaNewsAuthor")
+  areaNewsReads      AreaNewsRead[]
 
   /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها — فريدة ضمن البلدية
   gasArea            String?
@@ -382,6 +386,31 @@ model BroadcastNotification {
   @@index([municipalityId])
   @@index([targetRole])
   @@index([createdAt])
+}
+
+model AreaNewsPost {
+  id             String   @id @default(cuid())
+  municipalityId String?
+  municipality   Municipality? @relation(fields: [municipalityId], references: [id], onDelete: SetNull)
+  authorId       String?
+  author         User?    @relation("AreaNewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  title          String
+  body           String
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([municipalityId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model AreaNewsRead {
+  id        String   @id @default(cuid())
+  citizenId String   @unique
+  citizen   User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  lastReadAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model RequestSerial {

@@ -17,6 +17,7 @@ export function isCitizenAppPath(pathname: string) {
     pathname === "/citizen/welcome" ||
     pathname.startsWith("/register") ||
     pathname.startsWith("/services") ||
+    pathname.startsWith("/news") ||
     pathname.startsWith("/requests") ||
     pathname.startsWith("/notifications") ||
     pathname.startsWith("/feedback") ||
@@ -49,6 +50,7 @@ function isStaffPortalBrowserNext(next: string) {
     next.startsWith("/services") ||
     next.startsWith("/users") ||
     next.startsWith("/citizens") ||
+    next.startsWith("/area-news") ||
     next.startsWith("/stats")
   );
 }

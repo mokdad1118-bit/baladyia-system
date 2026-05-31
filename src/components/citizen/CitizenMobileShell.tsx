@@ -14,11 +14,13 @@ export function CitizenMobileShell({
   children,
   isCitizen,
   unreadNotifications = 0,
+  unreadAreaNews = 0,
 }: {
   children: ReactNode;
   isCitizen: boolean;
   /** عدد الإشعارات غير المقروءة (يُعرض على تبويب التنبيهات) */
   unreadNotifications?: number;
+  unreadAreaNews?: number;
 }) {
   useEffect(() => {
     if (!isCitizen) return;
@@ -45,7 +47,9 @@ export function CitizenMobileShell({
       >
         {children}
       </div>
-      {isCitizen ? <CitizenBottomNav unreadNotifications={unreadNotifications} /> : null}
+      {isCitizen ? (
+        <CitizenBottomNav unreadNotifications={unreadNotifications} unreadAreaNews={unreadAreaNews} />
+      ) : null}
       <CitizenRouteTransitionOverlay />
     </div>
   );

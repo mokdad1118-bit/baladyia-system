@@ -23,6 +23,7 @@ declare module "next-auth" {
       permManageServices?: boolean;
       permManageUsers?: boolean;
       permViewStats?: boolean;
+      permManageAreaNews?: boolean;
     };
   }
 }
@@ -44,5 +45,6 @@ declare module "next-auth/jwt" {
     permManageServices?: boolean;
     permManageUsers?: boolean;
     permViewStats?: boolean;
+    permManageAreaNews?: boolean;
   }
 }

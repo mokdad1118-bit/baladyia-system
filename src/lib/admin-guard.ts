@@ -9,6 +9,7 @@ import {
   staffCanManageServices,
   staffCanManageSocialServices,
   staffCanManageUsers,
+  staffCanManageAreaNews,
   staffCanViewCitizens,
   staffCanViewOperationLog,
   staffCanViewRequests,
@@ -36,7 +37,8 @@ export type StaffPanelPermissionKey =
   | "operationLog"
   | "services"
   | "users"
-  | "stats";
+  | "stats"
+  | "areaNews";
 
 /** موظف بصلاحية محددة أو مدير نظام */
 export async function requireStaffPanelPermission(
@@ -54,6 +56,7 @@ export async function requireStaffPanelPermission(
     services: staffCanManageServices(session),
     users: staffCanManageUsers(session),
     stats: staffCanViewStats(session),
+    areaNews: staffCanManageAreaNews(session),
   }[key];
   if (!ok) redirect("/admin");
 }

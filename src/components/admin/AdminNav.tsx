@@ -49,6 +49,12 @@ const segments = [
     badgeKey: "feedback" as const,
   },
   {
+    internal: "/admin/area-news",
+    label: "أخبار المنطقة",
+    desc: "مناشير تظهر داخل تطبيق المواطن",
+    perm: "manageAreaNews" as const,
+  },
+  {
     internal: "/admin/services",
     label: "الخدمات",
     desc: "النماذج والمستندات والأسعار",

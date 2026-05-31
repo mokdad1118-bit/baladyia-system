@@ -68,7 +68,8 @@ export async function middleware(req: NextRequest) {
         token?.permViewOperationLog ||
         token?.permManageServices ||
         token?.permManageUsers ||
-        token?.permViewStats,
+        token?.permViewStats ||
+        token?.permManageAreaNews,
     );
 
   if (pathname === "/admin/login") return NextResponse.next();
@@ -164,6 +165,8 @@ export const config = {
     "/register",
     "/register/:path*",
     "/services/:path*",
+    "/news",
+    "/news/:path*",
     "/requests/:path*",
     "/notifications/:path*",
     "/feedback",
@@ -177,6 +180,7 @@ export const config = {
     "/gas-agent/:path*",
     "/admin/:path*",
     "/users/:path*",
+    "/area-news/:path*",
     "/citizen-feedback/:path*",
     "/stats/:path*",
   ],
