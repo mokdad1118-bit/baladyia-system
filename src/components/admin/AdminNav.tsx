@@ -69,7 +69,7 @@ const segments: readonly NavSegment[] = [
       {
         internal: "/admin/services/in-person",
         label: "الخدمات المقدمة حضورياً",
-        desc: "خدمات تتطلب مراجعة البلدية",
+        desc: "الخدمات المقدمة داخل البلدية",
         perm: "manageServices",
       },
     ],
