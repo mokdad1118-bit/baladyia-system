@@ -17,6 +17,7 @@ export type AdminRequestRow = AdminRequestsExportSourceRow & {
   nationalId: string;
   phone: string;
   municipalityName: string;
+  source: string;
 };
 
 function haystack(r: AdminRequestRow): string {
@@ -26,6 +27,7 @@ function haystack(r: AdminRequestRow): string {
     r.nationalId,
     r.phone,
     r.municipalityName,
+    sourceLabel(r.source),
     r.serviceName,
     requestStatusAr[r.status],
     r.createdAt,
@@ -124,6 +126,7 @@ export function AdminRequestsTableWithSearch({
                 <th>الرقم الوطني</th>
                 <th>رقم الواتساب</th>
                 <th>البلدية</th>
+                <th>مصدر الطلب</th>
                 <th>الخدمة</th>
                 <th>الحالة</th>
                 <th>التاريخ</th>
@@ -144,6 +147,7 @@ export function AdminRequestsTableWithSearch({
                   <td dir="ltr">{r.nationalId || "—"}</td>
                   <td dir="ltr">{r.phone || "—"}</td>
                   <td>{r.municipalityName || "—"}</td>
+                  <td>{sourceLabel(r.source)}</td>
                   <td>{r.serviceName}</td>
                   <td>
                     <StatusBadge status={r.status} />
@@ -159,4 +163,8 @@ export function AdminRequestsTableWithSearch({
       )}
     </div>
   );
+}
+
+function sourceLabel(source: string) {
+  return source === "in_person" ? "حضوري" : "التطبيق";
 }

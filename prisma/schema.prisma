@@ -250,6 +250,7 @@ model Request {
   submittedFullName            String?
   submittedPhone               String?
   submittedNotificationEmail   String?
+  source        String   @default("online")
   /// Optional JSON for future extra form fields
   formPayload   String?  @default("{}")
   createdAt     DateTime @default(now())

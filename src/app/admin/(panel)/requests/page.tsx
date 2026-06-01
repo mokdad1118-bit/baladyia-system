@@ -13,7 +13,7 @@ import { AdminPageMunicipalityScopeForm } from "@/components/admin/AdminPageMuni
 import { listActiveMunicipalities } from "@/lib/municipalities";
 import { isSuperAdminRole } from "@/lib/roles";
 
-type S = { searchParams: Promise<{ status?: string; dateFrom?: string; dateTo?: string; municipalityId?: string }> };
+type S = { searchParams: Promise<{ status?: string; source?: string; dateFrom?: string; dateTo?: string; municipalityId?: string }> };
 
 export default async function AdminRequestsPage({ searchParams }: S) {
   const s = await auth();
@@ -27,6 +27,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
   const st = sp.status;
   const statusFilter =
     st && Object.values(RequestStatus).includes(st as RequestStatus) ? (st as RequestStatus) : undefined;
+  const sourceFilter = sp.source === "online" || sp.source === "in_person" ? sp.source : "";
   const d0 = parseDateStartParam(sp.dateFrom);
   const d1 = parseDateEndParam(sp.dateTo);
 
@@ -34,6 +35,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
     where: {
       ...mun,
       ...(statusFilter ? { status: statusFilter } : {}),
+      ...(sourceFilter ? { source: sourceFilter } : {}),
       ...(d0 || d1
         ? {
             createdAt: {
@@ -70,6 +72,14 @@ export default async function AdminRequestsPage({ searchParams }: S) {
           ))}
         </select>
       </div>
+      <div className="min-w-[10rem] flex-1 sm:max-w-xs">
+        <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">مصدر الطلب</label>
+        <select className="gov-input w-full px-3 py-2.5 text-sm" name="source" defaultValue={sourceFilter}>
+          <option value="">الكل</option>
+          <option value="online">التطبيق</option>
+          <option value="in_person">حضوري</option>
+        </select>
+      </div>
       <div className="min-w-[10rem] flex-1 sm:max-w-[11rem]">
         <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">من تاريخ</label>
         <input
@@ -96,6 +106,7 @@ export default async function AdminRequestsPage({ searchParams }: S) {
     nationalId: r.citizen.nationalId ?? "",
     phone: r.submittedPhone || r.citizen.phone || "",
     municipalityName: r.municipality.name,
+    source: r.source,
     serviceName: r.service.name,
     status: r.status,
     createdAt: r.createdAt.toISOString(),

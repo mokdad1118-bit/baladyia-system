@@ -133,8 +133,6 @@ export async function submitRequest(
       if (!v.ok) {
         return { error: `${d.name}: ${v.message}` };
       }
-      const ab = await file.arrayBuffer();
-      const buf = Buffer.from(ab);
       const ext =
         path.extname((file as File & { name?: string }).name || "") ||
         (mime === "application/pdf" ? ".pdf" : ".bin");
@@ -183,6 +181,7 @@ export async function submitRequest(
         submittedFullName: fullName,
         submittedPhone: phoneNorm,
         submittedNotificationEmail: notif,
+        source: "online",
         formPayload: "{}",
         files: { create: fileRecords },
       },

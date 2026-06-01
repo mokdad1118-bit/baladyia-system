@@ -186,6 +186,7 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await addColumnIfMissing(client, "Department", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Service", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Request", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
+  await addColumnIfMissing(client, "Request", "source", `TEXT NOT NULL DEFAULT 'online'`);
   await addColumnIfMissing(client, "Notification", "municipalityId", "TEXT");
   await addColumnIfMissing(client, "CitizenFeedback", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "PendingCitizenRegistration", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
