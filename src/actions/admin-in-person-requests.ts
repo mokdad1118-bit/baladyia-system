@@ -38,6 +38,10 @@ function parseEmail(raw: string): string | null {
   return notifEmailOrNull(raw.trim()) ?? null;
 }
 
+function inPersonNumberFromRequestNumber(requestNumber: string) {
+  return requestNumber.replace(/^REQ-/, "INP-");
+}
+
 async function resolveCitizen(input: {
   municipalityId: string;
   fullName: string;
@@ -173,11 +177,13 @@ export async function submitInPersonRequest(
     }
 
     const number = await nextRequestNumber(service.municipalityId);
+    const inPersonNumber = inPersonNumberFromRequestNumber(number);
     const assigneeId = await defaultAssigneeId(service.municipalityId);
     const req = await db.request.create({
       data: {
         municipalityId: service.municipalityId,
         requestNumber: number,
+        inPersonNumber,
         serviceId: service.id,
         citizenId: resolvedCitizen.citizen.id,
         assigneeId,
@@ -197,13 +203,14 @@ export async function submitInPersonRequest(
       action: "CREATE",
       module: "REQUESTS",
       title: "إنشاء طلب حضوري",
-      description: `تم إنشاء الطلب الحضوري ${number} للخدمة: ${service.name}`,
+      description: `تم إنشاء الطلب الحضوري ${inPersonNumber} للخدمة: ${service.name}`,
       entityType: "REQUEST",
       entityId: req.id,
       requestId: req.id,
       metadata: {
         source: "in_person",
         requestNumber: number,
+        inPersonNumber,
         serviceId: service.id,
         serviceName: service.name,
         citizenId: resolvedCitizen.citizen.id,
@@ -216,7 +223,7 @@ export async function submitInPersonRequest(
         userIds: await getStaffToNotify(service.municipalityId),
         type: "REQUEST_SUBMIT",
         title: "طلب حضوري جديد",
-        message: `تم إنشاء طلب حضوري رقم ${number} للخدمة: ${service.name}.`,
+        message: `تم إنشاء طلب حضوري رقم ${inPersonNumber} للخدمة: ${service.name}.`,
         municipalityId: service.municipalityId,
         requestId: req.id,
       });
@@ -226,7 +233,8 @@ export async function submitInPersonRequest(
 
     revalidatePath("/admin/requests");
     revalidatePath("/admin/services/in-person");
-    redirectTo = `/admin/requests?source=in_person&success=1&no=${encodeURIComponent(number)}`;
+    revalidatePath("/admin/services/in-person/completed");
+    redirectTo = `/admin/services/in-person/completed?success=1&no=${encodeURIComponent(inPersonNumber)}`;
   } catch (e) {
     unstable_rethrow(e);
     console.error("[submitInPersonRequest] failed:", e);

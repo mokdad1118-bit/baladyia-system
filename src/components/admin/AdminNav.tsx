@@ -71,6 +71,13 @@ const segments: readonly NavSegment[] = [
         label: "الخدمات المقدمة حضورياً",
         desc: "الخدمات المقدمة داخل البلدية",
         perm: "manageInPersonRequests",
+        exact: true,
+      },
+      {
+        internal: "/admin/services/in-person/completed",
+        label: "الطلبات المنتهية",
+        desc: "تفاصيل الطلبات الحضورية وأرقامها الخاصة",
+        perm: "manageInPersonRequests",
       },
     ],
   },

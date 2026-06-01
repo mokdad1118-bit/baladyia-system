@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
@@ -108,6 +109,12 @@ export default async function AdminInPersonServicesPage({ searchParams }: Props)
         <p className="mt-1 text-sm text-[var(--gov-muted)]">
           إنشاء طلب نيابة عن المواطن باستخدام نفس الخدمات والأوراق والمرفقات المعرفة في النظام.
         </p>
+        <Link
+          href={`/admin/services/in-person/completed${selectedMunicipalityId ? `?municipalityId=${encodeURIComponent(selectedMunicipalityId)}` : ""}`}
+          className="mt-3 inline-flex min-h-10 items-center rounded border border-[var(--gov-border)] bg-white px-4 text-sm font-semibold text-[var(--gov-primary)] no-underline hover:bg-slate-50"
+        >
+          الطلبات المنتهية
+        </Link>
       </header>
 
       <AdminPageMunicipalityScopeForm municipalities={municipalities} current={selectedMunicipalityId} />
