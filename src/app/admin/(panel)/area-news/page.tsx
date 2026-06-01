@@ -7,6 +7,7 @@ import { listActiveMunicipalities } from "@/lib/municipalities";
 import { PageHeader } from "@/components/ui/page-header";
 import { AreaNewsPostForm } from "@/components/admin/AreaNewsPostForm";
 import { DeleteAreaNewsPostButton } from "@/components/admin/DeleteAreaNewsPostButton";
+import { AreaNewsCommentReplyForm } from "@/components/admin/AreaNewsCommentReplyForm";
 
 export default async function AdminAreaNewsPage() {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function AdminAreaNewsPage() {
   const isSuperAdmin = isSuperAdminRole(session!.user!.role);
   const municipalityScope = staffMunicipalityIdFilter(session);
   const ownMunicipalityId = "municipalityId" in municipalityScope ? municipalityScope.municipalityId : "__none__";
-  const commentsWhere = isSuperAdmin ? {} : { municipalityId: ownMunicipalityId };
+  const commentsWhere = isSuperAdmin ? { parentCommentId: null } : { municipalityId: ownMunicipalityId, parentCommentId: null };
   const postsWhere = isSuperAdmin
     ? {}
     : {
@@ -36,7 +37,9 @@ export default async function AdminAreaNewsPage() {
         _count: {
           select: {
             likes: isSuperAdmin ? true : { where: { municipalityId: ownMunicipalityId } },
-            comments: isSuperAdmin ? true : { where: { municipalityId: ownMunicipalityId } },
+            comments: isSuperAdmin
+              ? { where: { parentCommentId: null } }
+              : { where: { municipalityId: ownMunicipalityId, parentCommentId: null } },
           },
         },
         comments: {
@@ -46,6 +49,10 @@ export default async function AdminAreaNewsPage() {
           include: {
             municipality: { select: { name: true } },
             citizen: { select: { name: true, phone: true, nationalId: true } },
+            adminReplies: {
+              orderBy: { createdAt: "asc" },
+              include: { admin: { select: { name: true } } },
+            },
           },
         },
       },
@@ -101,6 +108,24 @@ export default async function AdminAreaNewsPage() {
                             {comment.citizen.phone ?? "-"} - {comment.citizen.nationalId ?? "-"}
                           </p>
                           <p className="mt-2 whitespace-pre-wrap leading-6 text-slate-700">{comment.body}</p>
+                          <AreaNewsCommentReplyForm commentId={comment.id} />
+                          {comment.adminReplies.length ? (
+                            <div className="mt-3 space-y-2 border-r-2 border-[var(--gov-border)] pr-3">
+                              {comment.adminReplies.map((reply) => (
+                                <div key={reply.id} className="rounded-lg bg-white px-3 py-2">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="font-semibold text-[var(--gov-primary)]">
+                                      {reply.admin.name} - الإدارة
+                                    </p>
+                                    <time className="text-xs text-[var(--gov-muted)]" dateTime={reply.createdAt.toISOString()}>
+                                      {reply.createdAt.toLocaleString("ar-SY")}
+                                    </time>
+                                  </div>
+                                  <p className="mt-1 whitespace-pre-wrap leading-6 text-slate-700">{reply.body}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>

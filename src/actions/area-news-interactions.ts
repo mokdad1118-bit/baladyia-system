@@ -29,7 +29,7 @@ async function findVisiblePost(postId: string, municipalityId: string) {
 
 export async function toggleAreaNewsLike(postId: string): Promise<{ ok?: true; liked?: boolean; error?: string }> {
   const ctx = await requireCitizenContext();
-  if (!ctx) return { error: "غير مصرّح" };
+  if (!ctx) return { error: "غير مصرح" };
 
   const post = await findVisiblePost(postId, ctx.municipalityId);
   if (!post) return { error: "المنشور غير متاح" };
@@ -73,36 +73,22 @@ export async function createAreaNewsComment(
   formData: FormData,
 ): Promise<AreaNewsCommentState> {
   const ctx = await requireCitizenContext();
-  if (!ctx) return { error: "غير مصرّح" };
+  if (!ctx) return { error: "غير مصرح" };
 
   const postId = String(formData.get("postId") ?? "").trim();
-  const parentCommentId = String(formData.get("parentCommentId") ?? "").trim() || null;
+  const parentCommentId = String(formData.get("parentCommentId") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
   if (!postId) return { error: "المنشور غير محدد" };
+  if (parentCommentId) return { error: "الرد على التعليقات متاح للإدارة فقط" };
   if (body.length < 2) return { error: "اكتب تعليقاً واضحاً" };
   if (body.length > 700) return { error: "التعليق طويل جداً" };
 
   const post = await findVisiblePost(postId, ctx.municipalityId);
   if (!post) return { error: "المنشور غير متاح" };
 
-  let parentComment: { id: string; citizen: { name: string } } | null = null;
-  if (parentCommentId) {
-    parentComment = await db.areaNewsComment.findFirst({
-      where: {
-        id: parentCommentId,
-        postId,
-        municipalityId: ctx.municipalityId,
-        parentCommentId: null,
-      },
-      select: { id: true, citizen: { select: { name: true } } },
-    });
-    if (!parentComment) return { error: "التعليق غير متاح للرد" };
-  }
-
   await db.areaNewsComment.create({
     data: {
       postId,
-      parentCommentId,
       municipalityId: ctx.municipalityId,
       citizenId: ctx.session.user.id,
       body,
@@ -117,7 +103,7 @@ export async function createAreaNewsComment(
     title: "تعليق على خبر المنطقة",
     entityType: "AreaNewsPost",
     entityId: postId,
-    metadata: { title: post.title, comment: body, parentCommentId, replyTo: parentComment?.citizen.name ?? null },
+    metadata: { title: post.title, comment: body },
   });
 
   revalidatePath("/citizen/news");

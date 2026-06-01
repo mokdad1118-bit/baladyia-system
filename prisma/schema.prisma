@@ -34,6 +34,7 @@ model Municipality {
   broadcastNotifications    BroadcastNotification[]
   areaNewsPosts             AreaNewsPost[]
   areaNewsComments          AreaNewsComment[]
+  areaNewsCommentReplies    AreaNewsCommentReply[]
   areaNewsLikes             AreaNewsLike[]
   requestSerials            RequestSerial[]
   gasRequestSerials         GasRequestSerial[]
@@ -96,6 +97,7 @@ model User {
   authoredAreaNewsPosts AreaNewsPost[] @relation("AreaNewsAuthor")
   areaNewsReads      AreaNewsRead[]
   areaNewsComments   AreaNewsComment[]
+  areaNewsCommentReplies AreaNewsCommentReply[] @relation("AreaNewsCommentReplyAdmin")
   areaNewsLikes      AreaNewsLike[]
 
   /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها — فريدة ضمن البلدية
@@ -406,6 +408,7 @@ model AreaNewsPost {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   comments       AreaNewsComment[]
+  commentReplies AreaNewsCommentReply[]
   likes          AreaNewsLike[]
 
   @@index([municipalityId])
@@ -426,11 +429,32 @@ model AreaNewsComment {
   citizen        User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
   body           String
   createdAt      DateTime @default(now())
+  adminReplies   AreaNewsCommentReply[]
 
   @@index([postId])
   @@index([parentCommentId])
   @@index([municipalityId])
   @@index([citizenId])
+  @@index([createdAt])
+}
+
+model AreaNewsCommentReply {
+  id             String          @id @default(cuid())
+  postId         String
+  post           AreaNewsPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId      String
+  comment        AreaNewsComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  municipalityId String
+  municipality   Municipality    @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+  adminId        String
+  admin          User            @relation("AreaNewsCommentReplyAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime        @default(now())
+
+  @@index([postId])
+  @@index([commentId])
+  @@index([municipalityId])
+  @@index([adminId])
   @@index([createdAt])
 }
 

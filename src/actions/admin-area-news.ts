@@ -122,3 +122,67 @@ export async function deleteAreaNewsPost(id: string): Promise<{ ok?: true; error
   revalidatePath("/news");
   return { ok: true };
 }
+
+export async function replyToAreaNewsComment(
+  _prev: AreaNewsActionState,
+  formData: FormData,
+): Promise<AreaNewsActionState> {
+  const session = await auth();
+  if (!staffCanManageAreaNews(session)) return { error: "غير مصرّح" };
+
+  const commentId = clean(formData.get("commentId"), 120);
+  const body = clean(formData.get("body"), 1000);
+  if (!commentId) return { error: "التعليق غير محدد." };
+  if (body.length < 2) return { error: "اكتب رداً واضحاً." };
+
+  const comment = await db.areaNewsComment.findUnique({
+    where: { id: commentId },
+    select: {
+      id: true,
+      postId: true,
+      municipalityId: true,
+      body: true,
+      citizen: { select: { name: true } },
+      post: { select: { title: true, municipalityId: true } },
+    },
+  });
+  if (!comment) return { error: "التعليق غير موجود." };
+
+  try {
+    assertStaffCanAccessMunicipality(session, comment.municipalityId);
+  } catch {
+    return { error: "غير مصرّح" };
+  }
+
+  const created = await db.areaNewsCommentReply.create({
+    data: {
+      postId: comment.postId,
+      commentId: comment.id,
+      municipalityId: comment.municipalityId,
+      adminId: session!.user!.id,
+      body,
+    },
+  });
+
+  await writeOperationLog({
+    session,
+    municipalityId: comment.municipalityId,
+    action: "REPLY",
+    module: "AREA_NEWS",
+    title: "رد إداري على تعليق خبر المنطقة",
+    entityType: "AREA_NEWS_COMMENT_REPLY",
+    entityId: created.id,
+    metadata: {
+      postId: comment.postId,
+      postTitle: comment.post.title,
+      commentId: comment.id,
+      citizenName: comment.citizen.name,
+      reply: body,
+    },
+  });
+
+  revalidatePath("/admin/area-news");
+  revalidatePath("/citizen/news");
+  revalidatePath("/news");
+  return { ok: true, message: "تم إرسال الرد." };
+}

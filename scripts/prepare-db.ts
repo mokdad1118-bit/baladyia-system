@@ -232,6 +232,17 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS "AreaNewsCommentReply" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "postId" TEXT NOT NULL,
+      "commentId" TEXT NOT NULL,
+      "municipalityId" TEXT NOT NULL,
+      "adminId" TEXT NOT NULL,
+      "body" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
   await executeIfTableExists(
     client,
     "Department",
@@ -268,6 +279,11 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
     `CREATE INDEX IF NOT EXISTS "OperationLog_module_idx" ON "OperationLog"("module")`,
     `CREATE INDEX IF NOT EXISTS "OperationLog_createdAt_idx" ON "OperationLog"("createdAt")`,
     `CREATE INDEX IF NOT EXISTS "OperationLog_entityType_entityId_idx" ON "OperationLog"("entityType", "entityId")`,
+    `CREATE INDEX IF NOT EXISTS "AreaNewsCommentReply_postId_idx" ON "AreaNewsCommentReply"("postId")`,
+    `CREATE INDEX IF NOT EXISTS "AreaNewsCommentReply_commentId_idx" ON "AreaNewsCommentReply"("commentId")`,
+    `CREATE INDEX IF NOT EXISTS "AreaNewsCommentReply_municipalityId_idx" ON "AreaNewsCommentReply"("municipalityId")`,
+    `CREATE INDEX IF NOT EXISTS "AreaNewsCommentReply_adminId_idx" ON "AreaNewsCommentReply"("adminId")`,
+    `CREATE INDEX IF NOT EXISTS "AreaNewsCommentReply_createdAt_idx" ON "AreaNewsCommentReply"("createdAt")`,
     `CREATE INDEX IF NOT EXISTS "Request_municipalityId_idx" ON "Request"("municipalityId")`,
     `CREATE INDEX IF NOT EXISTS "ReturneeRegistration_municipalityId_idx" ON "ReturneeRegistration"("municipalityId")`,
     `CREATE INDEX IF NOT EXISTS "Service_municipalityId_idx" ON "Service"("municipalityId")`,

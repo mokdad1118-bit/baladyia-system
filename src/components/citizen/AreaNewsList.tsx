@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createAreaNewsComment,
@@ -28,7 +28,7 @@ type AreaNewsRow = {
       id: string;
       body: string;
       createdAt: string;
-      citizenName: string;
+      authorName: string;
     }[];
   }[];
 };
@@ -37,17 +37,16 @@ function CommentSubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="gov-btn-primary shrink-0 px-4 py-2 text-xs font-semibold" disabled={pending}>
-      {pending ? "جار الإرسال..." : "تعليق"}
+      {pending ? "جاري الإرسال..." : "تعليق"}
     </button>
   );
 }
 
-function CommentForm({ postId, parentCommentId }: { postId: string; parentCommentId?: string }) {
+function CommentForm({ postId }: { postId: string }) {
   const [state, action] = useActionState<AreaNewsCommentState, FormData>(createAreaNewsComment, undefined);
   return (
     <form action={action} className="mt-3 flex items-start gap-2">
       <input type="hidden" name="postId" value={postId} />
-      {parentCommentId ? <input type="hidden" name="parentCommentId" value={parentCommentId} /> : null}
       <textarea
         name="body"
         className="gov-input min-h-10 flex-1 resize-none px-3 py-2 text-sm"
@@ -61,9 +60,7 @@ function CommentForm({ postId, parentCommentId }: { postId: string; parentCommen
   );
 }
 
-function CommentItem({ postId, comment }: { postId: string; comment: AreaNewsRow["comments"][number] }) {
-  const [replyOpen, setReplyOpen] = useState(false);
-
+function CommentItem({ comment }: { comment: AreaNewsRow["comments"][number] }) {
   return (
     <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -73,22 +70,13 @@ function CommentItem({ postId, comment }: { postId: string; comment: AreaNewsRow
         </time>
       </div>
       <p className="mt-1 whitespace-pre-wrap leading-6 text-slate-700">{comment.body}</p>
-      <button
-        type="button"
-        className="mt-2 text-xs font-semibold text-[var(--gov-primary)] underline-offset-2 hover:underline"
-        onClick={() => setReplyOpen((open) => !open)}
-      >
-        {replyOpen ? "إلغاء الرد" : "رد"}
-      </button>
-
-      {replyOpen ? <CommentForm postId={postId} parentCommentId={comment.id} /> : null}
 
       {comment.replies.length ? (
         <div className="mt-3 space-y-2 border-r-2 border-[var(--gov-border)] pr-3">
           {comment.replies.map((reply) => (
             <div key={reply.id} className="rounded-lg bg-white px-3 py-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-semibold text-[var(--gov-text)]">{reply.citizenName}</p>
+                <p className="font-semibold text-[var(--gov-primary)]">{reply.authorName}</p>
                 <time className="text-xs text-[var(--gov-muted)]" dateTime={reply.createdAt}>
                   {new Date(reply.createdAt).toLocaleString("ar-SY")}
                 </time>
@@ -165,7 +153,7 @@ export function AreaNewsList({ posts }: { posts: AreaNewsRow[] }) {
               {post.comments.length ? (
                 <div className="mt-4 space-y-2">
                   {post.comments.map((comment) => (
-                    <CommentItem key={comment.id} postId={post.id} comment={comment} />
+                    <CommentItem key={comment.id} comment={comment} />
                   ))}
                 </div>
               ) : null}
