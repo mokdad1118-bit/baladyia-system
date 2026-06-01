@@ -95,6 +95,7 @@ export async function submitInPersonRequest(
   _p: { error?: string } | undefined,
   formData: FormData,
 ) {
+  let redirectTo: string | null = null;
   try {
     const session = await auth();
     if (session?.user && !staffCanManageInPersonRequests(session)) return { error: "غير مصرح." };
@@ -225,12 +226,13 @@ export async function submitInPersonRequest(
 
     revalidatePath("/admin/requests");
     revalidatePath("/admin/services/in-person");
-    redirect(`/admin/requests?source=in_person&success=1&no=${encodeURIComponent(number)}`);
+    redirectTo = `/admin/requests?source=in_person&success=1&no=${encodeURIComponent(number)}`;
   } catch (e) {
     unstable_rethrow(e);
     console.error("[submitInPersonRequest] failed:", e);
     return { error: "تعذر حفظ الطلب الحضوري حالياً. تحقق من البيانات والمرفقات ثم حاول مرة أخرى." };
   }
+  if (redirectTo) redirect(redirectTo);
 }
 
 function parseBirthDate(raw: string): { ok: true; date: Date } | { ok: false; error: string } {
@@ -292,6 +294,7 @@ export async function submitInPersonReturneeRegistration(
   _p: { error?: string } | undefined,
   formData: FormData,
 ) {
+  let redirectTo: string | null = null;
   try {
     const session = await auth();
     if (!session?.user) return { error: "يجب تسجيل الدخول." };
@@ -357,18 +360,20 @@ export async function submitInPersonReturneeRegistration(
 
     revalidatePath("/admin/social-services");
     revalidatePath("/admin/services/in-person");
-    redirect(`/admin/social-services?tab=returnees&municipalityId=${encodeURIComponent(scope.municipalityId)}`);
+    redirectTo = `/admin/social-services?tab=returnees&municipalityId=${encodeURIComponent(scope.municipalityId)}`;
   } catch (e) {
     unstable_rethrow(e);
     console.error("[submitInPersonReturneeRegistration] failed", e);
     return { error: "تعذر حفظ طلب العائدين الحضوري." };
   }
+  if (redirectTo) redirect(redirectTo);
 }
 
 export async function submitInPersonSocialServiceCase(
   _p: { error?: string } | undefined,
   formData: FormData,
 ) {
+  let redirectTo: string | null = null;
   try {
     const session = await auth();
     if (!session?.user) return { error: "يجب تسجيل الدخول." };
@@ -467,10 +472,11 @@ export async function submitInPersonSocialServiceCase(
 
     revalidatePath("/admin/social-services");
     revalidatePath("/admin/services/in-person");
-    redirect(`/admin/social-services?tab=${encodeURIComponent(socialServiceTabByCategory[category])}&municipalityId=${encodeURIComponent(scope.municipalityId)}`);
+    redirectTo = `/admin/social-services?tab=${encodeURIComponent(socialServiceTabByCategory[category])}&municipalityId=${encodeURIComponent(scope.municipalityId)}`;
   } catch (e) {
     unstable_rethrow(e);
     console.error("[submitInPersonSocialServiceCase] failed", e);
     return { error: "تعذر حفظ طلب الخدمة الاجتماعية الحضوري." };
   }
+  if (redirectTo) redirect(redirectTo);
 }
