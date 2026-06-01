@@ -76,6 +76,7 @@ export async function createAreaNewsComment(
   if (!ctx) return { error: "غير مصرّح" };
 
   const postId = String(formData.get("postId") ?? "").trim();
+  const parentCommentId = String(formData.get("parentCommentId") ?? "").trim() || null;
   const body = String(formData.get("body") ?? "").trim();
   if (!postId) return { error: "المنشور غير محدد" };
   if (body.length < 2) return { error: "اكتب تعليقاً واضحاً" };
@@ -84,9 +85,24 @@ export async function createAreaNewsComment(
   const post = await findVisiblePost(postId, ctx.municipalityId);
   if (!post) return { error: "المنشور غير متاح" };
 
+  let parentComment: { id: string; citizen: { name: string } } | null = null;
+  if (parentCommentId) {
+    parentComment = await db.areaNewsComment.findFirst({
+      where: {
+        id: parentCommentId,
+        postId,
+        municipalityId: ctx.municipalityId,
+        parentCommentId: null,
+      },
+      select: { id: true, citizen: { select: { name: true } } },
+    });
+    if (!parentComment) return { error: "التعليق غير متاح للرد" };
+  }
+
   await db.areaNewsComment.create({
     data: {
       postId,
+      parentCommentId,
       municipalityId: ctx.municipalityId,
       citizenId: ctx.session.user.id,
       body,
@@ -101,7 +117,7 @@ export async function createAreaNewsComment(
     title: "تعليق على خبر المنطقة",
     entityType: "AreaNewsPost",
     entityId: postId,
-    metadata: { title: post.title, comment: body },
+    metadata: { title: post.title, comment: body, parentCommentId, replyTo: parentComment?.citizen.name ?? null },
   });
 
   revalidatePath("/citizen/news");

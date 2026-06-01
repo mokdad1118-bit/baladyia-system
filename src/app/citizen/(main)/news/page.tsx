@@ -24,10 +24,18 @@ export default async function CitizenAreaNewsPage() {
         select: { citizenId: true },
       },
       comments: {
-        where: { municipalityId },
+        where: { municipalityId, parentCommentId: null },
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { citizen: { select: { name: true } } },
+        include: {
+          citizen: { select: { name: true } },
+          replies: {
+            where: { municipalityId },
+            orderBy: { createdAt: "asc" },
+            take: 5,
+            include: { citizen: { select: { name: true } } },
+          },
+        },
       },
       _count: {
         select: {
@@ -57,6 +65,12 @@ export default async function CitizenAreaNewsPage() {
             body: comment.body,
             createdAt: comment.createdAt.toISOString(),
             citizenName: comment.citizen.name,
+            replies: comment.replies.map((reply) => ({
+              id: reply.id,
+              body: reply.body,
+              createdAt: reply.createdAt.toISOString(),
+              citizenName: reply.citizen.name,
+            })),
           })),
         }))}
       />

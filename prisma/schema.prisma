@@ -417,6 +417,9 @@ model AreaNewsComment {
   id             String   @id @default(cuid())
   postId         String
   post           AreaNewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentCommentId String?
+  parentComment   AreaNewsComment? @relation("AreaNewsCommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         AreaNewsComment[] @relation("AreaNewsCommentReplies")
   municipalityId String
   municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
   citizenId      String
@@ -425,6 +428,7 @@ model AreaNewsComment {
   createdAt      DateTime @default(now())
 
   @@index([postId])
+  @@index([parentCommentId])
   @@index([municipalityId])
   @@index([citizenId])
   @@index([createdAt])
