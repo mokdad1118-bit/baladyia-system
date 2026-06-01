@@ -17,6 +17,7 @@ declare module "next-auth" {
       permViewRequests?: boolean;
       permManageGas?: boolean;
       permManageSocialServices?: boolean;
+      permManageInPersonRequests?: boolean;
       permManageCitizenFeedback?: boolean;
       permViewCitizens?: boolean;
       permViewOperationLog?: boolean;
@@ -39,6 +40,7 @@ declare module "next-auth/jwt" {
     permViewRequests?: boolean;
     permManageGas?: boolean;
     permManageSocialServices?: boolean;
+    permManageInPersonRequests?: boolean;
     permManageCitizenFeedback?: boolean;
     permViewCitizens?: boolean;
     permViewOperationLog?: boolean;

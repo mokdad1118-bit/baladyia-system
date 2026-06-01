@@ -6,6 +6,7 @@ import {
   hasAnyStaffPanelPermission,
   staffCanManageCitizenFeedback,
   staffCanManageGas,
+  staffCanManageInPersonRequests,
   staffCanManageServices,
   staffCanManageSocialServices,
   staffCanManageUsers,
@@ -32,6 +33,7 @@ export type StaffPanelPermissionKey =
   | "requests"
   | "gas"
   | "social"
+  | "inPerson"
   | "feedback"
   | "citizens"
   | "operationLog"
@@ -50,6 +52,7 @@ export async function requireStaffPanelPermission(
     requests: staffCanViewRequests(session),
     gas: staffCanManageGas(session),
     social: staffCanManageSocialServices(session),
+    inPerson: staffCanManageInPersonRequests(session),
     feedback: staffCanManageCitizenFeedback(session),
     citizens: staffCanViewCitizens(session),
     operationLog: staffCanViewOperationLog(session),

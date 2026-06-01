@@ -63,6 +63,7 @@ model User {
   permViewRequests  Boolean @default(false)
   permManageGas     Boolean @default(false)
   permManageSocialServices Boolean @default(false)
+  permManageInPersonRequests Boolean @default(false)
   permManageCitizenFeedback Boolean @default(false)
   permViewCitizens  Boolean @default(false)
   permViewOperationLog Boolean @default(false)
@@ -523,6 +524,7 @@ model ReturneeRegistration {
   returnStatementOriginal  String
   returnStatementMime      String
   returnStatementSize      Int
+  source                   String   @default("online")
   status                   ReturneeRegistrationStatus @default(PENDING)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
@@ -571,6 +573,7 @@ model SocialServiceCase {
   familyBookNumber      String?
   email                 String
   attachmentsJson       String   @default("[]")
+  source                String   @default("online")
   status                SocialServiceCaseStatus @default(PENDING)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

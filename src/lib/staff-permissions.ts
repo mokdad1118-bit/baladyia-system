@@ -6,6 +6,7 @@ export type StaffNavPermissions = {
   viewRequests: boolean;
   manageGas: boolean;
   manageSocialServices: boolean;
+  manageInPersonRequests: boolean;
   manageCitizenFeedback: boolean;
   viewCitizens: boolean;
   viewOperationLog: boolean;
@@ -19,6 +20,7 @@ export const emptyStaffNavPermissions: StaffNavPermissions = {
   viewRequests: false,
   manageGas: false,
   manageSocialServices: false,
+  manageInPersonRequests: false,
   manageCitizenFeedback: false,
   viewCitizens: false,
   viewOperationLog: false,
@@ -32,6 +34,7 @@ export const fullStaffNavPermissions: StaffNavPermissions = {
   viewRequests: true,
   manageGas: true,
   manageSocialServices: true,
+  manageInPersonRequests: true,
   manageCitizenFeedback: true,
   viewCitizens: true,
   viewOperationLog: true,
@@ -59,6 +62,7 @@ export function staffNavPermissions(s: Session | null): StaffNavPermissions {
     viewRequests: Boolean(u.permViewRequests),
     manageGas: Boolean(u.permManageGas),
     manageSocialServices: Boolean(u.permManageSocialServices),
+    manageInPersonRequests: Boolean(u.permManageInPersonRequests),
     manageCitizenFeedback: Boolean(u.permManageCitizenFeedback),
     viewCitizens: Boolean(u.permViewCitizens),
     viewOperationLog: Boolean(u.permViewOperationLog),
@@ -83,6 +87,10 @@ export function staffCanManageGas(s: Session | null): boolean {
 
 export function staffCanManageSocialServices(s: Session | null): boolean {
   return staffNavPermissions(s).manageSocialServices;
+}
+
+export function staffCanManageInPersonRequests(s: Session | null): boolean {
+  return staffNavPermissions(s).manageInPersonRequests;
 }
 
 export function staffCanManageCitizenFeedback(s: Session | null): boolean {
@@ -117,6 +125,7 @@ export type EmployeePermPayload = {
   permViewRequests: boolean;
   permManageGas: boolean;
   permManageSocialServices: boolean;
+  permManageInPersonRequests: boolean;
   permManageCitizenFeedback: boolean;
   permViewCitizens: boolean;
   permViewOperationLog: boolean;
@@ -143,6 +152,9 @@ export function validateAssignableEmployeePerms(
   }
   if (p.permManageSocialServices && !u.permManageSocialServices) {
     return "لا يمكنك منح صلاحية الخدمات الاجتماعية";
+  }
+  if (p.permManageInPersonRequests && !u.permManageInPersonRequests) {
+    return "لا يمكنك منح صلاحية الطلبات الحضورية";
   }
   if (p.permManageCitizenFeedback && !u.permManageCitizenFeedback) {
     return "لا يمكنك منح صلاحية شكاوى واقتراحات المواطنين";

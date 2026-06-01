@@ -10,6 +10,7 @@ type Assignable = {
   requests: boolean;
   gas: boolean;
   social: boolean;
+  inPerson: boolean;
   feedback: boolean;
   citizens: boolean;
   operationLog: boolean;
@@ -23,6 +24,7 @@ const permissionOptions = [
   { name: "permViewRequests", key: "requests", label: "طلبات خدمات المدينة" },
   { name: "permManageGas", key: "gas", label: "خدمات الغاز" },
   { name: "permManageSocialServices", key: "social", label: "الخدمات الاجتماعية والعائدين" },
+  { name: "permManageInPersonRequests", key: "inPerson", label: "الخدمات المقدمة حضورياً" },
   { name: "permManageCitizenFeedback", key: "feedback", label: "شكاوى واقتراحات المواطنين" },
   { name: "permViewCitizens", key: "citizens", label: "حسابات المواطنين" },
   { name: "permViewOperationLog", key: "operationLog", label: "سجل العمليات" },

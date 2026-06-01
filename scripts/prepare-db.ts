@@ -180,6 +180,9 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await addColumnIfMissing(client, "User", "permViewRequests", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permManageGas", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permManageSocialServices", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "permManageInPersonRequests", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "ReturneeRegistration", "source", "TEXT NOT NULL DEFAULT 'online'");
+  await addColumnIfMissing(client, "SocialServiceCase", "source", "TEXT NOT NULL DEFAULT 'online'");
   await addColumnIfMissing(client, "User", "permManageCitizenFeedback", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permViewCitizens", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permViewOperationLog", "BOOLEAN NOT NULL DEFAULT false");

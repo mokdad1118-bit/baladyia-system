@@ -129,6 +129,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           permViewRequests: isElevatedAdmin || user.permViewRequests,
           permManageGas: isElevatedAdmin || user.permManageGas,
           permManageSocialServices: isElevatedAdmin || user.permManageSocialServices,
+          permManageInPersonRequests: isElevatedAdmin || user.permManageInPersonRequests,
           permManageCitizenFeedback: isElevatedAdmin || user.permManageCitizenFeedback,
           permViewCitizens: isElevatedAdmin || user.permViewCitizens,
           permViewOperationLog: isElevatedAdmin || user.permViewOperationLog,
@@ -153,6 +154,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           permViewRequests?: boolean;
           permManageGas?: boolean;
           permManageSocialServices?: boolean;
+          permManageInPersonRequests?: boolean;
           permManageCitizenFeedback?: boolean;
           permViewCitizens?: boolean;
           permViewOperationLog?: boolean;
@@ -171,6 +173,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.permViewRequests = Boolean(u.permViewRequests);
         token.permManageGas = Boolean(u.permManageGas);
         token.permManageSocialServices = Boolean(u.permManageSocialServices);
+        token.permManageInPersonRequests = Boolean(u.permManageInPersonRequests);
         token.permManageCitizenFeedback = Boolean(u.permManageCitizenFeedback);
         token.permViewCitizens = Boolean(u.permViewCitizens);
         token.permViewOperationLog = Boolean(u.permViewOperationLog);
@@ -196,6 +199,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         session.user.permViewRequests = Boolean(token.permViewRequests);
         session.user.permManageGas = Boolean(token.permManageGas);
         session.user.permManageSocialServices = Boolean(token.permManageSocialServices);
+        session.user.permManageInPersonRequests = Boolean(token.permManageInPersonRequests);
         session.user.permManageCitizenFeedback = Boolean(token.permManageCitizenFeedback);
         session.user.permViewCitizens = Boolean(token.permViewCitizens);
         session.user.permViewOperationLog = Boolean(token.permViewOperationLog);

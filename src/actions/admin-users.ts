@@ -19,6 +19,7 @@ function parseEmployeePerms(formData: FormData) {
     permViewRequests: formData.get("permViewRequests") === "on",
     permManageGas: formData.get("permManageGas") === "on",
     permManageSocialServices: formData.get("permManageSocialServices") === "on",
+    permManageInPersonRequests: formData.get("permManageInPersonRequests") === "on",
     permManageCitizenFeedback: formData.get("permManageCitizenFeedback") === "on",
     permViewCitizens: formData.get("permViewCitizens") === "on",
     permViewOperationLog: formData.get("permViewOperationLog") === "on",
@@ -97,6 +98,7 @@ export async function createStaffUser(
   let permViewRequests = false;
   let permManageGas = false;
   let permManageSocialServices = false;
+  let permManageInPersonRequests = false;
   let permManageCitizenFeedback = false;
   let permViewCitizens = false;
   let permViewOperationLog = false;
@@ -104,6 +106,7 @@ export async function createStaffUser(
     permViewRequests = true;
     permManageGas = true;
     permManageSocialServices = true;
+    permManageInPersonRequests = true;
     permManageCitizenFeedback = true;
     permViewCitizens = true;
     permViewOperationLog = true;
@@ -121,6 +124,7 @@ export async function createStaffUser(
     permViewRequests = p.permViewRequests;
     permManageGas = p.permManageGas;
     permManageSocialServices = p.permManageSocialServices;
+    permManageInPersonRequests = p.permManageInPersonRequests;
     permManageCitizenFeedback = p.permManageCitizenFeedback;
     permViewCitizens = p.permViewCitizens;
     permViewOperationLog = p.permViewOperationLog;
@@ -140,6 +144,7 @@ export async function createStaffUser(
       permViewRequests,
       permManageGas,
       permManageSocialServices,
+      permManageInPersonRequests,
       permManageCitizenFeedback,
       permViewCitizens,
       permViewOperationLog,
