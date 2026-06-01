@@ -190,7 +190,6 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await addColumnIfMissing(client, "Service", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Request", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Request", "source", `TEXT NOT NULL DEFAULT 'online'`);
-  await addColumnIfMissing(client, "Request", "inPersonNumber", "TEXT");
   await addColumnIfMissing(client, "AreaNewsComment", "parentCommentId", "TEXT");
   await addColumnIfMissing(client, "Notification", "municipalityId", "TEXT");
   await addColumnIfMissing(client, "CitizenFeedback", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
@@ -286,7 +285,6 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
     `CREATE INDEX IF NOT EXISTS "AreaNewsCommentReply_adminId_idx" ON "AreaNewsCommentReply"("adminId")`,
     `CREATE INDEX IF NOT EXISTS "AreaNewsCommentReply_createdAt_idx" ON "AreaNewsCommentReply"("createdAt")`,
     `CREATE INDEX IF NOT EXISTS "Request_municipalityId_idx" ON "Request"("municipalityId")`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS "Request_inPersonNumber_key" ON "Request"("inPersonNumber")`,
     `CREATE INDEX IF NOT EXISTS "ReturneeRegistration_municipalityId_idx" ON "ReturneeRegistration"("municipalityId")`,
     `CREATE INDEX IF NOT EXISTS "Service_municipalityId_idx" ON "Service"("municipalityId")`,
     `CREATE INDEX IF NOT EXISTS "SocialServiceCase_municipalityId_idx" ON "SocialServiceCase"("municipalityId")`,

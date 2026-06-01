@@ -16,7 +16,13 @@ import { acceptsForFileKind } from "@/lib/file-validation";
 import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
-import { digitsOnly, isValidWhatsappLength, notifEmailOrNull } from "@/lib/phone";
+import {
+  citizenPhoneLookupKeys,
+  digitsOnly,
+  isValidWhatsappLength,
+  normalizeCitizenPhoneForStorage,
+  notifEmailOrNull,
+} from "@/lib/phone";
 import { hashPassword } from "@/lib/password";
 import { nextRequestNumber } from "@/lib/request-serial";
 import { writeOperationLog } from "@/lib/operation-log";
@@ -49,16 +55,20 @@ async function resolveCitizen(input: {
   nationalId: string;
   notificationEmail: string | null;
 }) {
+  const phoneKeys = citizenPhoneLookupKeys(input.phone);
   const byNationalId = await db.user.findFirst({
-    where: { role: UserRole.CITIZEN, nationalId: input.nationalId },
+    where: { nationalId: input.nationalId },
   });
   const byPhone = await db.user.findFirst({
-    where: { role: UserRole.CITIZEN, phone: input.phone },
+    where: { phone: { in: phoneKeys } },
   });
   const existing = byNationalId ?? byPhone;
 
   if (byNationalId && byPhone && byNationalId.id !== byPhone.id) {
     return { error: "الرقم الوطني ورقم الواتساب مسجلان لحسابين مختلفين." };
+  }
+  if (existing && existing.role !== UserRole.CITIZEN) {
+    return { error: "الرقم الوطني أو رقم الواتساب مستخدم لحساب موظف أو مدير، يرجى استخدام بيانات المواطن الصحيحة." };
   }
   if (existing && existing.municipalityId && existing.municipalityId !== input.municipalityId) {
     return { error: "حساب المواطن مسجل ضمن بلدية أخرى." };
@@ -107,14 +117,16 @@ export async function submitInPersonRequest(
 
     const serviceId = String(formData.get("serviceId") ?? "").trim();
     const fullName = String(formData.get("fullName") ?? "").trim();
-    const phone = digitsOnly(String(formData.get("phone") ?? ""));
+    const phoneRaw = String(formData.get("phone") ?? "");
+    const phoneDigits = digitsOnly(phoneRaw);
+    const phone = normalizeCitizenPhoneForStorage(phoneRaw);
     const nationalId = digitsOnly(String(formData.get("nationalId") ?? ""));
     const notificationEmailRaw = String(formData.get("notificationEmail") ?? "").trim();
     const notificationEmail = notificationEmailRaw ? parseEmail(notificationEmailRaw) : null;
 
     if (!serviceId) return { error: "يرجى اختيار الخدمة." };
     if (fullName.length < 2) return { error: "يرجى إدخال اسم المواطن." };
-    if (!isValidWhatsappLength(phone)) return { error: "رقم الواتساب غير صالح." };
+    if (!isValidWhatsappLength(phoneDigits)) return { error: "رقم الواتساب غير صالح." };
     if (nationalId.length < 8 || nationalId.length > 20) return { error: "الرقم الوطني غير صالح." };
     if (notificationEmailRaw && !notificationEmail) return { error: "بريد الإشعارات غير صالح." };
 
@@ -183,7 +195,6 @@ export async function submitInPersonRequest(
       data: {
         municipalityId: service.municipalityId,
         requestNumber: number,
-        inPersonNumber,
         serviceId: service.id,
         citizenId: resolvedCitizen.citizen.id,
         assigneeId,

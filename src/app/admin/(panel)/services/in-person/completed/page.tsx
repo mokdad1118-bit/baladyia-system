@@ -48,7 +48,7 @@ export default async function AdminInPersonCompletedRequestsPage({ searchParams 
   const rows = requests.map((request) => ({
     id: request.id,
     requestNumber: request.requestNumber,
-    inPersonNumber: request.inPersonNumber ?? request.requestNumber.replace(/^REQ-/, "INP-"),
+    inPersonNumber: request.requestNumber.replace(/^REQ-/, "INP-"),
     citizenName: request.submittedFullName || request.citizen.name,
     nationalId: request.citizen.nationalId ?? "",
     phone: request.submittedPhone || request.citizen.phone || "",
