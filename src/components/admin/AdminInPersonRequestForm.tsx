@@ -1,22 +1,19 @@
-"use client";
-
-import { useActionState } from "react";
 import type { Service, ServiceDocument } from "@/generated/prisma/client";
-import { submitInPersonRequest } from "@/actions/admin-in-person-requests";
 import { fileKindAr } from "@/lib/labels";
 import { acceptForKind } from "@/lib/file-accept";
 import { maxCitizenAttachmentLabelAr } from "@/lib/upload-limits";
 
 export function AdminInPersonRequestForm({
   service,
+  errorMessage,
 }: {
   service: Service & { documents: ServiceDocument[]; municipality: { name: string } };
+  errorMessage?: string;
 }) {
-  const [state, action, pending] = useActionState(submitInPersonRequest, undefined);
   const documents = service.documents.slice().sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
-    <form action={action} className="gov-card space-y-5 p-4 md:p-6">
+    <form action="/api/admin/in-person-requests" method="post" encType="multipart/form-data" className="gov-card space-y-5 p-4 md:p-6">
       <input type="hidden" name="serviceId" value={service.id} />
 
       <header className="border-b border-[var(--gov-border)] pb-4">
@@ -29,8 +26,8 @@ export function AdminInPersonRequestForm({
         </p>
       </header>
 
-      {state?.error ? (
-        <p className="rounded-sm border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">{state.error}</p>
+      {errorMessage ? (
+        <p className="rounded-sm border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">{errorMessage}</p>
       ) : null}
 
       <section className="grid gap-3 md:grid-cols-2">
@@ -86,8 +83,8 @@ export function AdminInPersonRequestForm({
       </section>
 
       <div className="border-t border-[var(--gov-border)] pt-4">
-        <button type="submit" disabled={pending} className="gov-btn-primary px-5 py-2.5 text-sm font-semibold disabled:opacity-60">
-          {pending ? "جاري الحفظ..." : "حفظ الطلب الحضوري"}
+        <button type="submit" className="gov-btn-primary px-5 py-2.5 text-sm font-semibold">
+          حفظ الطلب الحضوري
         </button>
       </div>
     </form>

@@ -18,7 +18,7 @@ import { isSuperAdminRole } from "@/lib/roles";
 import { SocialServiceCategory } from "@/generated/prisma/enums";
 import { socialServiceCategoryLabelAr } from "@/lib/social-service-labels";
 
-type Props = { searchParams: Promise<{ municipalityId?: string; serviceId?: string; item?: string }> };
+type Props = { searchParams: Promise<{ municipalityId?: string; serviceId?: string; item?: string; error?: string }> };
 
 const socialServiceOptions = [
   { key: "social:returnees", label: "تسجيل العائدين", category: null },
@@ -158,7 +158,7 @@ export default async function AdminInPersonServicesPage({ searchParams }: Props)
         </p>
       ) : null}
 
-      {selectedService ? <AdminInPersonRequestForm service={selectedService} /> : null}
+      {selectedService ? <AdminInPersonRequestForm service={selectedService} errorMessage={sp.error} /> : null}
       {selectedSocialOption?.key === "social:returnees" && selectedMunicipality ? (
         <AdminInPersonReturneeRegistrationForm
           municipalityId={selectedMunicipality.id}

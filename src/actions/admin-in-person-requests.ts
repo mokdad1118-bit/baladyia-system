@@ -105,10 +105,7 @@ async function resolveCitizen(input: {
   return { citizen: created };
 }
 
-export async function submitInPersonRequest(
-  _p: { error?: string } | undefined,
-  formData: FormData,
-) {
+export async function createInPersonRequestFromForm(formData: FormData) {
   let redirectTo: string | null = null;
   try {
     const session = await auth();
@@ -247,11 +244,19 @@ export async function submitInPersonRequest(
     revalidatePath("/admin/services/in-person/completed");
     redirectTo = `/admin/services/in-person/completed?success=1&no=${encodeURIComponent(inPersonNumber)}`;
   } catch (e) {
-    unstable_rethrow(e);
     console.error("[submitInPersonRequest] failed:", e);
-    return { error: "تعذر حفظ الطلب الحضوري حالياً. تحقق من البيانات والمرفقات ثم حاول مرة أخرى." };
+    return { ok: false as const, error: "تعذر حفظ الطلب الحضوري حالياً. تحقق من البيانات والمرفقات ثم حاول مرة أخرى." };
   }
-  if (redirectTo) redirect(redirectTo);
+  return { ok: true as const, redirectTo: redirectTo ?? "/admin/services/in-person/completed" };
+}
+
+export async function submitInPersonRequest(
+  _p: { error?: string } | undefined,
+  formData: FormData,
+) {
+  const result = await createInPersonRequestFromForm(formData);
+  if (!result.ok) return { error: result.error };
+  redirect(result.redirectTo);
 }
 
 function parseBirthDate(raw: string): { ok: true; date: Date } | { ok: false; error: string } {
