@@ -1,14 +1,5 @@
-import { GovLoginPage } from "@/components/gov/GovLoginPage";
+import { redirect } from "next/navigation";
 
 export default function StaffLoginPage() {
-  return (
-    <GovLoginPage
-      loginPage="staff"
-      title="بوابة الموظف"
-      subtitle="تسجيل دخول الموظفين"
-      identifierLabel="البريد الإلكتروني"
-      identifierPlaceholder="employee@org.local"
-      identifierAutocomplete="username"
-    />
-  );
+  redirect("/admin/login?next=/staff");
 }

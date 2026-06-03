@@ -7,7 +7,7 @@ import {
   staffPortalSplitEnabled,
 } from "@/lib/staff-portal";
 
-/** دخول مدير النظام فقط — /admin/login */
+/** دخول المدير والموظف — /admin/login */
 export default async function AdminStaffLoginPage() {
   const h = await headers();
   const host = h.get("host");
@@ -19,8 +19,8 @@ export default async function AdminStaffLoginPage() {
   return (
     <GovLoginPage
       loginPage="admin"
-      title="لوحة التحكم — دخول المدير"
-      subtitle="تسجيل دخول مدير النظام"
+      title="لوحة التحكم — دخول الإدارة والموظفين"
+      subtitle="تسجيل دخول المدير أو الموظف"
       identifierLabel="البريد الإلكتروني"
       identifierPlaceholder="employee@example.local"
       identifierAutocomplete="username"

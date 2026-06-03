@@ -50,7 +50,14 @@ export async function middleware(req: NextRequest) {
   }
   if (pathname === "/employee/login") {
     const u = req.nextUrl.clone();
-    u.pathname = "/staff/login";
+    u.pathname = "/admin/login";
+    u.searchParams.set("next", "/staff");
+    return NextResponse.redirect(u);
+  }
+  if (pathname === "/staff/login") {
+    const u = req.nextUrl.clone();
+    u.pathname = "/admin/login";
+    u.searchParams.set("next", req.nextUrl.searchParams.get("next") || "/staff");
     return NextResponse.redirect(u);
   }
 
@@ -87,10 +94,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/staff/login") return NextResponse.next();
   if (pathname.startsWith("/staff")) {
     if (!hasSession) {
-      const u = new URL("/staff/login", req.url);
+      const u = new URL("/admin/login", req.url);
       u.searchParams.set("next", pathname + search);
       return NextResponse.redirect(u);
     }

@@ -17,7 +17,7 @@ import { writeOperationLog } from "@/lib/operation-log";
 function loginPageAllowsRole(surface: LoginPageSurface, role: UserRole) {
   if (surface === "citizen") return role === UserRole.CITIZEN || role === UserRole.GAS_AGENT;
   if (surface === "staff") return role === UserRole.EMPLOYEE;
-  if (surface === "admin") return isAdminPanelRole(role);
+  if (surface === "admin") return isAdminPanelRole(role) || role === UserRole.EMPLOYEE;
   return false;
 }
 

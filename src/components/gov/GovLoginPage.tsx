@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useId, useState } from "react";
+import { Suspense, useId, useState } from "react";
 import { getSession, signIn, type SignInResponse } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import type { LoginPageSurface } from "@/lib/auth-portal";
@@ -45,6 +45,22 @@ function failureMessageForSignIn(loginPage: LoginPageSurface, res: SignInRespons
     : "البريد الإلكتروني أو كلمة المرور غير صحيحة";
 }
 
+function employeeHasAdminPanelPermission(user: NonNullable<Awaited<ReturnType<typeof getSession>>>["user"] | undefined): boolean {
+  return Boolean(
+    user?.permViewRequests ||
+      user?.permManageGas ||
+      user?.permManageSocialServices ||
+      user?.permManageInPersonRequests ||
+      user?.permManageCitizenFeedback ||
+      user?.permViewCitizens ||
+      user?.permViewOperationLog ||
+      user?.permManageServices ||
+      user?.permManageUsers ||
+      user?.permViewStats ||
+      user?.permManageAreaNews,
+  );
+}
+
 /**
  * ثلاث صفحات دخول: /citizen/login و /staff/login و /admin/login
  * والتحقق من صلاحية الدخول حسب الدور في الخادم (credentials.loginPage).
@@ -62,19 +78,10 @@ function GovLoginPageImpl({
   const sp = useSearchParams();
   const [err, setErr] = useState<string | null>(null);
   const [pend, setPend] = useState(false);
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
   const passwordFieldId = useId();
   const isCitizen = loginPage === "citizen";
-
-  const spQuery = sp.toString();
-  useEffect(() => {
-    if (!isCitizen) return;
-    const id = sp.get("identifier")?.trim();
-    if (id) setIdentifier(id);
-    // يُعاد عند تغيّر الاستعلام (spQuery)؛ sp من useSearchParams متزامن.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCitizen, spQuery]);
+  const [identifier, setIdentifier] = useState(() => (isCitizen ? (sp.get("identifier")?.trim() ?? "") : ""));
+  const [password, setPassword] = useState("");
 
   const form = (
     <div
@@ -123,7 +130,7 @@ function GovLoginPageImpl({
             if (!dest) {
               if (role === UserRole.CITIZEN) dest = "/citizen";
               else if (role === UserRole.GAS_AGENT) dest = "/gas-agent";
-              else if (role === UserRole.EMPLOYEE) dest = "/staff";
+              else if (role === UserRole.EMPLOYEE) dest = employeeHasAdminPanelPermission(session?.user) ? "/admin" : "/staff";
               else if (role === UserRole.SUPER_ADMIN || role === UserRole.MUNICIPALITY_ADMIN) dest = "/admin";
               else dest = loginPage === "citizen" ? "/citizen" : loginPage === "staff" ? "/staff" : "/admin";
             }
@@ -242,7 +249,7 @@ function GovLoginPageImpl({
         <p className="mt-8 border-t border-[var(--gov-border)] pt-4 text-center text-[0.7rem] leading-relaxed text-[var(--gov-muted)]">
           {loginPage === "staff"
             ? "هذه البوابة للموظفين فقط."
-            : "هذه البوابة لمدير النظام فقط."}{" "}
+            : "هذه البوابة للمدير والموظف."}{" "}
           لا يُستخدم حساب المواطن هنا — تسجيل الدخول للمواطنين من{" "}
           <Link className="font-semibold text-[var(--gov-primary)] underline-offset-2 hover:underline" href="/citizen/login">
             /citizen/login
