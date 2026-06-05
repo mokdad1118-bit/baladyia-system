@@ -18,6 +18,7 @@ type Assignable = {
   users: boolean;
   stats: boolean;
   areaNews: boolean;
+  archive: boolean;
 };
 
 const permissionOptions = [
@@ -32,6 +33,7 @@ const permissionOptions = [
   { name: "permManageUsers", key: "users", label: "إدارة حسابات الموظفين والصلاحيات" },
   { name: "permViewStats", key: "stats", label: "عرض الإحصائيات والتقارير" },
   { name: "permManageAreaNews", key: "areaNews", label: "إدارة أخبار المنطقة" },
+  { name: "permManageArchive", key: "archive", label: "الأرشيف" },
 ] as const;
 
 export function UserCreateForm({

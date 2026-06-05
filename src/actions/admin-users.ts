@@ -27,6 +27,7 @@ function parseEmployeePerms(formData: FormData) {
     permManageUsers: formData.get("permManageUsers") === "on",
     permViewStats: formData.get("permViewStats") === "on",
     permManageAreaNews: formData.get("permManageAreaNews") === "on",
+    permManageArchive: formData.get("permManageArchive") === "on",
   };
 }
 
@@ -95,6 +96,7 @@ export async function createStaffUser(
   let permManageUsers = false;
   let permViewStats = false;
   let permManageAreaNews = false;
+  let permManageArchive = false;
   let permViewRequests = false;
   let permManageGas = false;
   let permManageSocialServices = false;
@@ -114,6 +116,7 @@ export async function createStaffUser(
     permManageUsers = true;
     permViewStats = true;
     permManageAreaNews = true;
+    permManageArchive = true;
   } else {
     const p = parseEmployeePerms(formData);
     if (!hasAnyEmployeePerm(p)) {
@@ -132,6 +135,7 @@ export async function createStaffUser(
     permManageUsers = p.permManageUsers;
     permViewStats = p.permViewStats;
     permManageAreaNews = p.permManageAreaNews;
+    permManageArchive = p.permManageArchive;
   }
 
   const created = await db.user.create({
@@ -152,6 +156,7 @@ export async function createStaffUser(
       permManageUsers,
       permViewStats,
       permManageAreaNews,
+      permManageArchive,
     },
   });
   await writeOperationLog({

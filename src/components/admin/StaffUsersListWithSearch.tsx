@@ -32,6 +32,7 @@ export type StaffUserRow = {
   permManageUsers: boolean;
   permViewStats: boolean;
   permManageAreaNews: boolean;
+  permManageArchive: boolean;
 };
 
 function haystack(u: StaffUserRow): string {
@@ -53,6 +54,7 @@ function haystack(u: StaffUserRow): string {
     u.permManageUsers ? "موظفون" : "",
     u.permViewStats ? "إحصائيات" : "",
     u.permManageAreaNews ? "أخبار المنطقة" : "",
+    u.permManageArchive ? "الأرشيف" : "",
     u.isActive ? "" : "معطّل",
   ]
     .filter(Boolean)
@@ -72,6 +74,7 @@ const permissionOptions = [
   { name: "permManageUsers", key: "users", label: "الموظفون", valueKey: "permManageUsers" },
   { name: "permViewStats", key: "stats", label: "الإحصائيات", valueKey: "permViewStats" },
   { name: "permManageAreaNews", key: "areaNews", label: "أخبار المنطقة", valueKey: "permManageAreaNews" },
+  { name: "permManageArchive", key: "archive", label: "الأرشيف", valueKey: "permManageArchive" },
 ] as const;
 
 function PermissionBadge({ children }: { children: React.ReactNode }) {
@@ -92,7 +95,7 @@ function EmployeePermissionsForm({
   assignablePerms,
 }: {
   user: StaffUserRow;
-  assignablePerms: { requests: boolean; gas: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean };
+  assignablePerms: { requests: boolean; gas: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean; archive: boolean };
 }) {
   const [state, action] = useActionState(updateEmployeePermissions, undefined);
   return (
@@ -144,7 +147,7 @@ export function StaffUsersListWithSearch({
   municipalities?: { id: string; name: string }[];
   isSuperAdmin?: boolean;
   isFullAdmin: boolean;
-  assignablePerms: { requests: boolean; gas: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean };
+  assignablePerms: { requests: boolean; gas: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean; archive: boolean };
 }) {
   const [q, setQ] = useState("");
   const [exporting, setExporting] = useState(false);

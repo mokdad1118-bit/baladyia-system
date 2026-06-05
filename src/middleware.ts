@@ -76,7 +76,8 @@ export async function middleware(req: NextRequest) {
         token?.permManageServices ||
         token?.permManageUsers ||
         token?.permViewStats ||
-        token?.permManageAreaNews,
+        token?.permManageAreaNews ||
+        token?.permManageArchive,
     );
 
   if (pathname === "/admin/login") return NextResponse.next();

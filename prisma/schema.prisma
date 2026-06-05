@@ -41,6 +41,7 @@ model Municipality {
   socialServiceCaseSerials  SocialServiceCaseSerial[]
   returneeRegistrationSerials ReturneeRegistrationSerial[]
   pendingCitizenRegistrations PendingCitizenRegistration[]
+  archiveEntries           ArchiveEntry[]
 }
 
 /// Admin / employee / citizen
@@ -72,6 +73,7 @@ model User {
   permManageUsers    Boolean @default(false)
   permViewStats      Boolean @default(false)
   permManageAreaNews Boolean @default(false)
+  permManageArchive  Boolean @default(false)
   /// null فقط لمشرف المحافظة (يرى كل البلديات)
   municipalityId String?
   municipality   Municipality? @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
@@ -99,10 +101,33 @@ model User {
   areaNewsComments   AreaNewsComment[]
   areaNewsCommentReplies AreaNewsCommentReply[] @relation("AreaNewsCommentReplyAdmin")
   areaNewsLikes      AreaNewsLike[]
+  archiveEntries     ArchiveEntry[]
 
   /// للمعتمد (GAS_AGENT): المنطقة المكلّف بها — فريدة ضمن البلدية
   gasArea            String?
   @@unique([municipalityId, gasArea])
+}
+
+/// أرشيف ملفات الطلبات المدخلة من موظفي البلديات والإدارة
+model ArchiveEntry {
+  id             String   @id @default(cuid())
+  municipalityId String
+  municipality   Municipality @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
+  createdById    String?
+  createdBy      User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  requestNumber  String
+  citizenName    String
+  filePath       String
+  fileOriginal   String
+  fileMime       String
+  fileSize       Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([municipalityId])
+  @@index([createdAt])
+  @@index([requestNumber])
+  @@index([createdById])
 }
 
 /// شكاوى ومقترحات المواطنين بخصوص التطبيق والخدمات

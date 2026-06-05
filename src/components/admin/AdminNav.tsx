@@ -94,6 +94,12 @@ const segments: readonly NavSegment[] = [
     desc: "مناشير تظهر داخل تطبيق المواطن",
     perm: "manageAreaNews",
   },
+  {
+    internal: "/admin/archive",
+    label: "الأرشيف",
+    desc: "حفظ ملفات الطلبات وفلترتها وتصديرها",
+    perm: "manageArchive",
+  },
   { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" },
   {
     internal: "/admin/broadcast-notifications",

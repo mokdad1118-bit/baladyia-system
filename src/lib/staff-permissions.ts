@@ -14,6 +14,7 @@ export type StaffNavPermissions = {
   manageUsers: boolean;
   viewStats: boolean;
   manageAreaNews: boolean;
+  manageArchive: boolean;
 };
 
 export const emptyStaffNavPermissions: StaffNavPermissions = {
@@ -28,6 +29,7 @@ export const emptyStaffNavPermissions: StaffNavPermissions = {
   manageUsers: false,
   viewStats: false,
   manageAreaNews: false,
+  manageArchive: false,
 };
 
 export const fullStaffNavPermissions: StaffNavPermissions = {
@@ -42,6 +44,7 @@ export const fullStaffNavPermissions: StaffNavPermissions = {
   manageUsers: true,
   viewStats: true,
   manageAreaNews: true,
+  manageArchive: true,
 };
 
 function sessionUser(s: Session | null) {
@@ -70,6 +73,7 @@ export function staffNavPermissions(s: Session | null): StaffNavPermissions {
     manageUsers: Boolean(u.permManageUsers),
     viewStats: Boolean(u.permViewStats),
     manageAreaNews: Boolean(u.permManageAreaNews),
+    manageArchive: Boolean(u.permManageArchive),
   };
 }
 
@@ -121,6 +125,10 @@ export function staffCanManageAreaNews(s: Session | null): boolean {
   return staffNavPermissions(s).manageAreaNews;
 }
 
+export function staffCanManageArchive(s: Session | null): boolean {
+  return staffNavPermissions(s).manageArchive;
+}
+
 export type EmployeePermPayload = {
   permViewRequests: boolean;
   permManageGas: boolean;
@@ -133,6 +141,7 @@ export type EmployeePermPayload = {
   permManageUsers: boolean;
   permViewStats: boolean;
   permManageAreaNews: boolean;
+  permManageArchive: boolean;
 };
 
 /** يمنع منح صلاحية لا يملكها المنشئ (ما عدا المشرف أو مدير البلدية بامتيازات كاملة) */
@@ -176,6 +185,9 @@ export function validateAssignableEmployeePerms(
   }
   if (p.permManageAreaNews && !u.permManageAreaNews) {
     return "لا يمكنك منح صلاحية أخبار المنطقة";
+  }
+  if (p.permManageArchive && !u.permManageArchive) {
+    return "لا يمكنك منح صلاحية الأرشيف";
   }
   return undefined;
 }

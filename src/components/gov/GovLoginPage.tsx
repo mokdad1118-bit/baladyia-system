@@ -57,7 +57,8 @@ function employeeHasAdminPanelPermission(user: NonNullable<Awaited<ReturnType<ty
       user?.permManageServices ||
       user?.permManageUsers ||
       user?.permViewStats ||
-      user?.permManageAreaNews,
+      user?.permManageAreaNews ||
+      user?.permManageArchive,
   );
 }
 

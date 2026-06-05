@@ -55,6 +55,7 @@ export default async function AdminStaffUsersPage({ searchParams }: Props) {
           permManageUsers: u.permManageUsers,
           permViewStats: u.permViewStats,
           permManageAreaNews: u.permManageAreaNews,
+          permManageArchive: u.permManageArchive,
         }))}
         municipalities={municipalities}
         isSuperAdmin={isSuperAdmin}
@@ -71,6 +72,7 @@ export default async function AdminStaffUsersPage({ searchParams }: Props) {
           users: elevated || Boolean(s!.user!.permManageUsers),
           stats: elevated || Boolean(s!.user!.permViewStats),
           areaNews: elevated || Boolean(s!.user!.permManageAreaNews),
+          archive: elevated || Boolean(s!.user!.permManageArchive),
         }}
       />
     </>
