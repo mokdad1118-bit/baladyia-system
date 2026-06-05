@@ -41,7 +41,7 @@ export default async function AdminPanelLayout({
   }
   const staffPerms = staffNavPermissions(s);
   const uid = s.user.id;
-  const [cityServiceRequests, gas, social, feedback] = await Promise.all([
+  const [cityServiceRequests, gas, social, feedback, municipality] = await Promise.all([
     db.notification.count({
       where: { userId: uid, read: false, type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.cityServiceRequests] } },
     }),
@@ -54,6 +54,12 @@ export default async function AdminPanelLayout({
     db.notification.count({
       where: { userId: uid, read: false, type: { in: [...ADMIN_NAV_BADGE_NOTIFICATION_TYPES.feedback] } },
     }),
+    s.user.municipalityId
+      ? db.municipality.findUnique({
+          where: { id: s.user.municipalityId },
+          select: { name: true },
+        })
+      : Promise.resolve(null),
   ]);
   const badgeCounts = { cityServiceRequests, gas, social, feedback };
   const homeHref = staffRoot ? "/" : "/admin";
@@ -72,6 +78,7 @@ export default async function AdminPanelLayout({
       }
       homeHref={homeHref}
       logoutCallbackUrl={logoutCallbackUrl}
+      headerContextLabel={municipality?.name ?? null}
     >
       <AdminNoPwaCacheReset />
       {children}

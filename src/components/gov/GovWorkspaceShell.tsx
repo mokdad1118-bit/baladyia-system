@@ -14,12 +14,14 @@ export function GovWorkspaceShell({
   children,
   homeHref = "/admin",
   logoutCallbackUrl,
+  headerContextLabel,
 }: {
   portalTitle: string;
   nav: ReactNode;
   children: ReactNode;
   homeHref?: string;
   logoutCallbackUrl?: string;
+  headerContextLabel?: string | null;
 }) {
   const [navOpen, setNavOpen] = useState(true);
 
@@ -37,6 +39,11 @@ export function GovWorkspaceShell({
             </div>
           </Link>
           <div className="flex items-center gap-2">
+            {headerContextLabel ? (
+              <span className="max-w-[45vw] truncate rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white/95">
+                {headerContextLabel}
+              </span>
+            ) : null}
             <button
               type="button"
               className="rounded-lg border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition hover:bg-white/10 hover:text-white"
