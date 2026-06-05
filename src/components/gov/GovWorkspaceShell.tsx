@@ -57,10 +57,15 @@ export function GovWorkspaceShell({
       <div className="mx-auto flex max-w-[96rem] flex-col gap-6 px-4 py-8 lg:flex-row lg:items-start">
         <aside
           id="admin-side-nav"
-          className={cn("gov-card w-full p-0 lg:sticky lg:top-4 lg:w-56 lg:shrink-0", !navOpen && "hidden")}
+          className={cn(
+            "gov-card w-full overflow-hidden p-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:w-56 lg:shrink-0",
+            !navOpen && "hidden",
+          )}
         >
           <p className="gov-aside-title">القائمة</p>
-          <div className="px-1 pb-2">{nav}</div>
+          <div className="max-h-[65dvh] overflow-y-auto overscroll-contain px-1 pb-2 lg:max-h-[calc(100dvh-10.5rem)]">
+            {nav}
+          </div>
         </aside>
         <div className="min-w-0 flex-1">{children}</div>
       </div>
