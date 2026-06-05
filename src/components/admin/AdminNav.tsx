@@ -100,7 +100,6 @@ const segments: readonly NavSegment[] = [
     desc: "حفظ ملفات الطلبات وفلترتها وتصديرها",
     perm: "manageArchive",
   },
-  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" },
   {
     internal: "/admin/broadcast-notifications",
     label: "إرسال الإشعارات",
@@ -113,12 +112,6 @@ const segments: readonly NavSegment[] = [
     label: "سجل العمليات",
     desc: "كل ما يحدث داخل النظام",
     perm: "viewOperationLog",
-  },
-  {
-    internal: "/admin/users",
-    label: "حسابات الموظفين",
-    desc: "الموظفون والمديرون والصلاحيات",
-    perm: "manageUsers",
   },
   { internal: "/admin/stats", label: "الإحصائيات", desc: "تقارير", perm: "viewStats" },
   {
@@ -134,6 +127,13 @@ const segments: readonly NavSegment[] = [
     desc: "تقرير إحصائي على مستوى المحافظة",
     perm: null,
     superAdminOnly: true,
+  },
+  { internal: "/admin/citizens", label: "حسابات المواطنين", desc: "عرض حسابات المسجّلين", perm: "viewCitizens" },
+  {
+    internal: "/admin/users",
+    label: "حسابات الموظفين",
+    desc: "الموظفون والمديرون والصلاحيات",
+    perm: "manageUsers",
   },
 ];
 

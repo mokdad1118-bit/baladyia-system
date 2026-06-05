@@ -30,17 +30,30 @@ function ArchiveCreateForm({
   municipalities: { id: string; name: string }[];
   fixedMunicipalityId?: string;
 }) {
-  const [state, action] = useActionState(createArchiveEntry, undefined);
+  const [state, action, isPending] = useActionState(createArchiveEntry, undefined);
   return (
     <form action={action} className="grid gap-3 md:grid-cols-2 xl:grid-cols-5" encType="multipart/form-data">
-      {state?.error ? (
+      {isPending ? (
+        <p
+          className="md:col-span-2 xl:col-span-5 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          role="status"
+          aria-live="polite"
+        >
+          يرجى الانتظار، جاري حفظ الأرشيف...
+        </p>
+      ) : null}
+      {!isPending && state?.error ? (
         <p className="md:col-span-2 xl:col-span-5 rounded-sm border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
           {state.error}
         </p>
       ) : null}
-      {state?.ok ? (
-        <p className="md:col-span-2 xl:col-span-5 rounded-sm border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          تم حفظ السجل في الأرشيف.
+      {!isPending && state?.ok ? (
+        <p
+          className="md:col-span-2 xl:col-span-5 rounded-sm border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          role="status"
+          aria-live="polite"
+        >
+          تم الحفظ.
         </p>
       ) : null}
 
@@ -81,8 +94,12 @@ function ArchiveCreateForm({
         />
       </label>
       <div className="flex items-end">
-        <button type="submit" className="gov-btn-primary min-h-10 w-full px-4 py-2.5 text-sm font-semibold">
-          إضافة للأرشيف
+        <button
+          type="submit"
+          disabled={isPending}
+          className="gov-btn-primary min-h-10 w-full px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+        >
+          {isPending ? "جاري الحفظ..." : "إضافة للأرشيف"}
         </button>
       </div>
     </form>
