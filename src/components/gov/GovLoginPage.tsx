@@ -245,19 +245,6 @@ function GovLoginPageImpl({
       )}
 
       {extraFooter}
-
-      {(loginPage === "staff" || loginPage === "admin") && (
-        <p className="mt-8 border-t border-[var(--gov-border)] pt-4 text-center text-[0.7rem] leading-relaxed text-[var(--gov-muted)]">
-          {loginPage === "staff"
-            ? "هذه البوابة للموظفين فقط."
-            : "هذه البوابة للمدير والموظف."}{" "}
-          لا يُستخدم حساب المواطن هنا — تسجيل الدخول للمواطنين من{" "}
-          <Link className="font-semibold text-[var(--gov-primary)] underline-offset-2 hover:underline" href="/citizen/login">
-            /citizen/login
-          </Link>
-          .
-        </p>
-      )}
     </div>
   );
 
