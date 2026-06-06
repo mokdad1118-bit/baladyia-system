@@ -75,7 +75,7 @@ const segments: readonly NavSegment[] = [
       },
       {
         internal: "/admin/services/in-person/completed",
-        label: "الطلبات المنتهية",
+        label: "الطلبات التي تم تقديمها حضورياً",
         desc: "تفاصيل الطلبات الحضورية وأرقامها الخاصة",
         perm: "manageInPersonRequests",
       },

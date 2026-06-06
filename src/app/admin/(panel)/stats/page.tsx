@@ -4,18 +4,36 @@ import { auth } from "@/auth";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
 import { StatsListsWithSearch } from "@/components/admin/StatsListsWithSearch";
 import { staffMunicipalityIdFilter } from "@/lib/municipality-scope";
+import { listActiveMunicipalities } from "@/lib/municipalities";
+import { isSuperAdminRole } from "@/lib/roles";
+import { AdminPageMunicipalityScopeForm } from "@/components/admin/AdminPageMunicipalityScopeForm";
 
-export default async function AdminStatsPage() {
+type Props = { searchParams: Promise<{ municipalityId?: string }> };
+
+export default async function AdminStatsPage({ searchParams }: Props) {
   const s = await auth();
   await requireStaffPanelPermission(s, "stats");
-  const mun = staffMunicipalityIdFilter(s);
+  const sp = await searchParams;
+  const isSuperAdmin = s?.user ? isSuperAdminRole(s.user.role) : false;
+  const selectedMunicipalityId =
+    isSuperAdmin && sp.municipalityId && sp.municipalityId !== "__ALL__" ? sp.municipalityId : "";
+  const mun = isSuperAdmin
+    ? selectedMunicipalityId
+      ? { municipalityId: selectedMunicipalityId }
+      : {}
+    : staffMunicipalityIdFilter(s);
   const requestWhere = { ...mun };
-  const serviceWhere = { isActive: true, ...mun };
-  const [total, byService, byStatus, completed, gasRequestsCount, socialRequestsCount] = await Promise.all([
+  const serviceWhere = { ...mun };
+  const [municipalities, total, byService, byStatus, completed, gasRequestsCount, socialRequestsCount] = await Promise.all([
+    isSuperAdmin ? listActiveMunicipalities() : Promise.resolve([]),
     db.request.count({ where: requestWhere }),
     db.service.findMany({
       where: serviceWhere,
-      include: { _count: { select: { requests: true } } },
+      orderBy: [{ municipality: { sortOrder: "asc" } }, { name: "asc" }],
+      include: {
+        municipality: { select: { name: true } },
+        _count: { select: { requests: true } },
+      },
     }),
     Promise.all(
       (Object.values(RequestStatus) as RequestStatus[]).map(async (st) => {
@@ -29,17 +47,22 @@ export default async function AdminStatsPage() {
   ]);
 
   return (
-    <StatsListsWithSearch
-      total={total}
-      completed={completed}
-      gasRequestsCount={gasRequestsCount}
-      socialRequestsCount={socialRequestsCount}
-      byStatus={byStatus}
-      byService={byService.map((s) => ({
-        id: s.id,
-        name: s.name,
-        count: s._count.requests,
-      }))}
-    />
+    <>
+      <AdminPageMunicipalityScopeForm municipalities={municipalities} current={selectedMunicipalityId} />
+      <StatsListsWithSearch
+        total={total}
+        completed={completed}
+        gasRequestsCount={gasRequestsCount}
+        socialRequestsCount={socialRequestsCount}
+        byStatus={byStatus}
+        byService={byService.map((s) => ({
+          id: s.id,
+          name: s.name,
+          municipalityName: s.municipality.name,
+          isActive: s.isActive,
+          count: s._count.requests,
+        }))}
+      />
+    </>
   );
 }

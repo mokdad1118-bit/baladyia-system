@@ -31,6 +31,7 @@ import { nextReturneeRegistrationNumber } from "@/lib/returnee-registration-seri
 import { nextSocialServiceCaseNumber } from "@/lib/social-service-case-serial";
 import { socialServiceCategoryLabelAr } from "@/lib/social-service-labels";
 import { staffCanManageInPersonRequests } from "@/lib/staff-permissions";
+import { requestStatusAr } from "@/lib/labels";
 
 async function defaultAssigneeId(municipalityId: string) {
   const e = await db.user.findFirst({
@@ -264,6 +265,104 @@ export async function submitInPersonRequest(
   const result = await createInPersonRequestFromForm(formData);
   if (!result.ok) return { error: result.error };
   redirect(result.redirectTo);
+}
+
+const IN_PERSON_STATUS_SET = new Set<RequestStatus>([
+  RequestStatus.NEEDS_MODIFICATION,
+  RequestStatus.APPROVED,
+  RequestStatus.REJECTED,
+  RequestStatus.COMPLETED,
+]);
+
+export async function updateInPersonRequestStatusAction(
+  requestId: string,
+  statusRaw: string,
+): Promise<{ ok: true; status: RequestStatus; statusLabel: string } | { error: string }> {
+  const session = await auth();
+  if (!session?.user || !staffCanManageInPersonRequests(session)) {
+    return { error: "غير مصرّح." };
+  }
+  if (!(Object.values(RequestStatus) as string[]).includes(statusRaw)) {
+    return { error: "حالة غير صالحة." };
+  }
+  const status = statusRaw as RequestStatus;
+  if (!IN_PERSON_STATUS_SET.has(status)) {
+    return { error: "هذه الحالة غير متاحة للطلبات الحضورية من هذه القائمة." };
+  }
+
+  const request = await db.request.findFirst({
+    where: { id: requestId, source: "in_person" },
+    select: {
+      id: true,
+      requestNumber: true,
+      status: true,
+      municipalityId: true,
+      citizenId: true,
+    },
+  });
+  if (!request) return { error: "الطلب غير موجود." };
+  try {
+    assertStaffCanAccessMunicipality(session, request.municipalityId);
+  } catch {
+    return { error: "غير مصرّح." };
+  }
+  if (request.status === status) return { ok: true, status, statusLabel: requestStatusAr[status] };
+
+  const actor = await db.user.findFirst({
+    where: { id: session.user.id, isActive: true },
+    select: { id: true },
+  });
+  if (!actor) return { error: "انتهت صلاحية الجلسة. يرجى تسجيل الدخول من جديد." };
+
+  await db.$transaction([
+    db.request.update({
+      where: { id: request.id },
+      data: { status },
+    }),
+    db.requestStatusLog.create({
+      data: {
+        requestId: request.id,
+        actorId: actor.id,
+        fromStatus: request.status,
+        toStatus: status,
+      },
+    }),
+  ]);
+
+  await writeOperationLog({
+    session,
+    actorId: actor.id,
+    municipalityId: request.municipalityId,
+    action: "UPDATE_STATUS",
+    module: "REQUESTS",
+    title: "تغيير حالة طلب حضوري",
+    description: `تم تغيير حالة الطلب الحضوري ${request.requestNumber} من ${requestStatusAr[request.status]} إلى ${requestStatusAr[status]}`,
+    entityType: "REQUEST",
+    entityId: request.id,
+    requestId: request.id,
+    metadata: { requestNumber: request.requestNumber, fromStatus: request.status, toStatus: status },
+  });
+
+  try {
+    await notifyUsers({
+      userIds: [request.citizenId],
+      type: "STATUS_CHANGE",
+      title: "تغيير حالة الطلب",
+      message: `تم تحديث حالة الطلب ${request.requestNumber} إلى: ${requestStatusAr[status]}.`,
+      municipalityId: request.municipalityId,
+      requestId: request.id,
+    });
+  } catch (e) {
+    console.warn("[updateInPersonRequestStatusAction] notifyUsers:", e);
+  }
+
+  revalidatePath("/admin/services/in-person/completed");
+  revalidatePath("/admin/requests");
+  revalidatePath(`/admin/requests/${request.id}`);
+  revalidatePath("/admin");
+  revalidatePath("/citizen/requests");
+  revalidatePath(`/citizen/requests/${request.id}`);
+  return { ok: true, status, statusLabel: requestStatusAr[status] };
 }
 
 function parseBirthDate(raw: string): { ok: true; date: Date } | { ok: false; error: string } {

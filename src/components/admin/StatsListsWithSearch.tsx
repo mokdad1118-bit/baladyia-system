@@ -20,7 +20,7 @@ export function StatsListsWithSearch({
   gasRequestsCount: number;
   socialRequestsCount: number;
   byStatus: { status: RequestStatus; count: number }[];
-  byService: { id: string; name: string; count: number }[];
+  byService: { id: string; name: string; municipalityName: string; isActive: boolean; count: number }[];
 }) {
   const [qStatus, setQStatus] = useState("");
   const [qService, setQService] = useState("");
@@ -38,7 +38,10 @@ export function StatsListsWithSearch({
     const n = qService.trim().toLowerCase();
     if (!n) return byService;
     return byService.filter(
-      (row) => row.name.toLowerCase().includes(n) || String(row.count).includes(n),
+      (row) =>
+        row.name.toLowerCase().includes(n) ||
+        row.municipalityName.toLowerCase().includes(n) ||
+        String(row.count).includes(n),
     );
   }, [byService, qService]);
 
@@ -95,19 +98,25 @@ export function StatsListsWithSearch({
         </Card>
         <Card>
           <CardContent className="!pt-6">
-            <h2 className="text-sm font-semibold text-slate-900">حسب الخدمة</h2>
+            <h2 className="text-sm font-semibold text-slate-900">حسب الخدمة والبلدية</h2>
             <AdminListSearchField
               id="admin-stats-service-search"
               label="بحث في قائمة الخدمات"
-              placeholder="اسم الخدمة أو عدد الطلبات…"
+              placeholder="اسم الخدمة، البلدية، أو عدد الطلبات…"
               value={qService}
               onChange={setQService}
               className="mt-3"
             />
             <ul className="mt-3 space-y-2 text-sm text-slate-600">
               {filteredService.map((s) => (
-                <li key={s.id} className="flex justify-between gap-2">
-                  <span className="truncate">{s.name}</span>
+                <li key={s.id} className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2 last:border-b-0">
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-slate-800">
+                      {s.name}
+                      {!s.isActive ? <span className="ms-2 text-xs font-normal text-amber-700">(غير مفعلة)</span> : null}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-slate-500">{s.municipalityName}</span>
+                  </span>
                   <span className="shrink-0 font-mono tabular-nums text-slate-900">{s.count}</span>
                 </li>
               ))}

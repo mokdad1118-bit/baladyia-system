@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
+import { RequestStatus } from "@/generated/prisma/enums";
+import { requestStatusAr } from "@/lib/labels";
+import { updateInPersonRequestStatusAction } from "@/actions/admin-in-person-requests";
 
 export type InPersonCompletedRequestRow = {
   id: string;
@@ -14,7 +17,7 @@ export type InPersonCompletedRequestRow = {
   notificationEmail: string;
   municipalityName: string;
   serviceName: string;
-  status: "PENDING" | "UNDER_REVIEW" | "NEEDS_MODIFICATION" | "APPROVED" | "REJECTED" | "COMPLETED";
+  status: RequestStatus;
   createdAt: string;
   detailHref: string;
   files: {
@@ -58,6 +61,13 @@ function dateTimeLabel(iso: string) {
   return new Date(iso).toLocaleString("ar-SY");
 }
 
+const editableStatuses: RequestStatus[] = [
+  RequestStatus.COMPLETED,
+  RequestStatus.APPROVED,
+  RequestStatus.REJECTED,
+  RequestStatus.NEEDS_MODIFICATION,
+];
+
 export function AdminInPersonCompletedRequestsList({
   rows,
   successNumber,
@@ -65,18 +75,29 @@ export function AdminInPersonCompletedRequestsList({
   rows: InPersonCompletedRequestRow[];
   successNumber?: string;
 }) {
+  const [items, setItems] = useState(rows);
   const [q, setQ] = useState(successNumber ?? "");
   const [selected, setSelected] = useState<InPersonCompletedRequestRow | null>(null);
+  useEffect(() => {
+    setItems(rows);
+    setSelected(null);
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((row) => haystack(row).includes(needle));
-  }, [q, rows]);
+    if (!needle) return items;
+    return items.filter((row) => haystack(row).includes(needle));
+  }, [q, items]);
+
+  const updateRowStatus = (requestId: string, status: RequestStatus) => {
+    setItems((current) => current.map((row) => (row.id === requestId ? { ...row, status } : row)));
+    setSelected((current) => (current?.id === requestId ? { ...current, status } : current));
+  };
 
   return (
     <div className="space-y-5">
       <header className="gov-page-heading border-b border-[var(--gov-border)] pb-4">
-        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">الطلبات المنتهية</h1>
+        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">الطلبات التي تم تقديمها حضورياً</h1>
         <p className="mt-1 text-sm text-[var(--gov-muted)]">
           الطلبات الحضورية التي تم إنشاؤها مع رقم حضوري خاص للبحث والمتابعة.
         </p>
@@ -91,7 +112,7 @@ export function AdminInPersonCompletedRequestsList({
       <div className="gov-card p-4">
         <AdminListSearchField
           id="in-person-completed-search"
-          label="بحث في الطلبات المنتهية"
+          label="بحث في الطلبات التي تم تقديمها حضورياً"
           placeholder="ابحث بالرقم الحضوري، رقم الطلب، اسم المواطن، الرقم الوطني، رقم الواتساب..."
           value={q}
           onChange={setQ}
@@ -134,7 +155,13 @@ export function AdminInPersonCompletedRequestsList({
         </div>
       )}
 
-      {selected ? <RequestDetailsDialog row={selected} onClose={() => setSelected(null)} /> : null}
+      {selected ? (
+        <RequestDetailsDialog
+          row={selected}
+          onClose={() => setSelected(null)}
+          onStatusChanged={updateRowStatus}
+        />
+      ) : null}
     </div>
   );
 }
@@ -142,10 +169,15 @@ export function AdminInPersonCompletedRequestsList({
 function RequestDetailsDialog({
   row,
   onClose,
+  onStatusChanged,
 }: {
   row: InPersonCompletedRequestRow;
   onClose: () => void;
+  onStatusChanged: (requestId: string, status: RequestStatus) => void;
 }) {
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string>("");
+
   return (
     <div
       className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/45 p-3 sm:p-5"
@@ -176,6 +208,45 @@ function RequestDetailsDialog({
         </header>
 
         <div className="max-h-[75dvh] overflow-y-auto p-4 md:p-5">
+          <section className="mb-5 rounded-sm border border-[var(--gov-border)] bg-slate-50 p-3">
+            <label className="mb-1.5 block text-sm font-semibold text-[var(--gov-text)]">تغيير حالة الطلب</label>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={row.status}
+                disabled={isPending}
+                className="gov-input min-w-[12rem] px-3 py-2 text-sm"
+                onChange={(event) => {
+                  const next = event.target.value as RequestStatus;
+                  setMessage("");
+                  startTransition(async () => {
+                    const result = await updateInPersonRequestStatusAction(row.id, next);
+                    if ("error" in result) {
+                      setMessage(result.error);
+                      return;
+                    }
+                    onStatusChanged(row.id, result.status);
+                    setMessage(`تم تغيير الحالة إلى ${result.statusLabel}.`);
+                  });
+                }}
+              >
+                {!editableStatuses.includes(row.status) ? (
+                  <option value={row.status}>{requestStatusAr[row.status]}</option>
+                ) : null}
+                {editableStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {requestStatusAr[status]}
+                  </option>
+                ))}
+              </select>
+              {isPending ? <span className="text-xs text-[var(--gov-muted)]">جاري الحفظ...</span> : null}
+              {message ? (
+                <span className={`text-xs ${message.startsWith("تم") ? "text-emerald-700" : "text-rose-700"}`}>
+                  {message}
+                </span>
+              ) : null}
+            </div>
+          </section>
+
           <section className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
             <Info label="اسم المواطن" value={row.citizenName} />
             <Info label="الرقم الوطني" value={row.nationalId || "-"} ltr />
