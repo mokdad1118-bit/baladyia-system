@@ -113,7 +113,7 @@ export default async function AdminInPersonServicesPage({ searchParams }: Props)
           href={`/admin/services/in-person/completed${selectedMunicipalityId ? `?municipalityId=${encodeURIComponent(selectedMunicipalityId)}` : ""}`}
           className="mt-3 inline-flex min-h-10 items-center rounded border border-[var(--gov-border)] bg-white px-4 text-sm font-semibold text-[var(--gov-primary)] no-underline hover:bg-slate-50"
         >
-          الطلبات المنتهية
+          الطلبات التي تم تقديمها حضورياً
         </Link>
       </header>
 
