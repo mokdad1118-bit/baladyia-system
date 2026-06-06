@@ -25,6 +25,9 @@ export default async function AdminInPersonCompletedRequestsPage({ searchParams 
     : staffMunicipalityIdFilter(session);
   const municipalities = isSuperAdmin ? await listActiveMunicipalities() : [];
   const baseUrl = requestExportBaseUrl(await headers());
+  const backHref = selectedMunicipalityId
+    ? `/admin/services/in-person?municipalityId=${encodeURIComponent(selectedMunicipalityId)}`
+    : "/admin/services/in-person";
 
   const requests = await db.request.findMany({
     where: {
@@ -74,6 +77,7 @@ export default async function AdminInPersonCompletedRequestsPage({ searchParams 
       <AdminInPersonCompletedRequestsList
         rows={rows}
         successNumber={sp.success === "1" ? (sp.no ?? "") : ""}
+        backHref={backHref}
       />
     </>
   );

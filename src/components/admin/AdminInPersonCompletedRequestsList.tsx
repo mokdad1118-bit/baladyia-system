@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
@@ -71,9 +72,11 @@ const editableStatuses: RequestStatus[] = [
 export function AdminInPersonCompletedRequestsList({
   rows,
   successNumber,
+  backHref = "/admin/services/in-person",
 }: {
   rows: InPersonCompletedRequestRow[];
   successNumber?: string;
+  backHref?: string;
 }) {
   const [items, setItems] = useState(rows);
   const [q, setQ] = useState(successNumber ?? "");
@@ -97,7 +100,15 @@ export function AdminInPersonCompletedRequestsList({
   return (
     <div className="space-y-5">
       <header className="gov-page-heading border-b border-[var(--gov-border)] pb-4">
-        <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">الطلبات التي تم تقديمها حضورياً</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">الطلبات التي تم تقديمها حضورياً</h1>
+          <Link
+            href={backHref}
+            className="inline-flex min-h-10 items-center rounded border border-[var(--gov-border)] bg-white px-4 text-sm font-semibold text-[var(--gov-primary)] no-underline hover:bg-slate-50"
+          >
+            الرجوع لقائمة الخدمات المقدمة حضورياً
+          </Link>
+        </div>
         <p className="mt-1 text-sm text-[var(--gov-muted)]">
           الطلبات الحضورية التي تم إنشاؤها مع رقم حضوري خاص للبحث والمتابعة.
         </p>
