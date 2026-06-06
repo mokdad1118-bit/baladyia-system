@@ -250,6 +250,13 @@ export async function createInPersonRequestFromForm(formData: FormData) {
   return { ok: true as const, redirectTo: redirectTo ?? "/admin/services/in-person/completed" };
 }
 
+export async function createInPersonRequestAction(
+  _p: { error?: string; ok?: boolean; redirectTo?: string } | undefined,
+  formData: FormData,
+) {
+  return createInPersonRequestFromForm(formData);
+}
+
 export async function submitInPersonRequest(
   _p: { error?: string } | undefined,
   formData: FormData,
