@@ -6,7 +6,14 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
 import { RequestStatus } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
-import { updateInPersonRequestStatusAction } from "@/actions/admin-in-person-requests";
+import { addInPersonRequestStaffNoteAction, updateInPersonRequestStatusAction } from "@/actions/admin-in-person-requests";
+
+type InPersonRequestStaffNote = {
+  id: string;
+  body: string;
+  authorName: string;
+  createdAt: string;
+};
 
 export type InPersonCompletedRequestRow = {
   id: string;
@@ -29,6 +36,7 @@ export type InPersonCompletedRequestRow = {
     mimeType: string;
     size: number;
   }[];
+  notes: InPersonRequestStaffNote[];
 };
 
 function haystack(row: InPersonCompletedRequestRow) {
@@ -43,6 +51,7 @@ function haystack(row: InPersonCompletedRequestRow) {
     row.serviceName,
     row.status,
     row.createdAt,
+    ...row.notes.flatMap((note) => [note.body, note.authorName, note.createdAt]),
     ...row.files.flatMap((file) => [file.documentName, file.originalName, file.href]),
   ]
     .join(" ")
@@ -95,6 +104,11 @@ export function AdminInPersonCompletedRequestsList({
   const updateRowStatus = (requestId: string, status: RequestStatus) => {
     setItems((current) => current.map((row) => (row.id === requestId ? { ...row, status } : row)));
     setSelected((current) => (current?.id === requestId ? { ...current, status } : current));
+  };
+
+  const addRowNote = (requestId: string, note: InPersonRequestStaffNote) => {
+    setItems((current) => current.map((row) => (row.id === requestId ? { ...row, notes: [note, ...row.notes] } : row)));
+    setSelected((current) => (current?.id === requestId ? { ...current, notes: [note, ...current.notes] } : current));
   };
 
   return (
@@ -175,6 +189,7 @@ export function AdminInPersonCompletedRequestsList({
           row={selected}
           onClose={() => setSelected(null)}
           onStatusChanged={updateRowStatus}
+          onNoteAdded={addRowNote}
         />
       ) : null}
     </div>
@@ -185,13 +200,18 @@ function RequestDetailsDialog({
   row,
   onClose,
   onStatusChanged,
+  onNoteAdded,
 }: {
   row: InPersonCompletedRequestRow;
   onClose: () => void;
   onStatusChanged: (requestId: string, status: RequestStatus) => void;
+  onNoteAdded: (requestId: string, note: InPersonRequestStaffNote) => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [isNotePending, startNoteTransition] = useTransition();
   const [message, setMessage] = useState<string>("");
+  const [noteBody, setNoteBody] = useState("");
+  const [noteMessage, setNoteMessage] = useState("");
 
   return (
     <div
@@ -270,6 +290,76 @@ function RequestDetailsDialog({
             <Info label="البلدية" value={row.municipalityName} />
             <Info label="الخدمة" value={row.serviceName} />
             <Info label="تاريخ التقديم" value={dateTimeLabel(row.createdAt)} />
+          </section>
+
+          <section className="mt-5 border-t border-[var(--gov-border)] pt-4">
+            <h3 className="text-sm font-bold text-[var(--gov-text)]">ملاحظات الموظف أو مدير البلدية</h3>
+            <div className="mt-3 rounded-sm border border-[var(--gov-border)] bg-slate-50 p-3">
+              <label className="mb-1.5 block text-sm font-semibold text-[var(--gov-text)]" htmlFor="in-person-staff-note">
+                إضافة ملاحظة داخلية
+              </label>
+              <textarea
+                id="in-person-staff-note"
+                value={noteBody}
+                onChange={(event) => {
+                  setNoteBody(event.target.value);
+                  setNoteMessage("");
+                }}
+                disabled={isNotePending}
+                rows={3}
+                maxLength={2000}
+                className="gov-input w-full resize-y px-3 py-2 text-sm"
+                placeholder="اكتب ملاحظة تخص متابعة هذا الطلب..."
+              />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isNotePending || noteBody.trim().length < 2}
+                  className="gov-btn-primary px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => {
+                    const body = noteBody.trim();
+                    if (!body) return;
+                    setNoteMessage("");
+                    startNoteTransition(async () => {
+                      const result = await addInPersonRequestStaffNoteAction(row.id, body);
+                      if ("error" in result) {
+                        setNoteMessage(result.error);
+                        return;
+                      }
+                      onNoteAdded(row.id, result.note);
+                      setNoteBody("");
+                      setNoteMessage("تم حفظ الملاحظة.");
+                    });
+                  }}
+                >
+                  حفظ الملاحظة
+                </button>
+                {isNotePending ? <span className="text-xs text-[var(--gov-muted)]">جاري الحفظ...</span> : null}
+                {noteMessage ? (
+                  <span className={`text-xs ${noteMessage.startsWith("تم") ? "text-emerald-700" : "text-rose-700"}`}>
+                    {noteMessage}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            {row.notes.length === 0 ? (
+              <p className="mt-3 rounded border border-[var(--gov-border)] bg-white px-3 py-2 text-sm text-[var(--gov-muted)]">
+                لا توجد ملاحظات داخلية لهذا الطلب.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {row.notes.map((note) => (
+                  <article key={note.id} className="rounded-sm border border-[var(--gov-border)] bg-white px-3 py-2 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--gov-muted)]">
+                      <span className="font-semibold text-[var(--gov-text)]">{note.authorName}</span>
+                      <time>{dateTimeLabel(note.createdAt)}</time>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-[var(--gov-text)]">{note.body}</p>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="mt-5 border-t border-[var(--gov-border)] pt-4">

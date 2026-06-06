@@ -365,6 +365,92 @@ export async function updateInPersonRequestStatusAction(
   return { ok: true, status, statusLabel: requestStatusAr[status] };
 }
 
+export async function addInPersonRequestStaffNoteAction(
+  requestId: string,
+  bodyRaw: string,
+): Promise<
+  | {
+      ok: true;
+      note: {
+        id: string;
+        body: string;
+        authorName: string;
+        createdAt: string;
+      };
+    }
+  | { error: string }
+> {
+  const session = await auth();
+  if (!session?.user || !staffCanManageInPersonRequests(session)) {
+    return { error: "غير مصرح." };
+  }
+
+  const body = bodyRaw.trim();
+  if (!requestId) return { error: "الطلب غير محدد." };
+  if (body.length < 2) return { error: "يرجى إدخال الملاحظة." };
+  if (body.length > 2000) return { error: "الملاحظة طويلة جداً." };
+
+  const request = await db.request.findFirst({
+    where: { id: requestId, source: "in_person" },
+    select: {
+      id: true,
+      requestNumber: true,
+      municipalityId: true,
+    },
+  });
+  if (!request) return { error: "الطلب غير موجود." };
+  try {
+    assertStaffCanAccessMunicipality(session, request.municipalityId);
+  } catch {
+    return { error: "غير مصرح." };
+  }
+
+  const actor = await db.user.findFirst({
+    where: { id: session.user.id, isActive: true },
+    select: { id: true, name: true },
+  });
+  if (!actor) return { error: "انتهت صلاحية الجلسة. يرجى تسجيل الدخول من جديد." };
+
+  const note = await db.requestNote.create({
+    data: {
+      requestId: request.id,
+      authorId: actor.id,
+      body,
+    },
+    include: {
+      author: { select: { name: true } },
+    },
+  });
+
+  await writeOperationLog({
+    session,
+    actorId: actor.id,
+    municipalityId: request.municipalityId,
+    action: "ADD_NOTE",
+    module: "REQUESTS",
+    title: "إضافة ملاحظة داخلية على طلب حضوري",
+    description: `تمت إضافة ملاحظة داخلية على الطلب الحضوري ${request.requestNumber}`,
+    entityType: "REQUEST",
+    entityId: request.id,
+    requestId: request.id,
+    metadata: { requestNumber: request.requestNumber, note: body },
+  });
+
+  revalidatePath("/admin/services/in-person/completed");
+  revalidatePath("/admin/requests");
+  revalidatePath(`/admin/requests/${request.id}`);
+
+  return {
+    ok: true,
+    note: {
+      id: note.id,
+      body: note.body,
+      authorName: note.author.name,
+      createdAt: note.createdAt.toISOString(),
+    },
+  };
+}
+
 function parseBirthDate(raw: string): { ok: true; date: Date } | { ok: false; error: string } {
   const s = raw.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return { ok: false, error: "يرجى إدخال تاريخ ميلاد صالح." };

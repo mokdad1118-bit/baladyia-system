@@ -44,6 +44,10 @@ export default async function AdminInPersonCompletedRequestsPage({ searchParams 
         orderBy: { createdAt: "asc" },
         include: { serviceDocument: { select: { name: true } } },
       },
+      notes: {
+        orderBy: { createdAt: "desc" },
+        include: { author: { select: { name: true } } },
+      },
     },
   });
 
@@ -68,6 +72,12 @@ export default async function AdminInPersonCompletedRequestsPage({ searchParams 
       href: `${root}/api/request-files/${file.id}`,
       mimeType: file.mimeType,
       size: file.size,
+    })),
+    notes: request.notes.map((note) => ({
+      id: note.id,
+      body: note.body,
+      authorName: note.author.name,
+      createdAt: note.createdAt.toISOString(),
     })),
   }));
 
