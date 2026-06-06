@@ -130,6 +130,7 @@ export function AdminInPersonCompletedRequestsList({
                 <th>رقم الطلب</th>
                 <th>اسم المواطن</th>
                 <th>البلدية</th>
+                <th>حالة الطلب</th>
                 <th>تاريخ التقديم</th>
               </tr>
             </thead>
@@ -147,6 +148,9 @@ export function AdminInPersonCompletedRequestsList({
                   </td>
                   <td>{row.citizenName}</td>
                   <td>{row.municipalityName}</td>
+                  <td>
+                    <StatusBadge status={row.status} />
+                  </td>
                   <td className="whitespace-nowrap text-[var(--gov-muted)]">{dateLabel(row.createdAt)}</td>
                 </tr>
               ))}
