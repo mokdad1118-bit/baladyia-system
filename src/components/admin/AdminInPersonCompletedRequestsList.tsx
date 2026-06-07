@@ -7,6 +7,7 @@ import { AdminListSearchField } from "@/components/admin/AdminListSearchField";
 import { RequestStatus } from "@/generated/prisma/enums";
 import { requestStatusAr } from "@/lib/labels";
 import { addInPersonRequestStaffNoteAction, updateInPersonRequestStatusAction } from "@/actions/admin-in-person-requests";
+import { downloadInPersonRequestsExcel } from "@/lib/admin-in-person-requests-export";
 
 type InPersonRequestStaffNote = {
   id: string;
@@ -90,6 +91,7 @@ export function AdminInPersonCompletedRequestsList({
   const [items, setItems] = useState(rows);
   const [q, setQ] = useState(successNumber ?? "");
   const [selected, setSelected] = useState<InPersonCompletedRequestRow | null>(null);
+  const [exporting, setExporting] = useState(false);
   useEffect(() => {
     setItems(rows);
     setSelected(null);
@@ -135,14 +137,33 @@ export function AdminInPersonCompletedRequestsList({
       ) : null}
 
       <div className="gov-card p-4">
-        <AdminListSearchField
-          id="in-person-completed-search"
-          label="بحث في الطلبات التي تم تقديمها حضورياً"
-          placeholder="ابحث بالرقم الحضوري، رقم الطلب، اسم المواطن، الرقم الوطني، رقم الواتساب..."
-          value={q}
-          onChange={setQ}
-          className="mb-0"
-        />
+        <div className="flex flex-wrap items-end gap-3">
+          <AdminListSearchField
+            id="in-person-completed-search"
+            label="بحث في الطلبات التي تم تقديمها حضورياً"
+            placeholder="ابحث بالرقم الحضوري، رقم الطلب، اسم المواطن، الرقم الوطني، رقم الواتساب..."
+            value={q}
+            onChange={setQ}
+            className="mb-0 min-w-[16rem] flex-1"
+          />
+          <button
+            type="button"
+            disabled={exporting || filtered.length === 0}
+            className="gov-btn-primary min-h-10 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                await downloadInPersonRequestsExcel(filtered);
+              } catch {
+                alert("تعذر تصدير Excel. حاول مرة أخرى.");
+              } finally {
+                setExporting(false);
+              }
+            }}
+          >
+            {exporting ? "جاري التصدير..." : "تصدير Excel"}
+          </button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (

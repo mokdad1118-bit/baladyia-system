@@ -64,7 +64,7 @@ export default async function AdminInPersonCompletedRequestsPage({ searchParams 
     serviceName: request.service.name,
     status: request.status,
     createdAt: request.createdAt.toISOString(),
-    detailHref: `/admin/requests/${request.id}`,
+    detailHref: `${root}/admin/requests/${request.id}`,
     files: request.files.map((file) => ({
       id: file.id,
       documentName: file.serviceDocument.name,
