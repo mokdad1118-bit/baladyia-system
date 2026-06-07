@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { Session } from "next-auth";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
@@ -9,6 +10,7 @@ import {
   staffCanManageUsers,
   validateAssignableEmployeePerms,
   canCreateElevatedStaffRoles,
+  type EmployeePermPayload,
 } from "@/lib/staff-permissions";
 import { isMunicipalityAdminRole, isSuperAdminRole } from "@/lib/roles";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
@@ -33,6 +35,45 @@ function parseEmployeePerms(formData: FormData) {
 
 function hasAnyEmployeePerm(p: ReturnType<typeof parseEmployeePerms>) {
   return Object.values(p).some(Boolean);
+}
+
+const employeePermKeys = [
+  "permViewRequests",
+  "permManageGas",
+  "permManageSocialServices",
+  "permManageInPersonRequests",
+  "permManageCitizenFeedback",
+  "permViewCitizens",
+  "permViewOperationLog",
+  "permManageServices",
+  "permManageUsers",
+  "permViewStats",
+  "permManageAreaNews",
+  "permManageArchive",
+] as const satisfies readonly (keyof EmployeePermPayload)[];
+
+function assignableEmployeePermMap(s: Session | null) {
+  const u = s?.user;
+  if (!u) {
+    return Object.fromEntries(employeePermKeys.map((key) => [key, false])) as Record<keyof EmployeePermPayload, boolean>;
+  }
+  if (isSuperAdminRole(u.role) || isMunicipalityAdminRole(u.role)) {
+    return Object.fromEntries(employeePermKeys.map((key) => [key, true])) as Record<keyof EmployeePermPayload, boolean>;
+  }
+  return {
+    permViewRequests: Boolean(u.permViewRequests),
+    permManageGas: Boolean(u.permManageGas),
+    permManageSocialServices: Boolean(u.permManageSocialServices),
+    permManageInPersonRequests: Boolean(u.permManageInPersonRequests),
+    permManageCitizenFeedback: Boolean(u.permManageCitizenFeedback),
+    permViewCitizens: Boolean(u.permViewCitizens),
+    permViewOperationLog: Boolean(u.permViewOperationLog),
+    permManageServices: Boolean(u.permManageServices),
+    permManageUsers: Boolean(u.permManageUsers),
+    permViewStats: Boolean(u.permViewStats),
+    permManageAreaNews: Boolean(u.permManageAreaNews),
+    permManageArchive: Boolean(u.permManageArchive),
+  };
 }
 
 function parseStaffRole(raw: string): UserRole | null {
@@ -189,7 +230,22 @@ export async function updateEmployeePermissions(
 
   const target = await db.user.findUnique({
     where: { id: userId },
-    select: { role: true, municipalityId: true },
+    select: {
+      role: true,
+      municipalityId: true,
+      permViewRequests: true,
+      permManageGas: true,
+      permManageSocialServices: true,
+      permManageInPersonRequests: true,
+      permManageCitizenFeedback: true,
+      permViewCitizens: true,
+      permViewOperationLog: true,
+      permManageServices: true,
+      permManageUsers: true,
+      permViewStats: true,
+      permManageAreaNews: true,
+      permManageArchive: true,
+    },
   });
   if (!target) return { error: "المستخدم غير موجود" };
   if (target.role !== UserRole.EMPLOYEE) {
@@ -205,11 +261,15 @@ export async function updateEmployeePermissions(
     return { error: "غير مصرّح" };
   }
 
-  const p = parseEmployeePerms(formData);
+  const submitted = parseEmployeePerms(formData);
+  const assignable = assignableEmployeePermMap(s);
+  const p = Object.fromEntries(
+    employeePermKeys.map((key) => [key, assignable[key] ? submitted[key] : target[key]]),
+  ) as EmployeePermPayload;
   if (!hasAnyEmployeePerm(p)) {
     return { error: "اختر صلاحية واحدة على الأقل للموظف" };
   }
-  const assignErr = validateAssignableEmployeePerms(s, p);
+  const assignErr = validateAssignableEmployeePerms(s, submitted);
   if (assignErr) return { error: assignErr };
 
   await db.user.update({ where: { id: userId }, data: p });

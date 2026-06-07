@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { UserRole } from "@/generated/prisma/enums";
 
 const INTRO_STORAGE_KEY = "citizen_pwa_intro_v1";
+const NOTIFICATION_PROMPT_STORAGE_KEY = "citizen_notification_prompt_v1";
 const CITIZEN_SW_URL = "/sw.js";
 const CITIZEN_SW_SCOPE = "/citizen/";
 
@@ -14,6 +17,7 @@ type BeforeInstallPromptEventLike = Event & {
 declare global {
   interface Window {
     __daraaBeforeInstallPrompt?: BeforeInstallPromptEventLike | null;
+    __daraaRequestPushPermission?: () => Promise<boolean>;
   }
 }
 
@@ -54,10 +58,15 @@ async function registerCitizenServiceWorker() {
 }
 
 export function CitizenPwaLayer() {
+  const { data: session, status } = useSession();
   const [introOpen, setIntroOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [iosHelpOpen, setIosHelpOpen] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEventLike | null>(null);
   const [installBusy, setInstallBusy] = useState(false);
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const isCitizen = status === "authenticated" && session?.user?.role === UserRole.CITIZEN;
 
   useEffect(() => {
     void registerCitizenServiceWorker();
@@ -89,6 +98,50 @@ export function CitizenPwaLayer() {
     dismissIntro();
     setIntroOpen(false);
   }, []);
+
+  useEffect(() => {
+    if (!isCitizen || introOpen) return;
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "default") return;
+    try {
+      if (localStorage.getItem(NOTIFICATION_PROMPT_STORAGE_KEY)) return;
+    } catch {
+      /* continue */
+    }
+    const timer = window.setTimeout(() => setNotificationOpen(true), 500);
+    return () => window.clearTimeout(timer);
+  }, [isCitizen, introOpen]);
+
+  const closeNotificationPrompt = useCallback(() => {
+    try {
+      localStorage.setItem(NOTIFICATION_PROMPT_STORAGE_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setNotificationOpen(false);
+  }, []);
+
+  const requestNotifications = useCallback(async () => {
+    setNotificationBusy(true);
+    setNotificationMessage("يرجى الانتظار...");
+    try {
+      let granted = false;
+      if (window.__daraaRequestPushPermission) {
+        granted = await window.__daraaRequestPushPermission();
+      } else if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        granted = permission === "granted";
+      } else if (typeof Notification !== "undefined") {
+        granted = Notification.permission === "granted";
+      }
+      setNotificationMessage(granted ? "تم تفعيل الإشعارات." : "لم يتم تفعيل الإشعارات.");
+      window.setTimeout(closeNotificationPrompt, 900);
+    } catch {
+      setNotificationMessage("تعذر تفعيل الإشعارات حالياً.");
+    } finally {
+      setNotificationBusy(false);
+    }
+  }, [closeNotificationPrompt]);
 
   const runAndroidInstall = useCallback(async () => {
     const promptEvent = deferred ?? window.__daraaBeforeInstallPrompt;
@@ -159,6 +212,45 @@ export function CitizenPwaLayer() {
               >
                 متابعة في المتصفح
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notificationOpen && (
+        <div
+          className="fixed inset-0 z-[99997] flex items-end justify-center bg-black/45 p-3 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="citizen-notification-prompt-title"
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-xl border border-[var(--gov-border)] bg-white p-5 shadow-xl sm:rounded-xl">
+            <h2 id="citizen-notification-prompt-title" className="text-lg font-bold text-[var(--gov-text)]">
+              تفعيل الإشعارات
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--gov-muted)]">
+              فعّل الإشعارات لتصلك تحديثات حالة الطلبات والرسائل الجديدة من البلدية مباشرة.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={notificationBusy}
+                className="gov-btn-primary min-h-11 w-full rounded-sm border-0 px-4 py-2.5 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
+                style={{ backgroundColor: "#006c35" }}
+                onClick={() => void requestNotifications()}
+              >
+                {notificationBusy ? "يرجى الانتظار..." : "تفعيل الإشعارات"}
+              </button>
+              <button
+                type="button"
+                className="gov-btn-secondary min-h-11 w-full rounded-sm px-4 py-2.5 text-sm font-semibold"
+                onClick={closeNotificationPrompt}
+              >
+                لاحقاً
+              </button>
+              {notificationMessage ? (
+                <p className="text-center text-xs font-semibold text-[var(--gov-muted)]">{notificationMessage}</p>
+              ) : null}
             </div>
           </div>
         </div>

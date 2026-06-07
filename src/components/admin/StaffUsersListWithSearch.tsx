@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { UserRole } from "@/generated/prisma/enums";
 import { userRoleAr } from "@/lib/labels";
 import { updateEmployeePermissions } from "@/actions/admin-users";
@@ -90,6 +91,19 @@ function permissionLabels(user: StaffUserRow): string[] {
   return permissionOptions.flatMap((p) => (user[p.valueKey] ? [p.label] : []));
 }
 
+function SavePermissionsButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-70"
+    >
+      {pending ? "يرجى الانتظار..." : "حفظ الصلاحيات"}
+    </button>
+  );
+}
+
 function EmployeePermissionsForm({
   user,
   assignablePerms,
@@ -123,12 +137,7 @@ function EmployeePermissionsForm({
         })}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="submit"
-          className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
-        >
-          حفظ الصلاحيات
-        </button>
+        <SavePermissionsButton />
         {state?.error ? <span className="text-xs text-rose-700">{state.error}</span> : null}
         {state && "ok" in state && state.ok ? <span className="text-xs text-emerald-700">تم الحفظ</span> : null}
       </div>

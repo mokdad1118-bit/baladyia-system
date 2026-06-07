@@ -46,6 +46,7 @@ declare global {
     __daraaOneSignalInitFailed?: boolean;
     __daraaOneSignalSubscriptionListener?: boolean;
     __daraaOneSignalScriptLoading?: boolean;
+    __daraaRequestPushPermission?: () => Promise<boolean>;
   }
 }
 
@@ -93,7 +94,7 @@ export function OneSignalClient() {
   const userRole = session?.user?.role;
 
   useEffect(() => {
-    if (!pathname?.startsWith("/citizen")) return;
+    if (pathname && /^\/(admin|staff|employee|gas-agent)(\/|$)/.test(pathname)) return;
     const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || DARAA_ONESIGNAL_APP_ID;
     if (!appId || typeof window === "undefined") return;
 
@@ -163,6 +164,27 @@ export function OneSignalClient() {
       if (OneSignal.Notifications.isPushSupported && !OneSignal.Notifications.isPushSupported()) return;
       if (typeof Notification === "undefined") return;
       if (OneSignal.User.PushSubscription.optedIn) return;
+
+      const requestPushPermission = async () => {
+        if (Notification.permission === "granted") {
+          await OneSignal.User.PushSubscription.optIn();
+          await identifyUser();
+          return true;
+        }
+        if (Notification.permission !== "default") return false;
+        if (OneSignal.Slidedown?.promptPush) {
+          await OneSignal.Slidedown.promptPush();
+        } else {
+          await OneSignal.Notifications.requestPermission();
+        }
+        await identifyUser();
+        const permissionAfterPrompt = Notification.permission as NotificationPermission;
+        return permissionAfterPrompt === "granted" || Boolean(OneSignal.User.PushSubscription.optedIn);
+      };
+      window.__daraaRequestPushPermission = requestPushPermission;
+      window.dispatchEvent(new Event("daraa:push-permission-ready"));
+
+      if (userRole === UserRole.CITIZEN) return;
 
       if (Notification.permission === "granted") {
         await OneSignal.User.PushSubscription.optIn();
