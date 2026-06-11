@@ -1,11 +1,20 @@
 "use server";
 
+import { mkdir } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { UserRole } from "@/generated/prisma/enums";
+import { FileKind, UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { writeOperationLog } from "@/lib/operation-log";
+import { acceptsForFileKind } from "@/lib/file-validation";
+import { MAX_CITIZEN_ATTACHMENT_BYTES } from "@/lib/upload-limits";
 
 export type SubmitCitizenFeedbackState =
   | { error: string }
@@ -29,16 +38,43 @@ export async function submitCitizenFeedback(
     return { error: "النص طويل جداً. الحد الأقصى 2000 حرف." };
   }
 
+  const image = formData.get("image") as File | null;
+  if (!image || image.size === 0) {
+    return { error: "يرجى إرفاق صورة مع الشكوى." };
+  }
+  if (image.size > MAX_CITIZEN_ATTACHMENT_BYTES) {
+    return { error: "حجم الصورة كبير جداً." };
+  }
+  const imageMime = image.type || "application/octet-stream";
+  const imageValidation = acceptsForFileKind(FileKind.IMAGE, imageMime);
+  if (!imageValidation.ok) {
+    return { error: imageValidation.message ?? "المرفق يجب أن يكون صورة." };
+  }
+
   const municipalityId = session.user.municipalityId?.trim();
   if (!municipalityId) {
     return { error: "حسابك غير مرتبط ببلدية. لا يمكن إرسال الملاحظة." };
   }
+
+  const outDir = path.join(process.cwd(), "public", "uploads", "feedback", String(new Date().getUTCFullYear()));
+  await mkdir(outDir, { recursive: true });
+  const imageExt = path.extname((image as File & { name?: string }).name || "") || ".img";
+  const storedImage = `${randomUUID()}${imageExt}`;
+  await pipeline(
+    Readable.fromWeb(image.stream() as unknown as NodeReadableStream),
+    createWriteStream(path.join(outDir, storedImage)),
+  );
+  const imagePath = `/uploads/feedback/${new Date().getUTCFullYear()}/${storedImage}`;
 
   const row = await db.citizenFeedback.create({
     data: {
       municipalityId,
       citizenId: session.user.id,
       message,
+      imagePath,
+      imageOriginal: (image as File & { name?: string }).name || "feedback-image",
+      imageMime,
+      imageSize: image.size,
     },
   });
   const municipality = await db.municipality.findUnique({
@@ -55,7 +91,7 @@ export async function submitCitizenFeedback(
     description: `تم إرسال شكوى/اقتراح من ${session.user.name ?? "مواطن"}`,
     entityType: "CITIZEN_FEEDBACK",
     entityId: row.id,
-    metadata: { message, municipalityName },
+    metadata: { message, municipalityName, imagePath },
   });
 
   try {

@@ -19,6 +19,8 @@ export default async function CitizenFeedbackPage() {
     select: {
       id: true,
       message: true,
+      imagePath: true,
+      imageOriginal: true,
       createdAt: true,
       adminReply: true,
       adminReplyAt: true,

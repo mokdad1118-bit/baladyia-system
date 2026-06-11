@@ -67,6 +67,7 @@ export default async function AdminCitizenFeedbackPage() {
                 <th>الهاتف</th>
                 <th>الرقم الوطني</th>
                 <th>نص الشكوى / المقترح</th>
+                <th>صورة الشكوى</th>
                 <th>رد الإدارة الحالي</th>
                 <th>الرد على المواطن</th>
                 <th>تاريخ الإرسال</th>
@@ -94,6 +95,26 @@ export default async function AdminCitizenFeedbackPage() {
                   <td dir="ltr">{row.citizen?.phone ?? "—"}</td>
                   <td dir="ltr">{row.citizen?.nationalId ?? "—"}</td>
                   <td className="max-w-[28rem] whitespace-pre-wrap break-words">{row.message}</td>
+                  <td className="min-w-[10rem]">
+                    {row.imagePath ? (
+                      <a
+                        href={row.imagePath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block overflow-hidden rounded border border-[var(--gov-border)] bg-slate-50 text-xs no-underline"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- citizen-uploaded complaint image */}
+                        <img
+                          src={row.imagePath}
+                          alt={row.imageOriginal ?? "صورة الشكوى"}
+                          className="h-24 w-40 object-cover"
+                        />
+                        <span className="block px-2 py-1 text-[var(--gov-primary)]">فتح الصورة</span>
+                      </a>
+                    ) : (
+                      <span className="text-[var(--gov-muted)]">—</span>
+                    )}
+                  </td>
                   <td className="max-w-[20rem] whitespace-pre-wrap break-words text-sm">
                     {row.adminReply ? (
                       <>

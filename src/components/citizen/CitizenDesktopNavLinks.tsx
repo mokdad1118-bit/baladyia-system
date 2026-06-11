@@ -51,6 +51,9 @@ export function CitizenDesktopNavLinks({
           <Link href={news} className={linkClass(activeNews)}>
             {unreadAreaNews > 0 ? `أخبار المنطقة (${unreadAreaNews})` : "أخبار المنطقة"}
           </Link>
+          <Link href={feedback} className={linkClass(activeFeedback)}>
+            الشكاوي والمقترحات
+          </Link>
           <Link href={requests} className={linkClass(activeRequests)}>
             طلباتي
           </Link>
@@ -59,9 +62,6 @@ export function CitizenDesktopNavLinks({
           </Link>
           <Link href={account} className={linkClass(activeAccount)}>
             حسابي
-          </Link>
-          <Link href={feedback} className={linkClass(activeFeedback)}>
-            الشكاوي والمقترحات
           </Link>
           <Link href={home} className={linkClass(activeHome)}>
             الرئيسية

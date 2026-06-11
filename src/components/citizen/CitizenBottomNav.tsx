@@ -34,6 +34,12 @@ function buildTabs(base: "" | "/citizen") {
       badge: "news" as const,
     },
     {
+      href: feedback,
+      label: "شكاوى",
+      match: (p: string) => p === feedback || p.startsWith(`${feedback}/`),
+      Icon: IconMessageSm,
+    },
+    {
       href: requests,
       label: "طلباتي",
       match: (p: string) => p === requests || (p.startsWith(`${requests}/`) && !p.includes("/new/")),
@@ -50,12 +56,6 @@ function buildTabs(base: "" | "/citizen") {
       label: "حسابي",
       match: (p: string) => p === account || p.startsWith(`${account}/`),
       Icon: IconUserSm,
-    },
-    {
-      href: feedback,
-      label: "شكاوى",
-      match: (p: string) => p === feedback || p.startsWith(`${feedback}/`),
-      Icon: IconMessageSm,
     },
   ] as const;
 }

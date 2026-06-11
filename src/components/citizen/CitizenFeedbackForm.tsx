@@ -22,7 +22,7 @@ export function CitizenFeedbackForm({
   }, [state, router]);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} encType="multipart/form-data" className="space-y-4">
       <div className="rounded-xl border border-[var(--gov-border)] bg-white p-4">
         <label htmlFor="feedback-message" className="mb-2 block text-sm font-semibold text-[var(--gov-text)]">
           نص الشكوى أو المقترح
@@ -37,6 +37,21 @@ export function CitizenFeedbackForm({
           className="gov-input w-full resize-y px-3 py-2.5 text-sm"
           placeholder="اكتب هنا ملاحظتك بخصوص التطبيق أو مقترحك للتحسين..."
         />
+      </div>
+
+      <div className="rounded-xl border border-[var(--gov-border)] bg-white p-4">
+        <label htmlFor="feedback-image" className="mb-2 block text-sm font-semibold text-[var(--gov-text)]">
+          صورة الشكوى
+        </label>
+        <input
+          id="feedback-image"
+          name="image"
+          type="file"
+          accept="image/*"
+          required
+          className="gov-input w-full px-3 py-2.5 text-sm"
+        />
+        <p className="mt-2 text-xs text-[var(--gov-muted)]">الصورة مطلوبة لإرسال الشكوى.</p>
       </div>
 
       {state && "error" in state ? (

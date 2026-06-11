@@ -4,6 +4,8 @@ export function CitizenFeedbackList({
   items: {
     id: string;
     message: string;
+    imagePath: string | null;
+    imageOriginal: string | null;
     createdAt: Date;
     adminReply: string | null;
     adminReplyAt: Date | null;
@@ -34,6 +36,24 @@ export function CitizenFeedbackList({
                 </time>
               </div>
               <p className="whitespace-pre-wrap text-sm text-[var(--gov-text)]">{item.message}</p>
+              {item.imagePath ? (
+                <a
+                  href={item.imagePath}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block overflow-hidden rounded-lg border border-[var(--gov-border)] bg-slate-50 no-underline"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- citizen-uploaded complaint image */}
+                  <img
+                    src={item.imagePath}
+                    alt={item.imageOriginal ?? "صورة الشكوى"}
+                    className="max-h-64 w-full object-contain"
+                  />
+                  <span className="block px-3 py-2 text-xs text-[var(--gov-muted)]">
+                    {item.imageOriginal ?? "صورة الشكوى"}
+                  </span>
+                </a>
+              ) : null}
               {item.adminReply ? (
                 <div className="rounded-xl border border-[var(--gov-primary)]/25 bg-[var(--gov-primary)]/6 px-3 py-3">
                   <p className="text-xs font-semibold text-[var(--gov-primary)]">رد الإدارة</p>

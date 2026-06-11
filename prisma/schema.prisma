@@ -138,6 +138,10 @@ model CitizenFeedback {
   citizenId String
   citizen   User     @relation(fields: [citizenId], references: [id], onDelete: Cascade)
   message   String
+  imagePath     String?
+  imageOriginal String?
+  imageMime     String?
+  imageSize     Int?
   createdAt DateTime @default(now())
 
   /// رد الإدارة على نفس الشكوى/المقترح
