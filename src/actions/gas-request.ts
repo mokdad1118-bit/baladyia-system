@@ -9,6 +9,7 @@ import { getStaffToNotify, notifyUsers } from "@/lib/notify";
 import { digitsOnly, isValidWhatsappLength } from "@/lib/phone";
 import { nextGasRequestNumber } from "@/lib/gas-request-serial";
 import { writeOperationLog } from "@/lib/operation-log";
+import { parseGasAgentBarcodeValue } from "@/lib/gas-agent-barcode";
 
 export type SubmitGasRequestState = { error: string } | undefined;
 
@@ -24,7 +25,9 @@ export async function submitGasRequest(
   const fullName = String(formData.get("fullName") ?? "").trim();
   const phone = digitsOnly(String(formData.get("phone") ?? ""));
   const nationalId = digitsOnly(String(formData.get("nationalId") ?? ""));
-  const gasAgentId = String(formData.get("gasAgentId") ?? "").trim();
+  const gasAgentId = parseGasAgentBarcodeValue(
+    String(formData.get("gasAgentToken") ?? formData.get("gasAgentId") ?? "").trim(),
+  );
 
   if (fullName.length < 3) return { error: "يرجى إدخال الاسم الثلاثي." };
   if (!isValidWhatsappLength(phone)) return { error: "رقم الهاتف غير صالح (أرقام فقط ٨-١٥)." };
@@ -55,7 +58,22 @@ export async function submitGasRequest(
     return { error: "معتمد الغاز المختار غير متاح حالياً." };
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const duplicateToday = await db.gasRequest.findFirst({
+    where: {
+      citizenId: session.user.id,
+      assignedAgentId: agent.id,
+      createdAt: { gte: today },
+    },
+    select: { gasRequestNumber: true },
+  });
+  if (duplicateToday) {
+    return { error: `تم تسجيل استلام جرة غاز اليوم مسبقاً. رقم السجل: ${duplicateToday.gasRequestNumber}` };
+  }
+
   const number = await nextGasRequestNumber(citizenMun);
+  const now = new Date();
   const created = await db.gasRequest.create({
     data: {
       municipalityId: citizenMun,
@@ -66,6 +84,8 @@ export async function submitGasRequest(
       fullName,
       phone,
       nationalId,
+      isCompleted: true,
+      completedAt: now,
     },
   });
   await writeOperationLog({

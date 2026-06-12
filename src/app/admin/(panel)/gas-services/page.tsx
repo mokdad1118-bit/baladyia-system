@@ -4,6 +4,7 @@ import { ADMIN_NAV_BADGE_NOTIFICATION_TYPES } from "@/lib/admin-nav-badges";
 import { parseDateEndParam, parseDateStartParam } from "@/lib/request-list-filters";
 import { AdminGasRequestsTableWithSearch } from "@/components/admin/AdminGasRequestsTableWithSearch";
 import { GasAgentCreateForm } from "@/components/admin/GasAgentCreateForm";
+import { GasAgentBarcodeDialog } from "@/components/admin/GasAgentBarcodeDialog";
 import { GasAgentEditDialog } from "@/components/admin/GasAgentEditDialog";
 import { GasAgentToggleButton } from "@/components/admin/GasAgentToggleButton";
 import { UserRole } from "@/generated/prisma/enums";
@@ -123,6 +124,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
     nationalId: r.nationalId,
     isCompleted: r.isCompleted,
     createdAt: r.createdAt.toISOString(),
+    completedAt: r.completedAt?.toISOString() ?? null,
   }));
 
   return (
@@ -163,6 +165,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
                     <td className="whitespace-nowrap">
                       <div className="flex flex-wrap items-center gap-2">
                         <GasAgentEditDialog agent={a} />
+                        <GasAgentBarcodeDialog agent={a} />
                         <GasAgentToggleButton userId={a.id} isActive={a.isActive} name={a.name} />
                       </div>
                     </td>

@@ -8,6 +8,7 @@ export type GasRequestExportRow = {
   nationalId: string;
   isCompleted: boolean;
   createdAt: string;
+  completedAt?: string | null;
 };
 
 function fileStamp(): string {
@@ -22,12 +23,12 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
   if (rows.length === 0) return;
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("طلبات_الغاز", {
+  const sheet = workbook.addWorksheet("سجلات_الغاز", {
     views: [{ rightToLeft: true }],
   });
 
   sheet.columns = [
-    { header: "رقم طلب الغاز", key: "gasRequestNumber", width: 24 },
+    { header: "رقم سجل الغاز", key: "gasRequestNumber", width: 24 },
     { header: "المنطقة", key: "area", width: 20 },
     { header: "المعتمد", key: "agentName", width: 24 },
     { header: "البلدية", key: "municipalityName", width: 24 },
@@ -35,7 +36,7 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
     { header: "رقم الواتساب", key: "phone", width: 20 },
     { header: "الرقم الوطني", key: "nationalId", width: 20 },
     { header: "الحالة", key: "statusLabel", width: 16 },
-    { header: "تاريخ التقديم", key: "createdAtLabel", width: 18 },
+    { header: "تاريخ الاستلام", key: "receivedAtLabel", width: 18 },
   ];
 
   const headerRow = sheet.getRow(1);
@@ -56,8 +57,8 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
       fullName: r.fullName,
       phone: r.phone,
       nationalId: r.nationalId,
-      statusLabel: r.isCompleted ? "منتهي" : "قيد المعالجة",
-      createdAtLabel: new Date(r.createdAt).toLocaleDateString("ar"),
+      statusLabel: r.isCompleted ? "تم الاستلام" : "قيد المعالجة",
+      receivedAtLabel: new Date(r.completedAt ?? r.createdAt).toLocaleDateString("ar"),
     });
   }
 
@@ -73,7 +74,7 @@ export async function downloadAdminGasRequestsExcel(rows: GasRequestExportRow[])
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `gas-requests-${fileStamp()}.xlsx`;
+  a.download = `gas-receipts-${fileStamp()}.xlsx`;
   a.rel = "noopener";
   document.body.appendChild(a);
   a.click();

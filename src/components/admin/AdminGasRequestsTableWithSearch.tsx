@@ -13,7 +13,17 @@ export type AdminGasRequestRow = GasRequestExportRow & {
 };
 
 function haystack(r: AdminGasRequestRow): string {
-  return [r.gasRequestNumber, r.area, r.agentName, r.municipalityName, r.fullName, r.phone, r.nationalId, r.createdAt]
+  return [
+    r.gasRequestNumber,
+    r.area,
+    r.agentName,
+    r.municipalityName,
+    r.fullName,
+    r.phone,
+    r.nationalId,
+    r.createdAt,
+    r.completedAt ?? "",
+  ]
     .join(" ")
     .toLowerCase();
 }
@@ -37,12 +47,12 @@ export function AdminGasRequestsTableWithSearch({
     <div>
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
         <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">خدمات الغاز</h1>
-        <p className="mt-1 text-sm text-[var(--gov-muted)]">طلبات المواطنين لخدمات الغاز.</p>
+        <p className="mt-1 text-sm text-[var(--gov-muted)]">سجلات استلام جرار الغاز من خلال باركود المعتمدين.</p>
       </header>
 
       <div className="mb-4 grid gap-3 md:grid-cols-3">
         <div className="gov-card p-4">
-          <p className="text-xs text-[var(--gov-muted)]">عدد الطلبات المقدمة</p>
+          <p className="text-xs text-[var(--gov-muted)]">عدد سجلات الاستلام</p>
           <p className="mt-1 text-2xl font-bold text-[var(--gov-primary)]">{rows.length}</p>
         </div>
       </div>
@@ -53,8 +63,8 @@ export function AdminGasRequestsTableWithSearch({
         <div className="min-w-0 flex-1">
           <AdminListSearchField
             id="admin-gas-requests-search"
-            label="بحث في طلبات الغاز"
-            placeholder="رقم الطلب، المنطقة، المعتمد، اسم المواطن، الرقم الوطني، رقم الهاتف…"
+            label="بحث في سجلات الغاز"
+            placeholder="رقم السجل، المنطقة، المعتمد، اسم المواطن، الرقم الوطني، رقم الهاتف..."
             value={q}
             onChange={setQ}
             className="mb-0"
@@ -77,12 +87,12 @@ export function AdminGasRequestsTableWithSearch({
             }
           }}
         >
-          {busy ? "جاري التصدير…" : "تصدير Excel"}
+          {busy ? "جاري التصدير..." : "تصدير Excel"}
         </button>
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-center text-sm text-[var(--gov-muted)]">لا توجد طلبات غاز حالياً.</p>
+        <p className="text-center text-sm text-[var(--gov-muted)]">لا توجد سجلات استلام غاز حالياً.</p>
       ) : filtered.length === 0 ? (
         <p className="text-center text-sm text-[var(--gov-muted)]">لا نتائج مطابقة للبحث.</p>
       ) : (
@@ -90,7 +100,7 @@ export function AdminGasRequestsTableWithSearch({
           <table className="gov-table min-w-[76rem]">
             <thead>
               <tr>
-                <th>رقم طلب الغاز</th>
+                <th>رقم سجل الغاز</th>
                 <th>المنطقة</th>
                 <th>المعتمد</th>
                 <th>البلدية</th>
@@ -98,7 +108,7 @@ export function AdminGasRequestsTableWithSearch({
                 <th>رقم الواتساب</th>
                 <th>الرقم الوطني</th>
                 <th>الحالة</th>
-                <th>تاريخ التقديم</th>
+                <th>تاريخ الاستلام</th>
               </tr>
             </thead>
             <tbody>
@@ -114,7 +124,7 @@ export function AdminGasRequestsTableWithSearch({
                   <td>
                     {r.isCompleted ? (
                       <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">
-                        منتهي
+                        تم الاستلام
                       </span>
                     ) : (
                       <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
@@ -123,7 +133,7 @@ export function AdminGasRequestsTableWithSearch({
                     )}
                   </td>
                   <td className="whitespace-nowrap text-[var(--gov-muted)]">
-                    {new Date(r.createdAt).toLocaleDateString("ar")}
+                    {new Date(r.completedAt ?? r.createdAt).toLocaleDateString("ar")}
                   </td>
                 </tr>
               ))}
