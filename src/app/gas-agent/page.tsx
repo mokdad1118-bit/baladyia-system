@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { UserRole } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { LogoutForm } from "@/components/LogoutForm";
+import { GasAgentBarcodeCard } from "@/components/gas-agent/GasAgentBarcodeCard";
 import { GasAgentRequestsTableWithSearch } from "@/components/gas-agent/GasAgentRequestsTableWithSearch";
 
 export default async function GasAgentHomePage() {
@@ -16,7 +17,7 @@ export default async function GasAgentHomePage() {
 
   const me = await db.user.findUnique({
     where: { id: s.user.id },
-    select: { name: true, gasArea: true },
+    select: { id: true, name: true, gasArea: true },
   });
 
   const rows = await db.gasRequest.findMany({
@@ -36,6 +37,8 @@ export default async function GasAgentHomePage() {
         </header>
         <LogoutForm callbackUrl="/citizen/welcome" />
       </div>
+
+      {me ? <GasAgentBarcodeCard agent={me} /> : null}
 
       <GasAgentRequestsTableWithSearch
         rows={rows.map((r) => ({
