@@ -33,9 +33,9 @@ export function GasAgentBarcodeCard({
           <Image
             src={`/api/gas-agents/${encodeURIComponent(agent.id)}/barcode`}
             alt={`باركود ${agent.name}`}
-            width={640}
-            height={92}
-            className="mx-auto h-auto w-full max-w-2xl"
+            width={360}
+            height={360}
+            className="mx-auto aspect-square h-auto w-full max-w-80 rounded-lg bg-white p-3"
             unoptimized
           />
           <p className="mt-3 select-all text-center font-mono text-xs text-[var(--gov-muted)]" dir="ltr">

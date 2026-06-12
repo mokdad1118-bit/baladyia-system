@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { code128Svg } from "@/lib/code128-svg";
+import QRCode from "qrcode";
 import { gasAgentBarcodeValue } from "@/lib/gas-agent-barcode";
 
 type Params = {
@@ -8,7 +8,16 @@ type Params = {
 
 export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
-  const svg = code128Svg(gasAgentBarcodeValue(id));
+  const svg = await QRCode.toString(gasAgentBarcodeValue(id), {
+    type: "svg",
+    errorCorrectionLevel: "M",
+    margin: 2,
+    width: 360,
+    color: {
+      dark: "#111827",
+      light: "#ffffff",
+    },
+  });
 
   return new NextResponse(svg, {
     headers: {
@@ -17,4 +26,3 @@ export async function GET(_request: Request, { params }: Params) {
     },
   });
 }
-
