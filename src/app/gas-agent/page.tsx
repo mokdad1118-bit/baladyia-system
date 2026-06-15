@@ -17,7 +17,7 @@ export default async function GasAgentHomePage() {
 
   const me = await db.user.findUnique({
     where: { id: s.user.id },
-    select: { id: true, name: true, gasArea: true },
+    select: { id: true, name: true, gasArea: true, gasCylinderStock: true },
   });
 
   const rows = await db.gasRequest.findMany({
@@ -36,6 +36,13 @@ export default async function GasAgentHomePage() {
           </p>
         </header>
         <LogoutForm callbackUrl="/citizen/welcome" />
+      </div>
+
+      <div className="gov-card mb-6 p-4">
+        <p className="text-sm text-[var(--gov-muted)]">المخزون المتاح للبيع</p>
+        <p className="mt-1 text-2xl font-bold tabular-nums text-[var(--gov-text)]">
+          {me?.gasCylinderStock ?? 0} <span className="text-base font-semibold">جرة</span>
+        </p>
       </div>
 
       {me ? <GasAgentBarcodeCard agent={me} /> : null}

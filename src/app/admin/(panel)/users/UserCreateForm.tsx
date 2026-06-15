@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 type Assignable = {
   requests: boolean;
   gas: boolean;
+  gasInventory: boolean;
   social: boolean;
   inPerson: boolean;
   feedback: boolean;
@@ -24,6 +25,7 @@ type Assignable = {
 const permissionOptions = [
   { name: "permViewRequests", key: "requests", label: "طلبات خدمات المدينة" },
   { name: "permManageGas", key: "gas", label: "خدمات الغاز" },
+  { name: "permManageGasInventory", key: "gasInventory", label: "إدارة مخزون جرار الغاز" },
   { name: "permManageSocialServices", key: "social", label: "الخدمات الاجتماعية والعائدين" },
   { name: "permManageInPersonRequests", key: "inPerson", label: "الخدمات المقدمة حضورياً" },
   { name: "permManageCitizenFeedback", key: "feedback", label: "شكاوى واقتراحات المواطنين" },

@@ -179,6 +179,7 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await addColumnIfMissing(client, "User", "municipalityId", "TEXT");
   await addColumnIfMissing(client, "User", "permViewRequests", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permManageGas", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "permManageGasInventory", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permManageSocialServices", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permManageInPersonRequests", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "ReturneeRegistration", "source", "TEXT NOT NULL DEFAULT 'online'");
@@ -186,6 +187,7 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await addColumnIfMissing(client, "User", "permManageCitizenFeedback", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permViewCitizens", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing(client, "User", "permViewOperationLog", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(client, "User", "gasCylinderStock", "INTEGER NOT NULL DEFAULT 0");
   await addColumnIfMissing(client, "Department", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Service", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
   await addColumnIfMissing(client, "Request", "municipalityId", `TEXT NOT NULL DEFAULT '${MIGRATION_DEFAULT_MUNICIPALITY_ID}'`);
@@ -211,7 +213,7 @@ async function applyRemoteMultiMunicipalityMigration(client: LibsqlClient) {
   await executeIfTableExists(
     client,
     "User",
-    `UPDATE "User" SET "permViewRequests" = true, "permManageGas" = true, "permManageSocialServices" = true, "permManageCitizenFeedback" = true, "permViewCitizens" = true, "permViewOperationLog" = true WHERE "role" IN ('SUPER_ADMIN', 'MUNICIPALITY_ADMIN')`,
+    `UPDATE "User" SET "permViewRequests" = true, "permManageGas" = true, "permManageGasInventory" = true, "permManageSocialServices" = true, "permManageCitizenFeedback" = true, "permViewCitizens" = true, "permViewOperationLog" = true WHERE "role" IN ('SUPER_ADMIN', 'MUNICIPALITY_ADMIN')`,
   );
 
   await client.execute(`

@@ -7,8 +7,10 @@ import { updateGasAgentAction } from "@/actions/gas-agents";
 
 export function GasAgentEditDialog({
   agent,
+  canManageInventory = false,
 }: {
-  agent: { id: string; name: string; phone: string | null; gasArea: string | null };
+  agent: { id: string; name: string; phone: string | null; gasArea: string | null; gasCylinderStock: number };
+  canManageInventory?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -73,6 +75,9 @@ export function GasAgentEditDialog({
               }}
             >
               <input type="hidden" name="userId" value={agent.id} />
+              <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
+                المخزون الحالي: <span className="font-bold tabular-nums">{agent.gasCylinderStock}</span> جرة
+              </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">اسم المعتمد</label>
                 <input
@@ -83,6 +88,22 @@ export function GasAgentEditDialog({
                   className="gov-input w-full px-3 py-2.5 text-sm"
                 />
               </div>
+              {canManageInventory ? (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">
+                    إضافة جرار إلى المخزون
+                  </label>
+                  <input
+                    name="stockToAdd"
+                    type="number"
+                    min={0}
+                    step={1}
+                    defaultValue={0}
+                    inputMode="numeric"
+                    className="gov-input w-full px-3 py-2.5 text-sm"
+                  />
+                </div>
+              ) : null}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">رقم الهاتف</label>
                 <input

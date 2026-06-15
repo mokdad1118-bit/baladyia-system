@@ -51,11 +51,14 @@ export async function submitGasRequest(
       municipalityId: citizenMun,
       gasArea: { not: null },
     },
-    select: { id: true, gasArea: true },
+    select: { id: true, gasArea: true, gasCylinderStock: true },
   });
   const area = agent?.gasArea?.trim() ?? "";
   if (!agent || area.length < 2) {
     return { error: "معتمد الغاز المختار غير متاح حالياً." };
+  }
+  if (agent.gasCylinderStock <= 0) {
+    return { error: "لا توجد جرار غاز متاحة حالياً لدى هذا المعتمد." };
   }
 
   const today = new Date();
@@ -74,20 +77,39 @@ export async function submitGasRequest(
 
   const number = await nextGasRequestNumber(citizenMun);
   const now = new Date();
-  const created = await db.gasRequest.create({
-    data: {
-      municipalityId: citizenMun,
-      gasRequestNumber: number,
-      citizenId: session.user.id,
-      area,
-      assignedAgentId: agent.id,
-      fullName,
-      phone,
-      nationalId,
-      isCompleted: true,
-      completedAt: now,
-    },
+  const created = await db.$transaction(async (tx) => {
+    const decremented = await tx.user.updateMany({
+      where: {
+        id: agent.id,
+        role: UserRole.GAS_AGENT,
+        gasCylinderStock: { gt: 0 },
+      },
+      data: { gasCylinderStock: { decrement: 1 } },
+    });
+    if (decremented.count !== 1) {
+      throw new Error("GAS_AGENT_OUT_OF_STOCK");
+    }
+    return tx.gasRequest.create({
+      data: {
+        municipalityId: citizenMun,
+        gasRequestNumber: number,
+        citizenId: session.user.id,
+        area,
+        assignedAgentId: agent.id,
+        fullName,
+        phone,
+        nationalId,
+        isCompleted: true,
+        completedAt: now,
+      },
+    });
+  }).catch((e) => {
+    if (e instanceof Error && e.message === "GAS_AGENT_OUT_OF_STOCK") return null;
+    throw e;
   });
+  if (!created) {
+    return { error: "لا توجد جرار غاز متاحة حالياً لدى هذا المعتمد." };
+  }
   await writeOperationLog({
     session,
     municipalityId: citizenMun,
@@ -155,13 +177,33 @@ export async function completeGasRequestAction(requestId: string): Promise<{ ok:
   });
   if (!row) return { error: "الطلب غير موجود أو غير مخصص لك." };
   if (!row.isCompleted) {
-    await db.gasRequest.update({
-      where: { id: row.id },
-      data: {
-        isCompleted: true,
-        completedAt: new Date(),
-      },
+    const completed = await db.$transaction(async (tx) => {
+      const decremented = await tx.user.updateMany({
+        where: {
+          id: session.user.id,
+          role: UserRole.GAS_AGENT,
+          gasCylinderStock: { gt: 0 },
+        },
+        data: { gasCylinderStock: { decrement: 1 } },
+      });
+      if (decremented.count !== 1) {
+        throw new Error("GAS_AGENT_OUT_OF_STOCK");
+      }
+      await tx.gasRequest.update({
+        where: { id: row.id },
+        data: {
+          isCompleted: true,
+          completedAt: new Date(),
+        },
+      });
+      return true;
+    }).catch((e) => {
+      if (e instanceof Error && e.message === "GAS_AGENT_OUT_OF_STOCK") return false;
+      throw e;
     });
+    if (!completed) {
+      return { error: "لا توجد جرار غاز متاحة حالياً لديك." };
+    }
     await writeOperationLog({
       session,
       municipalityId: row.municipalityId,

@@ -6,9 +6,11 @@ import { createGasAgentAction } from "@/actions/gas-agents";
 export function GasAgentCreateForm({
   municipalities = [],
   showMunicipalityPicker = false,
+  canManageInventory = false,
 }: {
   municipalities?: { id: string; name: string }[];
   showMunicipalityPicker?: boolean;
+  canManageInventory?: boolean;
 }) {
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -68,6 +70,20 @@ export function GasAgentCreateForm({
           <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">المنطقة المخصصة</label>
           <input name="area" required className="gov-input w-full px-3 py-2.5 text-sm" />
         </div>
+        {canManageInventory ? (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">عدد جرار الغاز الأولي</label>
+            <input
+              name="initialStock"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={0}
+              inputMode="numeric"
+              className="gov-input w-full px-3 py-2.5 text-sm"
+            />
+          </div>
+        ) : null}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">كلمة مرور المعتمد</label>
           <input

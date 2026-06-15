@@ -46,6 +46,7 @@ export default async function AdminStaffUsersPage({ searchParams }: Props) {
           isActive: u.isActive,
           permViewRequests: u.permViewRequests,
           permManageGas: u.permManageGas,
+          permManageGasInventory: u.permManageGasInventory,
           permManageSocialServices: u.permManageSocialServices,
           permManageInPersonRequests: u.permManageInPersonRequests,
           permManageCitizenFeedback: u.permManageCitizenFeedback,
@@ -63,6 +64,7 @@ export default async function AdminStaffUsersPage({ searchParams }: Props) {
         assignablePerms={{
           requests: elevated || Boolean(s!.user!.permViewRequests),
           gas: elevated || Boolean(s!.user!.permManageGas),
+          gasInventory: elevated || Boolean(s!.user!.permManageGasInventory),
           social: elevated || Boolean(s!.user!.permManageSocialServices),
           inPerson: elevated || Boolean(s!.user!.permManageInPersonRequests),
           feedback: elevated || Boolean(s!.user!.permManageCitizenFeedback),

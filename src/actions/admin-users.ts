@@ -20,6 +20,7 @@ function parseEmployeePerms(formData: FormData) {
   return {
     permViewRequests: formData.get("permViewRequests") === "on",
     permManageGas: formData.get("permManageGas") === "on",
+    permManageGasInventory: formData.get("permManageGasInventory") === "on",
     permManageSocialServices: formData.get("permManageSocialServices") === "on",
     permManageInPersonRequests: formData.get("permManageInPersonRequests") === "on",
     permManageCitizenFeedback: formData.get("permManageCitizenFeedback") === "on",
@@ -40,6 +41,7 @@ function hasAnyEmployeePerm(p: ReturnType<typeof parseEmployeePerms>) {
 const employeePermKeys = [
   "permViewRequests",
   "permManageGas",
+  "permManageGasInventory",
   "permManageSocialServices",
   "permManageInPersonRequests",
   "permManageCitizenFeedback",
@@ -63,6 +65,7 @@ function assignableEmployeePermMap(s: Session | null) {
   return {
     permViewRequests: Boolean(u.permViewRequests),
     permManageGas: Boolean(u.permManageGas),
+    permManageGasInventory: Boolean(u.permManageGasInventory),
     permManageSocialServices: Boolean(u.permManageSocialServices),
     permManageInPersonRequests: Boolean(u.permManageInPersonRequests),
     permManageCitizenFeedback: Boolean(u.permManageCitizenFeedback),
@@ -140,6 +143,7 @@ export async function createStaffUser(
   let permManageArchive = false;
   let permViewRequests = false;
   let permManageGas = false;
+  let permManageGasInventory = false;
   let permManageSocialServices = false;
   let permManageInPersonRequests = false;
   let permManageCitizenFeedback = false;
@@ -148,6 +152,7 @@ export async function createStaffUser(
   if (role === UserRole.SUPER_ADMIN || role === UserRole.MUNICIPALITY_ADMIN) {
     permViewRequests = true;
     permManageGas = true;
+    permManageGasInventory = true;
     permManageSocialServices = true;
     permManageInPersonRequests = true;
     permManageCitizenFeedback = true;
@@ -167,6 +172,7 @@ export async function createStaffUser(
     if (assignErr) return { error: assignErr };
     permViewRequests = p.permViewRequests;
     permManageGas = p.permManageGas;
+    permManageGasInventory = p.permManageGasInventory;
     permManageSocialServices = p.permManageSocialServices;
     permManageInPersonRequests = p.permManageInPersonRequests;
     permManageCitizenFeedback = p.permManageCitizenFeedback;
@@ -188,6 +194,7 @@ export async function createStaffUser(
       municipalityId,
       permViewRequests,
       permManageGas,
+      permManageGasInventory,
       permManageSocialServices,
       permManageInPersonRequests,
       permManageCitizenFeedback,
@@ -235,6 +242,7 @@ export async function updateEmployeePermissions(
       municipalityId: true,
       permViewRequests: true,
       permManageGas: true,
+      permManageGasInventory: true,
       permManageSocialServices: true,
       permManageInPersonRequests: true,
       permManageCitizenFeedback: true,

@@ -128,6 +128,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           activeMunicipalityId: user.role === UserRole.SUPER_ADMIN ? null : null,
           permViewRequests: isElevatedAdmin || user.permViewRequests,
           permManageGas: isElevatedAdmin || user.permManageGas,
+          permManageGasInventory: isElevatedAdmin || user.permManageGasInventory,
           permManageSocialServices: isElevatedAdmin || user.permManageSocialServices,
           permManageInPersonRequests: isElevatedAdmin || user.permManageInPersonRequests,
           permManageCitizenFeedback: isElevatedAdmin || user.permManageCitizenFeedback,
@@ -154,6 +155,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           activeMunicipalityId?: string | null;
           permViewRequests?: boolean;
           permManageGas?: boolean;
+          permManageGasInventory?: boolean;
           permManageSocialServices?: boolean;
           permManageInPersonRequests?: boolean;
           permManageCitizenFeedback?: boolean;
@@ -174,6 +176,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           u.role === UserRole.SUPER_ADMIN ? (u.activeMunicipalityId ?? null) : null;
         token.permViewRequests = Boolean(u.permViewRequests);
         token.permManageGas = Boolean(u.permManageGas);
+        token.permManageGasInventory = Boolean(u.permManageGasInventory);
         token.permManageSocialServices = Boolean(u.permManageSocialServices);
         token.permManageInPersonRequests = Boolean(u.permManageInPersonRequests);
         token.permManageCitizenFeedback = Boolean(u.permManageCitizenFeedback);
@@ -201,6 +204,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           (token.activeMunicipalityId as string | null | undefined) ?? null;
         session.user.permViewRequests = Boolean(token.permViewRequests);
         session.user.permManageGas = Boolean(token.permManageGas);
+        session.user.permManageGasInventory = Boolean(token.permManageGasInventory);
         session.user.permManageSocialServices = Boolean(token.permManageSocialServices);
         session.user.permManageInPersonRequests = Boolean(token.permManageInPersonRequests);
         session.user.permManageCitizenFeedback = Boolean(token.permManageCitizenFeedback);

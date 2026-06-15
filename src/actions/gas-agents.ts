@@ -8,7 +8,7 @@ import { UserRole } from "@/generated/prisma/enums";
 import { digitsOnly, normalizeCitizenPhoneForStorage } from "@/lib/phone";
 import { isSuperAdminRole } from "@/lib/roles";
 import { assertStaffCanAccessMunicipality } from "@/lib/municipality-scope";
-import { staffCanManageGas } from "@/lib/staff-permissions";
+import { staffCanManageGas, staffCanManageGasInventory } from "@/lib/staff-permissions";
 import { writeOperationLog } from "@/lib/operation-log";
 
 export type CreateGasAgentResult =
@@ -18,6 +18,15 @@ export type CreateGasAgentResult =
 export type UpdateGasAgentResult =
   | { ok: true; message: string }
   | { ok: false; error: string };
+
+function parseNonNegativeInt(raw: FormDataEntryValue | null, label: string) {
+  const value = String(raw ?? "").trim();
+  if (!value) return { ok: true as const, value: 0 };
+  if (!/^\d+$/.test(value)) return { ok: false as const, error: `${label} يجب أن يكون رقماً صحيحاً موجباً أو صفراً.` };
+  const n = Number(value);
+  if (!Number.isSafeInteger(n)) return { ok: false as const, error: `${label} كبير جداً.` };
+  return { ok: true as const, value: n };
+}
 
 export async function createGasAgentAction(formData: FormData): Promise<CreateGasAgentResult> {
   const s = await auth();
@@ -41,10 +50,15 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
   const phoneRaw = String(formData.get("phone") ?? "").trim();
   const area = String(formData.get("area") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const initialStock = parseNonNegativeInt(formData.get("initialStock"), "عدد جرار الغاز");
 
   if (name.length < 3) return { ok: false, error: "اسم المعتمد يجب أن يكون 3 أحرف على الأقل." };
   if (area.length < 2) return { ok: false, error: "يرجى إدخال المنطقة المخصصة." };
   if (password.length < 6) return { ok: false, error: "كلمة المرور 6 أحرف على الأقل." };
+  if (!initialStock.ok) return { ok: false, error: initialStock.error };
+  if (initialStock.value > 0 && !staffCanManageGasInventory(s)) {
+    return { ok: false, error: "لا تملك صلاحية إضافة مخزون جرار الغاز." };
+  }
 
   const phoneDigits = digitsOnly(phoneRaw);
   const phone = normalizeCitizenPhoneForStorage(phoneDigits);
@@ -68,6 +82,7 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
       name,
       phone,
       gasArea: area,
+      gasCylinderStock: initialStock.value,
       passwordHash: await hashPassword(password),
       role: UserRole.GAS_AGENT,
       isVerified: true,
@@ -83,7 +98,7 @@ export async function createGasAgentAction(formData: FormData): Promise<CreateGa
     description: `تم إنشاء حساب معتمد الغاز: ${name}`,
     entityType: "USER",
     entityId: created.id,
-    metadata: { name, phone, area, role: UserRole.GAS_AGENT },
+    metadata: { name, phone, area, role: UserRole.GAS_AGENT, gasCylinderStock: initialStock.value },
   });
 
   revalidatePath("/admin/gas-services");
@@ -101,7 +116,7 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
 
   const existing = await db.user.findFirst({
     where: { id: userId, role: UserRole.GAS_AGENT },
-    select: { id: true, phone: true, gasArea: true, municipalityId: true },
+    select: { id: true, phone: true, gasArea: true, municipalityId: true, gasCylinderStock: true },
   });
   if (!existing?.municipalityId) return { ok: false, error: "المعتمد غير موجود." };
   try {
@@ -114,9 +129,14 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
   const phoneRaw = String(formData.get("phone") ?? "").trim();
   const area = String(formData.get("area") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const stockToAdd = parseNonNegativeInt(formData.get("stockToAdd"), "عدد الجرار المراد إضافتها");
 
   if (name.length < 3) return { ok: false, error: "اسم المعتمد يجب أن يكون 3 أحرف على الأقل." };
   if (area.length < 2) return { ok: false, error: "يرجى إدخال المنطقة المخصصة." };
+  if (!stockToAdd.ok) return { ok: false, error: stockToAdd.error };
+  if (stockToAdd.value > 0 && !staffCanManageGasInventory(s)) {
+    return { ok: false, error: "لا تملك صلاحية زيادة مخزون جرار الغاز." };
+  }
 
   const phoneDigits = digitsOnly(phoneRaw);
   const phone = normalizeCitizenPhoneForStorage(phoneDigits);
@@ -149,6 +169,7 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
       name,
       phone,
       gasArea: area,
+      ...(stockToAdd.value > 0 ? { gasCylinderStock: { increment: stockToAdd.value } } : {}),
       ...(password.length > 0 ? { passwordHash: await hashPassword(password) } : {}),
     },
   });
@@ -161,7 +182,7 @@ export async function updateGasAgentAction(formData: FormData): Promise<UpdateGa
     description: `تم تعديل بيانات معتمد الغاز: ${name}`,
     entityType: "USER",
     entityId: userId,
-    metadata: { before: existing, after: { id: updated.id, name, phone, gasArea: area } },
+    metadata: { before: existing, after: { id: updated.id, name, phone, gasArea: area, stockAdded: stockToAdd.value } },
   });
 
   revalidatePath("/admin/gas-services");

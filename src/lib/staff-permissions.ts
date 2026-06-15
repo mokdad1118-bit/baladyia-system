@@ -5,6 +5,7 @@ import { hasFullAdminPrivileges, isSuperAdminRole } from "@/lib/roles";
 export type StaffNavPermissions = {
   viewRequests: boolean;
   manageGas: boolean;
+  manageGasInventory: boolean;
   manageSocialServices: boolean;
   manageInPersonRequests: boolean;
   manageCitizenFeedback: boolean;
@@ -20,6 +21,7 @@ export type StaffNavPermissions = {
 export const emptyStaffNavPermissions: StaffNavPermissions = {
   viewRequests: false,
   manageGas: false,
+  manageGasInventory: false,
   manageSocialServices: false,
   manageInPersonRequests: false,
   manageCitizenFeedback: false,
@@ -35,6 +37,7 @@ export const emptyStaffNavPermissions: StaffNavPermissions = {
 export const fullStaffNavPermissions: StaffNavPermissions = {
   viewRequests: true,
   manageGas: true,
+  manageGasInventory: true,
   manageSocialServices: true,
   manageInPersonRequests: true,
   manageCitizenFeedback: true,
@@ -64,6 +67,7 @@ export function staffNavPermissions(s: Session | null): StaffNavPermissions {
   return {
     viewRequests: Boolean(u.permViewRequests),
     manageGas: Boolean(u.permManageGas),
+    manageGasInventory: Boolean(u.permManageGasInventory),
     manageSocialServices: Boolean(u.permManageSocialServices),
     manageInPersonRequests: Boolean(u.permManageInPersonRequests),
     manageCitizenFeedback: Boolean(u.permManageCitizenFeedback),
@@ -87,6 +91,10 @@ export function staffCanViewRequests(s: Session | null): boolean {
 
 export function staffCanManageGas(s: Session | null): boolean {
   return staffNavPermissions(s).manageGas;
+}
+
+export function staffCanManageGasInventory(s: Session | null): boolean {
+  return staffNavPermissions(s).manageGasInventory;
 }
 
 export function staffCanManageSocialServices(s: Session | null): boolean {
@@ -132,6 +140,7 @@ export function staffCanManageArchive(s: Session | null): boolean {
 export type EmployeePermPayload = {
   permViewRequests: boolean;
   permManageGas: boolean;
+  permManageGasInventory: boolean;
   permManageSocialServices: boolean;
   permManageInPersonRequests: boolean;
   permManageCitizenFeedback: boolean;
@@ -158,6 +167,9 @@ export function validateAssignableEmployeePerms(
   }
   if (p.permManageGas && !u.permManageGas) {
     return "لا يمكنك منح صلاحية خدمات الغاز";
+  }
+  if (p.permManageGasInventory && !u.permManageGasInventory) {
+    return "لا يمكنك منح صلاحية إدارة مخزون جرار الغاز";
   }
   if (p.permManageSocialServices && !u.permManageSocialServices) {
     return "لا يمكنك منح صلاحية الخدمات الاجتماعية";

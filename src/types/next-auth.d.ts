@@ -16,6 +16,7 @@ declare module "next-auth" {
       /** للموظف في لوحة الإدارة؛ المدير يُملأ دائماً بـ true من الخادم */
       permViewRequests?: boolean;
       permManageGas?: boolean;
+      permManageGasInventory?: boolean;
       permManageSocialServices?: boolean;
       permManageInPersonRequests?: boolean;
       permManageCitizenFeedback?: boolean;
@@ -40,6 +41,7 @@ declare module "next-auth/jwt" {
     activeMunicipalityId?: string | null;
     permViewRequests?: boolean;
     permManageGas?: boolean;
+    permManageGasInventory?: boolean;
     permManageSocialServices?: boolean;
     permManageInPersonRequests?: boolean;
     permManageCitizenFeedback?: boolean;

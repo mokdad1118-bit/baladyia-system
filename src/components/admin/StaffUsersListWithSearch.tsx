@@ -24,6 +24,7 @@ export type StaffUserRow = {
   isActive: boolean;
   permViewRequests: boolean;
   permManageGas: boolean;
+  permManageGasInventory: boolean;
   permManageSocialServices: boolean;
   permManageInPersonRequests: boolean;
   permManageCitizenFeedback: boolean;
@@ -46,6 +47,7 @@ function haystack(u: StaffUserRow): string {
     userRoleAr[u.role],
     u.permViewRequests ? "طلبات" : "",
     u.permManageGas ? "غاز" : "",
+    u.permManageGasInventory ? "مخزون جرار الغاز" : "",
     u.permManageSocialServices ? "اجتماعية" : "",
     u.permManageInPersonRequests ? "حضوري" : "",
     u.permManageCitizenFeedback ? "شكاوى" : "",
@@ -66,6 +68,7 @@ function haystack(u: StaffUserRow): string {
 const permissionOptions = [
   { name: "permViewRequests", key: "requests", label: "طلبات المدينة", valueKey: "permViewRequests" },
   { name: "permManageGas", key: "gas", label: "الغاز", valueKey: "permManageGas" },
+  { name: "permManageGasInventory", key: "gasInventory", label: "مخزون جرار الغاز", valueKey: "permManageGasInventory" },
   { name: "permManageSocialServices", key: "social", label: "الخدمات الاجتماعية", valueKey: "permManageSocialServices" },
   { name: "permManageInPersonRequests", key: "inPerson", label: "الخدمات المقدمة حضورياً", valueKey: "permManageInPersonRequests" },
   { name: "permManageCitizenFeedback", key: "feedback", label: "الشكاوى", valueKey: "permManageCitizenFeedback" },
@@ -109,7 +112,7 @@ function EmployeePermissionsForm({
   assignablePerms,
 }: {
   user: StaffUserRow;
-  assignablePerms: { requests: boolean; gas: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean; archive: boolean };
+  assignablePerms: { requests: boolean; gas: boolean; gasInventory: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean; archive: boolean };
 }) {
   const [state, action] = useActionState(updateEmployeePermissions, undefined);
   return (
@@ -156,7 +159,7 @@ export function StaffUsersListWithSearch({
   municipalities?: { id: string; name: string }[];
   isSuperAdmin?: boolean;
   isFullAdmin: boolean;
-  assignablePerms: { requests: boolean; gas: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean; archive: boolean };
+  assignablePerms: { requests: boolean; gas: boolean; gasInventory: boolean; social: boolean; inPerson: boolean; feedback: boolean; citizens: boolean; operationLog: boolean; services: boolean; users: boolean; stats: boolean; areaNews: boolean; archive: boolean };
 }) {
   const [q, setQ] = useState("");
   const [exporting, setExporting] = useState(false);

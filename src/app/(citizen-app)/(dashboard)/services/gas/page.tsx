@@ -26,6 +26,7 @@ export default async function CitizenGasServicePage({ searchParams }: Props) {
       isActive: true,
       municipalityId: s.user.municipalityId ?? "__none__",
       gasArea: { not: null },
+      gasCylinderStock: { gt: 0 },
     },
   });
 

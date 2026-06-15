@@ -14,6 +14,7 @@ import { isSuperAdminRole } from "@/lib/roles";
 import { listActiveMunicipalities } from "@/lib/municipalities";
 import { requireStaffPanelPermission } from "@/lib/admin-guard";
 import { AdminPageMunicipalityScopeForm } from "@/components/admin/AdminPageMunicipalityScopeForm";
+import { staffCanManageGasInventory } from "@/lib/staff-permissions";
 
 type S = { searchParams: Promise<{ dateFrom?: string; dateTo?: string; municipalityId?: string }> };
 type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
@@ -26,6 +27,7 @@ type GasRequestWithAgent = Prisma.GasRequestGetPayload<{
 export default async function AdminGasServicesPage({ searchParams }: S) {
   const session = await auth();
   await requireStaffPanelPermission(session, "gas");
+  const canManageInventory = staffCanManageGasInventory(session);
   const sp = await searchParams;
   const isSuperAdmin = session?.user ? isSuperAdminRole(session.user.role) : false;
   const selectedMunicipalityId =
@@ -61,6 +63,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
     name: string;
     phone: string | null;
     gasArea: string | null;
+    gasCylinderStock: number;
     isActive: boolean;
     municipality: { name: string } | null;
   }[] = [];
@@ -86,6 +89,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
           name: true,
           phone: true,
           gasArea: true,
+          gasCylinderStock: true,
           isActive: true,
           municipality: { select: { name: true } },
         },
@@ -135,7 +139,11 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
           تعذّر تحميل بعض بيانات خدمات الغاز. أعد المحاولة بعد اكتمال ترحيل قاعدة البيانات أو راجع سجلات Render.
         </div>
       ) : null}
-      <GasAgentCreateForm municipalities={municipalities} showMunicipalityPicker={municipalities.length > 0} />
+      <GasAgentCreateForm
+        municipalities={municipalities}
+        showMunicipalityPicker={municipalities.length > 0}
+        canManageInventory={canManageInventory}
+      />
 
       <div className="gov-card mb-6 p-4">
         <h2 className="mb-3 text-base font-bold text-[var(--gov-text)]">قائمة معتمدي الغاز</h2>
@@ -150,6 +158,7 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
                   <th>البلدية</th>
                   <th>رقم الهاتف</th>
                   <th>المنطقة</th>
+                  <th>المخزون</th>
                   <th>الحالة</th>
                   <th>إجراء</th>
                 </tr>
@@ -161,10 +170,11 @@ export default async function AdminGasServicesPage({ searchParams }: S) {
                     <td>{a.municipality?.name ?? "—"}</td>
                     <td dir="ltr">{a.phone ?? "—"}</td>
                     <td>{a.gasArea ?? "—"}</td>
+                    <td className="tabular-nums">{a.gasCylinderStock}</td>
                     <td>{a.isActive ? "مفعّل" : "معطّل"}</td>
                     <td className="whitespace-nowrap">
                       <div className="flex flex-wrap items-center gap-2">
-                        <GasAgentEditDialog agent={a} />
+                        <GasAgentEditDialog agent={a} canManageInventory={canManageInventory} />
                         <GasAgentBarcodeDialog agent={a} />
                         <GasAgentToggleButton userId={a.id} isActive={a.isActive} name={a.name} />
                       </div>
