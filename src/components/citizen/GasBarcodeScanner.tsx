@@ -40,7 +40,7 @@ export function GasBarcodeScanner({
 
     const BarcodeDetector = (window as typeof window & { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
     if (!BarcodeDetector) {
-      setCameraError("المتصفح لا يدعم قراءة الباركود بالكاميرا. أدخل الرمز المكتوب أسفل باركود المعتمد.");
+      setCameraError("هذا الجهاز أو المتصفح لا يدعم المسح بالكاميرا. اكتب رمز المعتمد يدوياً في الحقل الموجود أسفل الصفحة.");
       return;
     }
 
@@ -74,14 +74,14 @@ export function GasBarcodeScanner({
             return;
           }
         } catch {
-          setCameraError("تعذر قراءة الباركود. قرّب الكاميرا من الرمز أو أدخله يدوياً.");
+          setCameraError("تعذر قراءة الباركود بالكاميرا. يمكنك كتابة رمز المعتمد يدوياً في الحقل الموجود أسفل الصفحة.");
         }
         window.setTimeout(scan, 300);
       };
 
       void scan();
     } catch {
-      setCameraError("تعذر تشغيل الكاميرا. تأكد من السماح للتطبيق باستخدام الكاميرا.");
+      setCameraError("تعذر تشغيل الكاميرا. يمكنك كتابة رمز المعتمد يدوياً في الحقل الموجود أسفل الصفحة.");
     }
   }
 
@@ -101,8 +101,33 @@ export function GasBarcodeScanner({
           </p>
         ) : null}
 
-        <div className="overflow-hidden rounded-xl border border-[var(--gov-border)] bg-slate-950">
-          <video ref={videoRef} className="aspect-[4/3] w-full object-cover" muted playsInline />
+        <div className="rounded-xl border border-[var(--gov-border)] bg-white p-3">
+          <h2 className="text-sm font-bold text-[var(--gov-text)]">المسح بالكاميرا</h2>
+          <p className="mt-1 text-xs text-[var(--gov-muted)]">
+            استخدم هذا الخيار إذا كانت كاميرا جهازك تدعم قراءة الباركود.
+          </p>
+          <div className="mt-3 overflow-hidden rounded-xl border border-[var(--gov-border)] bg-slate-950">
+            <video ref={videoRef} className="aspect-[4/3] w-full object-cover" muted playsInline />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={startCamera}
+              disabled={cameraActive}
+              className="gov-btn-primary px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+            >
+              {cameraActive ? "جاري المسح..." : "فتح الكاميرا ومسح الباركود"}
+            </button>
+            {cameraActive ? (
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="rounded-sm border border-[var(--gov-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--gov-primary)]"
+              >
+                إيقاف الكاميرا
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {cameraError ? (
@@ -111,42 +136,29 @@ export function GasBarcodeScanner({
           </p>
         ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={startCamera}
-            disabled={cameraActive}
-            className="gov-btn-primary px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
-          >
-            {cameraActive ? "جاري المسح..." : "فتح الكاميرا ومسح الباركود"}
-          </button>
-          {cameraActive ? (
-            <button
-              type="button"
-              onClick={stopCamera}
-              className="rounded-sm border border-[var(--gov-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--gov-primary)]"
-            >
-              إيقاف الكاميرا
-            </button>
-          ) : null}
-        </div>
-
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="fullName" value={prefill?.name ?? ""} />
           <input type="hidden" name="phone" value={prefill?.phone ?? ""} />
           <input type="hidden" name="nationalId" value={prefill?.nationalId ?? ""} />
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--gov-text)]">رمز معتمد الغاز</label>
+          <div className="rounded-xl border border-[var(--gov-border)] bg-white p-3">
+            <label className="block text-sm font-bold text-[var(--gov-text)]">كتابة رمز الباركود يدوياً</label>
+            <p className="mt-1 text-xs leading-6 text-[var(--gov-muted)]">
+              إذا لم تعمل الكاميرا، اطلب من معتمد الغاز قراءة الرمز المكتوب تحت الباركود، ثم اكتبه هنا كاملاً كما هو.
+              يجب أن يبدأ الرمز بـ <span dir="ltr" className="font-mono font-semibold">gas-agent:</span>
+            </p>
             <input
               name="gasAgentToken"
               required
               dir="ltr"
               value={scanValue}
               onChange={(e) => setScanValue(e.target.value)}
-              placeholder="gas-agent:..."
-              className="gov-input w-full px-3 py-2.5 text-sm"
+              placeholder="مثال: gas-agent:xxxxxxxx"
+              className="gov-input mt-3 w-full px-3 py-3 font-mono text-base"
             />
+            <p className="mt-2 text-xs text-[var(--gov-muted)]">
+              اكتب الرمز بدون مسافات إضافية. الأحرف بعد النقطتين تختلف من معتمد لآخر.
+            </p>
           </div>
 
           <div className="rounded-xl border border-[var(--gov-border)] bg-slate-50 px-3 py-2 text-sm text-[var(--gov-muted)]">
@@ -165,4 +177,3 @@ export function GasBarcodeScanner({
     </>
   );
 }
-

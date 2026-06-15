@@ -34,7 +34,9 @@ export default async function CitizenGasServicePage({ searchParams }: Props) {
     <div className="gov-panel w-full min-w-0 max-w-full">
       <header className="gov-page-heading mb-6 border-b border-[var(--gov-border)] pb-4">
         <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">خدمات الغاز</h1>
-        <p className="mt-1 text-sm text-[var(--gov-muted)]">امسح باركود معتمد الغاز لتسجيل استلام الجرة مباشرة.</p>
+        <p className="mt-1 text-sm text-[var(--gov-muted)]">
+          امسح باركود معتمد الغاز أو اكتب الرمز الموجود أسفل الباركود يدوياً لتسجيل استلام الجرة.
+        </p>
       </header>
 
       {sp.ok === "1" ? (
