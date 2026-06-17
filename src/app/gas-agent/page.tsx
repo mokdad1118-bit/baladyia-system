@@ -33,7 +33,8 @@ export default async function GasAgentHomePage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+    <div className="gov-pattern-bg min-h-dvh px-4 py-8">
+      <div className="mx-auto w-full max-w-6xl">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--gov-border)] pb-4">
         <header>
           <h1 className="text-lg font-bold text-[var(--gov-text)] md:text-xl">لوحة معتمد الغاز</h1>
@@ -55,19 +56,20 @@ export default async function GasAgentHomePage() {
 
       {me ? <GasAgentBarcodeCard agent={me} /> : null}
 
-      <GasAgentRequestsTableWithSearch
-        rows={rows.map((r) => ({
-          id: r.id,
-          gasRequestNumber: r.gasRequestNumber,
-          fullName: r.fullName,
-          phone: r.phone,
-          nationalId: r.nationalId,
-          area: r.area,
-          createdAt: r.createdAt.toISOString(),
-          isCompleted: r.isCompleted,
-          completedAt: r.completedAt?.toISOString() ?? null,
-        }))}
-      />
+        <GasAgentRequestsTableWithSearch
+          rows={rows.map((r) => ({
+            id: r.id,
+            gasRequestNumber: r.gasRequestNumber,
+            fullName: r.fullName,
+            phone: r.phone,
+            nationalId: r.nationalId,
+            area: r.area,
+            createdAt: r.createdAt.toISOString(),
+            isCompleted: r.isCompleted,
+            completedAt: r.completedAt?.toISOString() ?? null,
+          }))}
+        />
+      </div>
     </div>
   );
 }

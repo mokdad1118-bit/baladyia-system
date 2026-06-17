@@ -26,7 +26,7 @@ export function GovWorkspaceShell({
   const [navOpen, setNavOpen] = useState(true);
 
   return (
-    <NavigationWaitGate className="min-h-dvh">
+    <NavigationWaitGate className="gov-pattern-bg min-h-dvh">
       <header className="gov-header sticky top-0 z-50">
         <div className="mx-auto flex max-w-[96rem] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link href={homeHref} prefetch={false} className="flex items-center gap-3 no-underline">

@@ -12,7 +12,7 @@ export function WorkspaceShell({
   children: ReactNode;
 }) {
   return (
-    <NavigationWaitGate className="grid gap-8 lg:grid-cols-[15.5rem_1fr] lg:items-start">
+    <NavigationWaitGate className="gov-pattern-bg min-h-dvh grid gap-8 lg:grid-cols-[15.5rem_1fr] lg:items-start">
       <aside className="lg:sticky lg:top-20">
         <Card className="overflow-hidden">
           <CardHeader>

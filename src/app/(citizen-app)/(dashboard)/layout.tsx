@@ -30,7 +30,7 @@ export default async function CitizenDashboardLayout({ children }: { children: R
   const citizenEntityName = municipalityCouncilName(municipality?.name) ?? ENTITY_NAME_AR;
 
   return (
-    <div className="notranslate min-h-dvh min-w-0 overflow-x-hidden" translate="no">
+    <div className="gov-pattern-bg notranslate min-h-dvh min-w-0 overflow-x-hidden" translate="no">
       <div className="citizen-hide-global-chrome hidden border-b border-[var(--gov-border)] bg-white md:block">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-3 no-underline">
